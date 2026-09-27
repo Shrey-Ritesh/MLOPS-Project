@@ -1,0 +1,2 @@
+## src/ directory
+Handles the source code for the application. Modularisation of the code is expected within this directory, and must be self-sufficient (can only invoke modules defined within src/, should not call modules outside src/)

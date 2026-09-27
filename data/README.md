@@ -1,0 +1,2 @@
+## Details of the data/ directory 
+This directory is meant to save the DVC history, for the datasets used in the Tutor app. The actual datasets, due to size, will be stored elsewhere, details to be updated here.

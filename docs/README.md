@@ -1,0 +1,2 @@
+# docs/ directory
+This directory only handles the documents used to manage the project, such as timelines and roadmaps. The actual documentation may be recorded elsewhere, preferably Github Wi-Ki. Details on coding documentation to be updated here upo finalisation
