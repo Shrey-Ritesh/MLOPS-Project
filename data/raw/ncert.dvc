@@ -1,0 +1,6 @@
+outs:
+- md5: 7484cbea99c205836262adb906bfc814.dir
+  size: 36365923
+  nfiles: 19
+  hash: md5
+  path: ncert
