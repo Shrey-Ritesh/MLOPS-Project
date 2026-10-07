@@ -17,6 +17,8 @@ Policy notes (documented per data_contract.md §4.1):
 - Some PDFs (e.g. keph107) store text as private-use codes U+F0xx; these are
   decoded to the characters they stand for (cp1252 for text fonts, a Greek /
   operator table for Symbol-style fonts).
+- Chapter openers are "CHAPTER <n>" or "UNIT <n>" (any weight); the title is the
+  large heading(s) right after it, and stays null when it is part of a graphic.
 - Images are recorded as `figure` blocks with null text; binary extraction and
   `asset_ids` linking belong to Track C (asset_ids stay empty here).
 - Vector-only drawings are not detected as figures (Track C territory).
@@ -40,7 +42,7 @@ from src.data.ncert_clean import (
 
 MIN_FIGURE_SIDE_PT = 40
 MAX_FIGURE_PAGE_FRACTION = 0.8
-HEADER_ZONE = 0.10
+HEADER_ZONE = 0.125
 FOOTER_ZONE = 0.93
 PUA_REVIEW_THRESHOLD = 0.005
 FULL_WIDTH_FRACTION = 0.55
@@ -55,7 +57,7 @@ _NUMBER_WORDS = {
     )
 }
 
-_CHAPTER_RE = re.compile(r"^CHAPTER\s+(\w+)\b", re.IGNORECASE)
+_CHAPTER_RE = re.compile(r"^(?:CHAPTER|UNIT)\s+(\w+)\b", re.IGNORECASE)
 _SECTION_RE = re.compile(r"^(\d+(?:\.\d+)+)\b")
 _EXAMPLE_RE = re.compile(r"^(example\s+\d+(?:\.\d+)*)\b", re.IGNORECASE)
 _CAPTION_RE = re.compile(r"^((?:fig(?:ure)?\.?|table)\s*\d+(?:\.\d+)*)", re.IGNORECASE)
@@ -587,9 +589,18 @@ def _classify(b: RawBlock) -> tuple[str, str | None]:
     if label := _caption_label(flat):
         return "caption", label
 
+    # Chapter/unit opener ("Chapter One", "UNIT 1"): large, but not always bold.
+    first_line = text.split("\n")[0].strip()
+    if (
+        b.size >= 14
+        and n_lines <= 6
+        and len(flat) <= 160
+        and len(first_line) <= 40
+        and _CHAPTER_RE.match(first_line)
+    ):
+        return "heading", first_line
+
     if b.bold and n_lines <= 3 and len(flat) <= 120:
-        if _CHAPTER_RE.match(flat):
-            return "heading", flat
         if m := _SECTION_RE.match(flat):
             return "heading", m.group(1)
         if m := _EXAMPLE_RE.match(flat):
@@ -620,10 +631,24 @@ def _chapter_header(
         if kind == "heading" and label and (m := _CHAPTER_RE.match(label)):
             word = m.group(1).upper()
             number = _NUMBER_WORDS.get(word, word if word.isdigit() else None)
-            parts = []
-            for nb, nkind, _ in blocks[idx + 1 : idx + 3]:
-                if nkind == "heading" and nb.size >= 18 and nb.page == b.page:
-                    parts.append(" ".join((nb.text or "").split()))
+            # Title either follows the opener line inside the same block
+            # ("Chapter One\nELECTRIC CHARGES\nAND FIELDS") or in the next large block(s).
+            inline = " ".join(" ".join((b.text or "").split("\n")[1:]).split())
+            parts = [inline] if inline else []
+            if not parts:
+                below = sorted(
+                    (
+                        nb
+                        for nb, nkind, _ in blocks[max(idx - 4, 0) : idx + 8]
+                        if nkind == "heading"
+                        and nb is not b
+                        and nb.size >= 18
+                        and nb.page == b.page
+                        and nb.bbox[1] > b.bbox[1]
+                    ),
+                    key=lambda nb: nb.bbox[1],
+                )
+                parts = [" ".join((nb.text or "").split()) for nb in below[:3]]
             title = " ".join(parts) or None
             break
     return number, title
@@ -667,7 +692,10 @@ def extract_chapter(
     chapter_number = chapter_number or chapter_number_hint
     if chapter_number is None:
         reasons.append("chapter_number_not_found")
-    if chapter_title is None:
+    # Some books set the chapter title inside a graphic, so it is not extractable
+    # text; a null title is valid per the contract and only flagged when the
+    # chapter number is missing too.
+    if chapter_title is None and chapter_number is None:
         reasons.append("chapter_title_not_found")
     if totals["tables_missed"]:
         reasons.append(f"table_not_reconstructed:{totals['tables_missed']}")
@@ -743,5 +771,6 @@ def extract_chapter(
             "tables_reconstructed": totals["tables"],
             "tables_not_reconstructed": totals["tables_missed"],
             "fragmented_equation_blocks": fragmented,
+            "chapter_title_missing": chapter_title is None,
         },
     )

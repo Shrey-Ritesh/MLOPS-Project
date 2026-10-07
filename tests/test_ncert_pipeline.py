@@ -162,3 +162,40 @@ def test_private_use_codes_are_decoded():
     assert decode_private_use("earths") == "earth’s"
     assert decode_private_use("", symbol_font=True) == "αβ"
     assert decode_private_use("plain text") == "plain text"
+
+
+def test_unit_opener_and_unbold_chapter_opener(tmp_path):
+    doc = pymupdf.open()
+    page = doc.new_page(width=600, height=800)
+    page.insert_text((200, 110), "UNIT 3", fontsize=16, fontname="hebo")
+    page.insert_text((100, 180), "CLASSIFICATION OF ELEMENTS", fontsize=19, fontname="hebo")
+    page.insert_text((72, 300), "Body text of the unit goes here and continues on.", fontsize=10, fontname="helv")
+    path = tmp_path / "unit.pdf"
+    doc.save(path)
+    rec = _extract(str(path)).record
+    assert rec["chapter_number"] == "3"
+    assert rec["chapter_title"] == "CLASSIFICATION OF ELEMENTS"
+
+    doc = pymupdf.open()
+    page = doc.new_page(width=600, height=800)
+    page.insert_text((200, 130), "Chapter One", fontsize=30, fontname="helv")  # not bold, title is a graphic
+    page.insert_text((72, 300), "Body text of the chapter goes here and continues on.", fontsize=10, fontname="helv")
+    path = tmp_path / "chapter.pdf"
+    doc.save(path)
+    result = _extract(str(path))
+    assert result.record["chapter_number"] == "1"
+    assert result.record["chapter_title"] is None
+    assert result.record["extraction_status"] == "success"
+
+
+def test_opener_with_title_in_same_block(tmp_path):
+    doc = pymupdf.open()
+    page = doc.new_page(width=600, height=800)
+    page.insert_textbox(pymupdf.Rect(100, 120, 500, 260), "Chapter One\nELECTRIC CHARGES\nAND FIELDS", fontsize=30, fontname="helv")
+    page.insert_text((72, 400), "Body text of the chapter goes here and continues on.", fontsize=10, fontname="helv")
+    path = tmp_path / "inline.pdf"
+    doc.save(path)
+    rec = _extract(str(path)).record
+    assert rec["chapter_number"] == "1"
+    assert rec["chapter_title"] == "ELECTRIC CHARGES AND FIELDS"
+    assert next(b for b in rec["content_blocks"] if b["block_type"] == "heading")["original_label"] == "Chapter One"

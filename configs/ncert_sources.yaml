@@ -28,3 +28,35 @@ files:
   - {file: keph207.pdf, kind: chapter}
   - {file: keph2ps.pdf, kind: non_chapter}   # preliminary pages
   - {file: keph2an.pdf, kind: non_chapter}   # answers / bibliography / index
+  # --- Class 12 Physics (Parts 1 and 2) ---
+  - {file: leph101.pdf, kind: chapter, class_level: 12}
+  - {file: leph102.pdf, kind: chapter, class_level: 12}
+  - {file: leph103.pdf, kind: chapter, class_level: 12}
+  - {file: leph104.pdf, kind: chapter, class_level: 12}
+  - {file: leph105.pdf, kind: chapter, class_level: 12}
+  - {file: leph106.pdf, kind: chapter, class_level: 12}
+  - {file: leph107.pdf, kind: chapter, class_level: 12}
+  - {file: leph108.pdf, kind: chapter, class_level: 12}
+  - {file: leph1ps.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph1an.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph209.pdf, kind: chapter, class_level: 12}
+  - {file: leph210.pdf, kind: chapter, class_level: 12}
+  - {file: leph211.pdf, kind: chapter, class_level: 12}
+  - {file: leph212.pdf, kind: chapter, class_level: 12}
+  - {file: leph213.pdf, kind: chapter, class_level: 12}
+  - {file: leph214.pdf, kind: chapter, class_level: 12}
+  - {file: leph2ps.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph2an.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph2a1.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph2BL.pdf, kind: non_chapter, class_level: 12}
+  # --- Class 11 Chemistry (Part 1) ---
+  - {file: kech101.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech102.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech103.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech104.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech105.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech106.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech107.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech1ps.pdf, kind: non_chapter, subject: Chemistry}
+  - {file: kech1an.pdf, kind: non_chapter, subject: Chemistry}
+  - {file: kech1a1.pdf, kind: non_chapter, subject: Chemistry}
