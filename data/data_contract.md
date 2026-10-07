@@ -68,7 +68,6 @@ Initial status values:
 | `class_level` | integer or null | Yes | Class level where applicable and known. |
 | `session` | string or null | Yes | JEE Main session where applicable and known. |
 | `shift` | string or null | Yes | JEE Main shift where applicable and known. |
-| `source_locator` | string | Yes | Agreed Drive-relative path or other stable locator, not a machine-specific absolute path. |
 | `inventory_status` | enum | Yes | `registered`, `verified`, or `quarantined`. |
 
 All nullable keys above remain present in serialized v1 records; use JSON `null` if unknown or inapplicable. Source-type-specific validation must not require NCERT-only metadata on JEE records or vice versa.
@@ -79,10 +78,7 @@ These fields answer different questions:
 
 - `source_id` identifies the registered document version within this dataset.
 - `sha256` identifies the exact byte contents of the PDF.
-- `source_locator` tells the team where the file can currently be found.
 - `logical_source_id`, when used, groups related versions of the same logical publication or paper series.
-
-Moving a file to another Drive folder must not change its `source_id` or `sha256`. Re-downloading identical bytes under a different filename produces the same checksum and should be reported as a possible duplicate, not automatically treated as a new content version.
 
 If a revised textbook edition or corrected paper has different bytes, register it as a distinct document version with a distinct `source_id`. It may share a `logical_source_id` with related versions. Do not overwrite an existing manifest entry or silently replace the old file.
 
