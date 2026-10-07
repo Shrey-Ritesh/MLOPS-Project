@@ -1,0 +1,30 @@
+# NCERT sources for Track B. Metadata below was supplied by the project team
+# (folder "11 phy part 2"); it is not inferred from file contents.
+# kind: chapter      -> produces one chapter record
+# kind: non_chapter  -> registered as a source but not extracted as a chapter
+raw_dir: data/raw/ncert
+defaults:
+  source_type: ncert
+  subject: Physics
+  class_level: 11
+  language: en
+files:
+  - {file: keph101.pdf, kind: chapter}
+  - {file: keph102.pdf, kind: chapter}
+  - {file: keph103.pdf, kind: chapter}
+  - {file: keph104.pdf, kind: chapter}
+  - {file: keph105.pdf, kind: chapter}
+  - {file: keph106.pdf, kind: chapter}
+  - {file: keph107.pdf, kind: chapter}
+  - {file: keph1ps.pdf, kind: non_chapter}   # Part 1 preliminary pages
+  - {file: keph1an.pdf, kind: non_chapter}   # Part 1 answers
+  - {file: keph1a1.pdf, kind: non_chapter}   # Part 1 appendices
+  - {file: keph201.pdf, kind: chapter}
+  - {file: keph202.pdf, kind: chapter}
+  - {file: keph203.pdf, kind: chapter}
+  - {file: keph204.pdf, kind: chapter}
+  - {file: keph205.pdf, kind: chapter}
+  - {file: keph206.pdf, kind: chapter}
+  - {file: keph207.pdf, kind: chapter}
+  - {file: keph2ps.pdf, kind: non_chapter}   # preliminary pages
+  - {file: keph2an.pdf, kind: non_chapter}   # answers / bibliography / index

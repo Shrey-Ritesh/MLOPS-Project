@@ -2,3 +2,5 @@ docs/
 venv/
 **/__pycache__
 aws_access_key.txt
+.venv/
+/data/raw/

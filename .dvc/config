@@ -1,4 +1,4 @@
 [core]
-    remote = s3
-['remote "s3"']
-    url = s3://jee-tutor-dvc-321043732660-ap-southeast-2-an/dvc
+    remote = s3remote
+['remote "s3remote"']
+    url = s3://jee-tutor-dvc-321043732660-ap-southeast-2-an
