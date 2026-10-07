@@ -57,7 +57,7 @@ _NUMBER_WORDS = {
     )
 }
 
-_CHAPTER_RE = re.compile(r"^(?:CHAPTER|UNIT)\s+(\w+)\b", re.IGNORECASE)
+_CHAPTER_RE = re.compile(r"^(?:CHAPTER|UNIT)(?:\s+(\w+)|(\d+))\b", re.IGNORECASE)
 _SECTION_RE = re.compile(r"^(\d+(?:\.\d+)+)\b")
 _EXAMPLE_RE = re.compile(r"^(example\s+\d+(?:\.\d+)*)\b", re.IGNORECASE)
 _CAPTION_RE = re.compile(r"^((?:fig(?:ure)?\.?|table)\s*\d+(?:\.\d+)*)", re.IGNORECASE)
@@ -113,9 +113,37 @@ def _is_bold(span: dict) -> bool:
     return any(k in font for k in _BOLD_FONT_NAMES) or bool(span["flags"] & 16)
 
 
+def _drop_overlaid_duplicates(entries: list[tuple[Line, list[dict]]]) -> list[tuple[Line, list[dict]]]:
+    """Some books draw text several times on top of itself (outline/shadow effect).
+
+    Drop a line whose text is contained in another line that covers (almost) the
+    same area; of identical overlapping lines the first one is kept.
+    """
+
+    def covered(a: Line, b: Line) -> bool:
+        ix = min(a.x1, b.x1 + 2) - max(a.x0, b.x0 - 2)
+        iy = min(a.y1, b.y1 + 2) - max(a.y0, b.y0 - 2)
+        area = max((a.x1 - a.x0) * (a.y1 - a.y0), 1e-6)
+        return ix > 0 and iy > 0 and ix * iy / area >= 0.7
+
+    keep = []
+    for i, (a, _) in enumerate(entries):
+        ta = a.text.strip()
+        dup = False
+        for j, (b, _) in enumerate(entries):
+            if i == j or not covered(a, b):
+                continue
+            tb = b.text.strip()
+            if ta == tb and j < i or (ta != tb and ta in tb):
+                dup = True
+                break
+        if not dup:
+            keep.append(entries[i])
+    return keep
+
+
 def _text_block(page_no: int, block: dict, page_height: float) -> RawBlock | None:
-    lines: list[Line] = []
-    spans: list[dict] = []
+    entries: list[tuple[Line, list[dict]]] = []
     for line in block["lines"]:
         # Wingdings spans are decorative bullet/marker glyphs ("u", "⊳"), not content.
         kept = [
@@ -126,8 +154,15 @@ def _text_block(page_no: int, block: dict, page_height: float) -> RawBlock | Non
         line_text = "".join(s["text"] for s in kept)
         if line_text.strip():
             x0, y0, x1, y1 = line["bbox"]
-            lines.append(Line(line_text, x0, y0, x1, y1, kept[0]["origin"][1]))
-            spans.extend(s for s in kept if s["text"].strip())
+            entries.append((Line(line_text, x0, y0, x1, y1, kept[0]["origin"][1]), kept))
+    if len(entries) > 1:
+        deduped = _drop_overlaid_duplicates(entries)
+        if len(deduped) != len(entries):  # overlaid text: restore top-to-bottom order
+            deduped.sort(key=lambda e: (round(e[0].y0 / 3), e[0].x0))
+        entries = deduped
+
+    lines = [ln for ln, _ in entries]
+    spans = [s for _, kept in entries for s in kept if s["text"].strip()]
     if not lines:
         return None
 
@@ -609,6 +644,10 @@ def _classify(b: RawBlock) -> tuple[str, str | None]:
         if b.size >= 12 or (len(letters) >= 3 and flat.upper() == flat):
             return "heading", None
 
+    # Some books set section headings large but not bold ("1.1 General Characteristics").
+    if b.size >= 13 and n_lines <= 3 and len(flat) <= 120 and (m := _SECTION_RE.match(flat)):
+        return "heading", m.group(1)
+
     if m := _EQ_NUMBER_RE.search(text):
         if len(flat) <= 200 and n_lines <= 4:
             return "equation", m.group(1)
@@ -622,15 +661,57 @@ def _classify(b: RawBlock) -> tuple[str, str | None]:
     return "paragraph", None
 
 
+def _flat(b: RawBlock) -> str:
+    return " ".join((b.text or "").split())
+
+
+def _big_title_parts(blocks, page: int, exclude) -> list[str]:
+    """Large title text near the top of the opening page (books that set it as display type)."""
+    cands = sorted(
+        (
+            b
+            for b, _, _ in blocks
+            if b.page == page
+            and b.kind == "text"
+            and 28 <= b.size < 60
+            and b.bbox[1] < 350
+            and b is not exclude
+            and 0 < len(_flat(b)) <= 60
+            and not _flat(b).replace(" ", "").isdigit()
+        ),
+        key=lambda b: (b.bbox[1], b.bbox[0]),
+    )
+    parts: list[str] = []
+    for b in cands:
+        text = _flat(b)
+        if any(text in p or p in text for p in parts):
+            parts = [text if p in text else p for p in parts] if any(p in text for p in parts) else parts
+            continue
+        parts.append(text)
+    return parts
+
+
+def _title_looks_clean(title: str) -> bool:
+    words = [w.lower() for w in re.findall(r"[A-Za-z]{3,}", title)]
+    if len(words) != len(set(words)):
+        return False
+    return not re.search(r"([A-Za-z]{1,3})\1{2,}", title)
+
+
 def _chapter_header(
     blocks: list[tuple[RawBlock, str, str | None]],
 ) -> tuple[str | None, str | None]:
-    """Chapter number/title from the opener ("CHAPTER EIGHT" + large title)."""
+    """Chapter number/title from the opener ("CHAPTER EIGHT", "UNIT 3", "Unit1" + title)."""
+    if not blocks:
+        return None, None
     number = title = None
+    first_page = blocks[0][0].page
+    opener = None
     for idx, (b, kind, label) in enumerate(blocks):
         if kind == "heading" and label and (m := _CHAPTER_RE.match(label)):
-            word = m.group(1).upper()
+            word = (m.group(1) or m.group(2)).upper()
             number = _NUMBER_WORDS.get(word, word if word.isdigit() else None)
+            opener = b
             # Title either follows the opener line inside the same block
             # ("Chapter One\nELECTRIC CHARGES\nAND FIELDS") or in the next large block(s).
             inline = " ".join(" ".join((b.text or "").split("\n")[1:]).split())
@@ -651,6 +732,24 @@ def _chapter_header(
                 parts = [" ".join((nb.text or "").split()) for nb in below[:3]]
             title = " ".join(parts) or None
             break
+
+    # Display-type openers: a giant repeated number ("6 6") and large title lines.
+    if number is None:
+        for b, _, _ in blocks:
+            if b.page == first_page and b.kind == "text" and b.size >= 60:
+                m = re.fullmatch(r"(\d{1,2})(?:\s+\1)*", _flat(b))
+                if m:
+                    number = m.group(1)
+                    break
+    if number is not None:
+        extra = _big_title_parts(blocks, first_page, opener)
+        if extra:
+            merged = " ".join([title] if title else [])
+            for part in extra:
+                if part in merged:
+                    continue
+                merged = part if merged and merged in part else f"{merged} {part}".strip()
+            title = merged or title
     return number, title
 
 
@@ -695,6 +794,11 @@ def extract_chapter(
     # Some books set the chapter title inside a graphic, so it is not extractable
     # text; a null title is valid per the contract and only flagged when the
     # chapter number is missing too.
+    if chapter_title and not _title_looks_clean(chapter_title):
+        # Overlaid/outlined display type can interleave fragments; a wrong title is
+        # worse than none, so drop it and flag the chapter instead.
+        chapter_title = None
+        reasons.append("chapter_title_unreliable")
     if chapter_title is None and chapter_number is None:
         reasons.append("chapter_title_not_found")
     if totals["tables_missed"]:

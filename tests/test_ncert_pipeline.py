@@ -199,3 +199,31 @@ def test_opener_with_title_in_same_block(tmp_path):
     assert rec["chapter_number"] == "1"
     assert rec["chapter_title"] == "ELECTRIC CHARGES AND FIELDS"
     assert next(b for b in rec["content_blocks"] if b["block_type"] == "heading")["original_label"] == "Chapter One"
+
+
+def test_overlaid_duplicate_lines_collapse_and_unit1_opener(tmp_path):
+    doc = pymupdf.open()
+    page = doc.new_page(width=600, height=800)
+    for _ in range(4):  # same text drawn repeatedly, as outline/shadow effect
+        page.insert_text((100, 140), "Unit", fontsize=40, fontname="helv")
+    page.insert_text((100, 140), "Unit1", fontsize=40, fontname="helv")
+    page.insert_text((100, 200), "The Solid State", fontsize=40, fontname="helv")
+    page.insert_text((72, 400), "Body text of the unit goes here and continues on.", fontsize=10, fontname="helv")
+    for _ in range(3):
+        page.insert_text((72, 300), "1.1 General Characteristics", fontsize=14, fontname="helv")
+    path = tmp_path / "overlay.pdf"
+    doc.save(path)
+    rec = _extract(str(path)).record
+    assert rec["chapter_number"] == "1"
+    assert rec["chapter_title"] == "The Solid State"
+    headings = [b for b in rec["content_blocks"] if b["block_type"] == "heading"]
+    assert any(h["text_cleaned"] == "1.1 General Characteristics" and h["original_label"] == "1.1" for h in headings)
+
+
+def test_title_sanity_check():
+    from src.data.ncert_extract import _title_looks_clean
+
+    assert _title_looks_clean("Haloalkanes and Haloarenes")
+    assert _title_looks_clean("THE s-BLOCK ELEMENTS")
+    assert not _title_looks_clean("Haloalkanes and Haloalkanes and Haloarenes")
+    assert not _title_looks_clean("Chemistry ininininin Ever eryday yday Life")
