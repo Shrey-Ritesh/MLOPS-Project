@@ -27,8 +27,6 @@ htmlcov/
 # Data Directories & Binary Assets (Tracked by DVC)
 data/raw/
 /data/raw/
-data/processed/
-data/assets/
 data/quarantine/
 
 # Temporary Session & Preview Test Files
