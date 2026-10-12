@@ -1,0 +1,97 @@
+# NCERT sources for Track B. Metadata below was supplied by the project team
+# (folder "11 phy part 2"); it is not inferred from file contents.
+# kind: chapter      -> produces one chapter record
+# kind: non_chapter  -> registered as a source but not extracted as a chapter
+raw_dir: data/raw/ncert
+defaults:
+  source_type: ncert
+  subject: Physics
+  class_level: 11
+  language: en
+files:
+  - {file: keph101.pdf, kind: chapter}
+  - {file: keph102.pdf, kind: chapter}
+  - {file: keph103.pdf, kind: chapter}
+  - {file: keph104.pdf, kind: chapter}
+  - {file: keph105.pdf, kind: chapter}
+  - {file: keph106.pdf, kind: chapter}
+  - {file: keph107.pdf, kind: chapter}
+  - {file: keph1ps.pdf, kind: non_chapter}   # Part 1 preliminary pages
+  - {file: keph1an.pdf, kind: non_chapter}   # Part 1 answers
+  - {file: keph1a1.pdf, kind: non_chapter}   # Part 1 appendices
+  - {file: keph201.pdf, kind: chapter}
+  - {file: keph202.pdf, kind: chapter}
+  - {file: keph203.pdf, kind: chapter}
+  - {file: keph204.pdf, kind: chapter}
+  - {file: keph205.pdf, kind: chapter}
+  - {file: keph206.pdf, kind: chapter}
+  - {file: keph207.pdf, kind: chapter}
+  - {file: keph2ps.pdf, kind: non_chapter}   # preliminary pages
+  - {file: keph2an.pdf, kind: non_chapter}   # answers / bibliography / index
+  # --- Class 12 Physics (Parts 1 and 2) ---
+  - {file: leph101.pdf, kind: chapter, class_level: 12}
+  - {file: leph102.pdf, kind: chapter, class_level: 12}
+  - {file: leph103.pdf, kind: chapter, class_level: 12}
+  - {file: leph104.pdf, kind: chapter, class_level: 12}
+  - {file: leph105.pdf, kind: chapter, class_level: 12}
+  - {file: leph106.pdf, kind: chapter, class_level: 12}
+  - {file: leph107.pdf, kind: chapter, class_level: 12}
+  - {file: leph108.pdf, kind: chapter, class_level: 12}
+  - {file: leph1ps.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph1an.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph209.pdf, kind: chapter, class_level: 12}
+  - {file: leph210.pdf, kind: chapter, class_level: 12}
+  - {file: leph211.pdf, kind: chapter, class_level: 12}
+  - {file: leph212.pdf, kind: chapter, class_level: 12}
+  - {file: leph213.pdf, kind: chapter, class_level: 12}
+  - {file: leph214.pdf, kind: chapter, class_level: 12}
+  - {file: leph2ps.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph2an.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph2a1.pdf, kind: non_chapter, class_level: 12}
+  - {file: leph2BL.pdf, kind: non_chapter, class_level: 12}
+  # --- Class 11 Chemistry (Part 1) ---
+  - {file: kech101.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech102.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech103.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech104.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech105.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech106.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech107.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech1ps.pdf, kind: non_chapter, subject: Chemistry}
+  - {file: kech1an.pdf, kind: non_chapter, subject: Chemistry}
+  - {file: kech1a1.pdf, kind: non_chapter, subject: Chemistry}
+  # --- Class 11 Chemistry (Part 2) ---
+  - {file: kech201.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech202.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech203.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech204.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech205.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech206.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech207.pdf, kind: chapter, subject: Chemistry}
+  - {file: kech2ps.pdf, kind: non_chapter, subject: Chemistry}
+  - {file: kech2an.pdf, kind: non_chapter, subject: Chemistry}
+  - {file: kech2in.pdf, kind: non_chapter, subject: Chemistry}
+  # --- Class 12 Chemistry (Parts 1 and 2) ---
+  - {file: lech101.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech102.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech103.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech104.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech105.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech106.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech107.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech108.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech109.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech1ps.pdf, kind: non_chapter, subject: Chemistry, class_level: 12}
+  - {file: lech1an.pdf, kind: non_chapter, subject: Chemistry, class_level: 12}
+  - {file: lech1a1.pdf, kind: non_chapter, subject: Chemistry, class_level: 12}
+  - {file: lech1in.pdf, kind: non_chapter, subject: Chemistry, class_level: 12}
+  - {file: lech201.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech202.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech203.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech204.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech205.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech206.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech207.pdf, kind: chapter, subject: Chemistry, class_level: 12}
+  - {file: lech2ps.pdf, kind: non_chapter, subject: Chemistry, class_level: 12}
+  - {file: lech2an.pdf, kind: non_chapter, subject: Chemistry, class_level: 12}
+  - {file: lech2in.pdf, kind: non_chapter, subject: Chemistry, class_level: 12}

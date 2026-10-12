@@ -1,0 +1,1817 @@
+{
+  "contract_version": "1.0.0",
+  "track": "B_ncert",
+  "sources_registered": [
+    {
+      "source_id": "src-2685cb3e2582bc0b3eb48f121a3959a3ad7e93d87bcda03762e605f034fa8380",
+      "file": "keph101.pdf",
+      "sha256": "2685cb3e2582bc0b3eb48f121a3959a3ad7e93d87bcda03762e605f034fa8380"
+    },
+    {
+      "source_id": "src-cd0307176cef6d2ccf50a48f4342d82cec49d191f1869dc71da4ff5173846f27",
+      "file": "keph102.pdf",
+      "sha256": "cd0307176cef6d2ccf50a48f4342d82cec49d191f1869dc71da4ff5173846f27"
+    },
+    {
+      "source_id": "src-7619da28a2e58c099426fe256a966383a8d7da6e23c69deee42b62481aecd355",
+      "file": "keph103.pdf",
+      "sha256": "7619da28a2e58c099426fe256a966383a8d7da6e23c69deee42b62481aecd355"
+    },
+    {
+      "source_id": "src-8a5df412b53d86040d73ec589ddc98ae23201c420973c7b910e1acca85d234ef",
+      "file": "keph104.pdf",
+      "sha256": "8a5df412b53d86040d73ec589ddc98ae23201c420973c7b910e1acca85d234ef"
+    },
+    {
+      "source_id": "src-a6d4b72b0fc10230bd54393f86e58630ccd258d54269b60de226c68d0eaa937e",
+      "file": "keph105.pdf",
+      "sha256": "a6d4b72b0fc10230bd54393f86e58630ccd258d54269b60de226c68d0eaa937e"
+    },
+    {
+      "source_id": "src-88e0ad16f315b3510e40cdc20e6d70d7b5412bac1926fd505a6a1836464ca3bb",
+      "file": "keph106.pdf",
+      "sha256": "88e0ad16f315b3510e40cdc20e6d70d7b5412bac1926fd505a6a1836464ca3bb"
+    },
+    {
+      "source_id": "src-631fbe30827cd5faa745698fe337ca2cf829356aa8124f1abb4f3d82b44d499a",
+      "file": "keph107.pdf",
+      "sha256": "631fbe30827cd5faa745698fe337ca2cf829356aa8124f1abb4f3d82b44d499a"
+    },
+    {
+      "source_id": "src-b06cce4e3d6c4c150869bd4f6221ed5aa86bb0ff1725e4effcd2615e85ff5782",
+      "file": "keph1ps.pdf",
+      "sha256": "b06cce4e3d6c4c150869bd4f6221ed5aa86bb0ff1725e4effcd2615e85ff5782"
+    },
+    {
+      "source_id": "src-79be0d7adeccc1deb630abaea390880063cdb4f37a2308934e8f63695985fbbc",
+      "file": "keph1an.pdf",
+      "sha256": "79be0d7adeccc1deb630abaea390880063cdb4f37a2308934e8f63695985fbbc"
+    },
+    {
+      "source_id": "src-7c9eafd1d63e60fdc2495a94102b935b88745aa33959dd5cc928290f5fad7ae2",
+      "file": "keph1a1.pdf",
+      "sha256": "7c9eafd1d63e60fdc2495a94102b935b88745aa33959dd5cc928290f5fad7ae2"
+    },
+    {
+      "source_id": "src-54ef32e2d3eb1e47e87f9d8e6a49423b8b2cc77e4ac5efbc7c34670c49462de6",
+      "file": "keph201.pdf",
+      "sha256": "54ef32e2d3eb1e47e87f9d8e6a49423b8b2cc77e4ac5efbc7c34670c49462de6"
+    },
+    {
+      "source_id": "src-3ff64c89dcbfaf99ecec307d753b0bd2d3f731f17e2f16875d74749840d223b6",
+      "file": "keph202.pdf",
+      "sha256": "3ff64c89dcbfaf99ecec307d753b0bd2d3f731f17e2f16875d74749840d223b6"
+    },
+    {
+      "source_id": "src-b062894aea80298f8df2f83e34dc11f5f96577bfe08d0ad35e2e647a8446854e",
+      "file": "keph203.pdf",
+      "sha256": "b062894aea80298f8df2f83e34dc11f5f96577bfe08d0ad35e2e647a8446854e"
+    },
+    {
+      "source_id": "src-00462650d55bda8843f5fbf4eba1a7996faf13d04a8858fa04061b1309e090ba",
+      "file": "keph204.pdf",
+      "sha256": "00462650d55bda8843f5fbf4eba1a7996faf13d04a8858fa04061b1309e090ba"
+    },
+    {
+      "source_id": "src-198ca1df5f392ee6aaac7fa8541d65a3354345a79eeca05875c19247adc7ddd9",
+      "file": "keph205.pdf",
+      "sha256": "198ca1df5f392ee6aaac7fa8541d65a3354345a79eeca05875c19247adc7ddd9"
+    },
+    {
+      "source_id": "src-adc85e61480ab919f13c6b0951a91d44315958b37bc5f6bfb3304fd256b1978d",
+      "file": "keph206.pdf",
+      "sha256": "adc85e61480ab919f13c6b0951a91d44315958b37bc5f6bfb3304fd256b1978d"
+    },
+    {
+      "source_id": "src-9f39d09b0556c3a59b89d6b979189f960e5c663af11cdd52d6c7af0cd2e7d1c9",
+      "file": "keph207.pdf",
+      "sha256": "9f39d09b0556c3a59b89d6b979189f960e5c663af11cdd52d6c7af0cd2e7d1c9"
+    },
+    {
+      "source_id": "src-75b36508385f54afb66906cc52d871325802d156535c102b17c1e96842298482",
+      "file": "keph2ps.pdf",
+      "sha256": "75b36508385f54afb66906cc52d871325802d156535c102b17c1e96842298482"
+    },
+    {
+      "source_id": "src-abed24380ce644a461d13743c7a180cc53f3941976c7560e8d81cc781765709c",
+      "file": "keph2an.pdf",
+      "sha256": "abed24380ce644a461d13743c7a180cc53f3941976c7560e8d81cc781765709c"
+    },
+    {
+      "source_id": "src-7e04fbe6f06673180cec58afc6a618f7c409ff260777be4b9a946394e998433f",
+      "file": "leph101.pdf",
+      "sha256": "7e04fbe6f06673180cec58afc6a618f7c409ff260777be4b9a946394e998433f"
+    },
+    {
+      "source_id": "src-45acbe82552c2c3ad08f7b40c2923249115b7014d1bb4e6fc99de6f0610980c1",
+      "file": "leph102.pdf",
+      "sha256": "45acbe82552c2c3ad08f7b40c2923249115b7014d1bb4e6fc99de6f0610980c1"
+    },
+    {
+      "source_id": "src-a1ac65af1e09f341276f6a9f2fcf36376d60f66123e58aaa19e686fd0e531701",
+      "file": "leph103.pdf",
+      "sha256": "a1ac65af1e09f341276f6a9f2fcf36376d60f66123e58aaa19e686fd0e531701"
+    },
+    {
+      "source_id": "src-43f0d3d9db3a4b25ffdfca17d788b3ebfcaeff1a207fa7e85a4a7c1de7a0f908",
+      "file": "leph104.pdf",
+      "sha256": "43f0d3d9db3a4b25ffdfca17d788b3ebfcaeff1a207fa7e85a4a7c1de7a0f908"
+    },
+    {
+      "source_id": "src-0b5723c7a021a77d4d75f5a0155ad04c6bba9624c8055afc4b7a33305aeba4d2",
+      "file": "leph105.pdf",
+      "sha256": "0b5723c7a021a77d4d75f5a0155ad04c6bba9624c8055afc4b7a33305aeba4d2"
+    },
+    {
+      "source_id": "src-e8cf03b14e9700e71d5db8b0ecfd90669cbc9e5c3315caae55d184ef58ab0e78",
+      "file": "leph106.pdf",
+      "sha256": "e8cf03b14e9700e71d5db8b0ecfd90669cbc9e5c3315caae55d184ef58ab0e78"
+    },
+    {
+      "source_id": "src-170130c82f3e9c0de6f32b74d0991e338720992275b474e1bc9c9a9511e77f43",
+      "file": "leph107.pdf",
+      "sha256": "170130c82f3e9c0de6f32b74d0991e338720992275b474e1bc9c9a9511e77f43"
+    },
+    {
+      "source_id": "src-487ea535178ea202c2e9f5e0deb56ddfc77e728ad03e11717f8ddb01739f2212",
+      "file": "leph108.pdf",
+      "sha256": "487ea535178ea202c2e9f5e0deb56ddfc77e728ad03e11717f8ddb01739f2212"
+    },
+    {
+      "source_id": "src-a86a58d2a10bc236b16da389c16b2cf3a109b6f8ff400f02056c29fbde8a3b53",
+      "file": "leph1ps.pdf",
+      "sha256": "a86a58d2a10bc236b16da389c16b2cf3a109b6f8ff400f02056c29fbde8a3b53"
+    },
+    {
+      "source_id": "src-2830a6ac0406b15a6f24ba5832352cd117ce8abf06fe0434fc1bd1adc1c1b317",
+      "file": "leph1an.pdf",
+      "sha256": "2830a6ac0406b15a6f24ba5832352cd117ce8abf06fe0434fc1bd1adc1c1b317"
+    },
+    {
+      "source_id": "src-7d14d31796fb25178aa9708f51b34c1a716e5856b2a97c46f4afacc2b5167f7e",
+      "file": "leph209.pdf",
+      "sha256": "7d14d31796fb25178aa9708f51b34c1a716e5856b2a97c46f4afacc2b5167f7e"
+    },
+    {
+      "source_id": "src-c21a9eb92a9a3f5672a6111e9dfb81c50997918f8209456ac1bb594855fac76d",
+      "file": "leph210.pdf",
+      "sha256": "c21a9eb92a9a3f5672a6111e9dfb81c50997918f8209456ac1bb594855fac76d"
+    },
+    {
+      "source_id": "src-23611b2904f80b6bc924c36b3ee7b6eb9770e1786f9485e8ac7c552fbdc5f9ec",
+      "file": "leph211.pdf",
+      "sha256": "23611b2904f80b6bc924c36b3ee7b6eb9770e1786f9485e8ac7c552fbdc5f9ec"
+    },
+    {
+      "source_id": "src-1e8230c2e2bc55802659384b1cbea5b7262fe3c837ed0164055e867b49ac7f17",
+      "file": "leph212.pdf",
+      "sha256": "1e8230c2e2bc55802659384b1cbea5b7262fe3c837ed0164055e867b49ac7f17"
+    },
+    {
+      "source_id": "src-f35cef5a0939ba9bfd50ec73b5f036a68723971e3a66dee4604f5fcb8014ee8e",
+      "file": "leph213.pdf",
+      "sha256": "f35cef5a0939ba9bfd50ec73b5f036a68723971e3a66dee4604f5fcb8014ee8e"
+    },
+    {
+      "source_id": "src-7110b0aa217a27cd55d98d8d9baca50fc3f7f2cba243b9ef3417cbfa794a8548",
+      "file": "leph214.pdf",
+      "sha256": "7110b0aa217a27cd55d98d8d9baca50fc3f7f2cba243b9ef3417cbfa794a8548"
+    },
+    {
+      "source_id": "src-beac6862bd1b07c44543565a006c3ced65ddfb2f01969c265f25e16a99dec712",
+      "file": "leph2ps.pdf",
+      "sha256": "beac6862bd1b07c44543565a006c3ced65ddfb2f01969c265f25e16a99dec712"
+    },
+    {
+      "source_id": "src-b5196783f9d67af8b89ca8c2b2f68a67f9a49cf9948b7d9a188b00005b827bd7",
+      "file": "leph2an.pdf",
+      "sha256": "b5196783f9d67af8b89ca8c2b2f68a67f9a49cf9948b7d9a188b00005b827bd7"
+    },
+    {
+      "source_id": "src-ed725ced5a785bb7896edff3bf6c5ec4e0dfc345560af4290ee7f856bb55f71b",
+      "file": "leph2a1.pdf",
+      "sha256": "ed725ced5a785bb7896edff3bf6c5ec4e0dfc345560af4290ee7f856bb55f71b"
+    },
+    {
+      "source_id": "src-0e398fab5999465780241af9d013ff853d6dfb242f715ca58d80a0d009fc3dcf",
+      "file": "leph2BL.pdf",
+      "sha256": "0e398fab5999465780241af9d013ff853d6dfb242f715ca58d80a0d009fc3dcf"
+    },
+    {
+      "source_id": "src-332d21e2ebd7423b9850bf32fa171a95694a3f8397d02d138eb46a05640e36cd",
+      "file": "kech101.pdf",
+      "sha256": "332d21e2ebd7423b9850bf32fa171a95694a3f8397d02d138eb46a05640e36cd"
+    },
+    {
+      "source_id": "src-2202ba73ff2126c61322fabcc003ebce4ac6c9ef19727d52eae4b2ea44da2a3e",
+      "file": "kech102.pdf",
+      "sha256": "2202ba73ff2126c61322fabcc003ebce4ac6c9ef19727d52eae4b2ea44da2a3e"
+    },
+    {
+      "source_id": "src-ecbff15c0bf10913d28d65f6270a55771a7d870b4ec6d4b90f6e575865adb3bb",
+      "file": "kech103.pdf",
+      "sha256": "ecbff15c0bf10913d28d65f6270a55771a7d870b4ec6d4b90f6e575865adb3bb"
+    },
+    {
+      "source_id": "src-7b8ac46dc1d7337a7f2568cde80b86216e76097a116b675304a5130bf25d7266",
+      "file": "kech104.pdf",
+      "sha256": "7b8ac46dc1d7337a7f2568cde80b86216e76097a116b675304a5130bf25d7266"
+    },
+    {
+      "source_id": "src-a7941f4921eb9bf700bdfd02e899bc99fcc5fe973bdb390b6fc58c03227169cd",
+      "file": "kech105.pdf",
+      "sha256": "a7941f4921eb9bf700bdfd02e899bc99fcc5fe973bdb390b6fc58c03227169cd"
+    },
+    {
+      "source_id": "src-de4db6e4c424d80290c0211ce501f2bc43834033548b942cc58226b1f904348d",
+      "file": "kech106.pdf",
+      "sha256": "de4db6e4c424d80290c0211ce501f2bc43834033548b942cc58226b1f904348d"
+    },
+    {
+      "source_id": "src-0ecb64120a706527428c48ab13221eaed5e162f548b4e269517846749405e22c",
+      "file": "kech107.pdf",
+      "sha256": "0ecb64120a706527428c48ab13221eaed5e162f548b4e269517846749405e22c"
+    },
+    {
+      "source_id": "src-e39fe918b8fbcfe59933ab792d9551757dc60b365b812687aca3d7e84edde331",
+      "file": "kech1ps.pdf",
+      "sha256": "e39fe918b8fbcfe59933ab792d9551757dc60b365b812687aca3d7e84edde331"
+    },
+    {
+      "source_id": "src-8b5cef9a7f27d582e9917e39f25ec76e4f55b386b99c51c6538fef4e404de8d1",
+      "file": "kech1an.pdf",
+      "sha256": "8b5cef9a7f27d582e9917e39f25ec76e4f55b386b99c51c6538fef4e404de8d1"
+    },
+    {
+      "source_id": "src-dd7abe38786a5da4e901baa5eb68e8064ea3f8768b08c6795d24e58158622aea",
+      "file": "kech1a1.pdf",
+      "sha256": "dd7abe38786a5da4e901baa5eb68e8064ea3f8768b08c6795d24e58158622aea"
+    },
+    {
+      "source_id": "src-a8c9c122b25a38c77a929495c7889dd896a115b19c12f5e49c4e933e9623acdb",
+      "file": "kech201.pdf",
+      "sha256": "a8c9c122b25a38c77a929495c7889dd896a115b19c12f5e49c4e933e9623acdb"
+    },
+    {
+      "source_id": "src-86eb2b14ec038858432a8aa105966b9ce1ff9f296b74e0cdbaa1831071e8a120",
+      "file": "kech202.pdf",
+      "sha256": "86eb2b14ec038858432a8aa105966b9ce1ff9f296b74e0cdbaa1831071e8a120"
+    },
+    {
+      "source_id": "src-c8ae2e9b04ef32f1a7dfd91e9ea1a969a14cc3641a94772218147eb0df9dbdf8",
+      "file": "kech203.pdf",
+      "sha256": "c8ae2e9b04ef32f1a7dfd91e9ea1a969a14cc3641a94772218147eb0df9dbdf8"
+    },
+    {
+      "source_id": "src-a9bfcf2677d70be262ddbada05f87c561c11aece65d33cc67a8b7b050efc2d5c",
+      "file": "kech204.pdf",
+      "sha256": "a9bfcf2677d70be262ddbada05f87c561c11aece65d33cc67a8b7b050efc2d5c"
+    },
+    {
+      "source_id": "src-2d57d0a53da25a4d14e0cb56b72811e75f39cd8fa8ab515de3879d56b428711d",
+      "file": "kech205.pdf",
+      "sha256": "2d57d0a53da25a4d14e0cb56b72811e75f39cd8fa8ab515de3879d56b428711d"
+    },
+    {
+      "source_id": "src-a1d6b0406f9ddd7a2f6ba289740b96a1c8b7801d6e1497ea89c931eb2ad0cbe6",
+      "file": "kech206.pdf",
+      "sha256": "a1d6b0406f9ddd7a2f6ba289740b96a1c8b7801d6e1497ea89c931eb2ad0cbe6"
+    },
+    {
+      "source_id": "src-697013b6d6d81ee6a4cf6201b5e6045b8a8d4028d7ca98530d5c271d7916474b",
+      "file": "kech207.pdf",
+      "sha256": "697013b6d6d81ee6a4cf6201b5e6045b8a8d4028d7ca98530d5c271d7916474b"
+    },
+    {
+      "source_id": "src-157bd12c438e7066a201a4d2aaeb2d6ca9f8ef9a624533e42799859ceb294729",
+      "file": "kech2ps.pdf",
+      "sha256": "157bd12c438e7066a201a4d2aaeb2d6ca9f8ef9a624533e42799859ceb294729"
+    },
+    {
+      "source_id": "src-22cdd518ddb386c1146ee31f61b370076d18ebc161b1a7d3c924782c8627beb1",
+      "file": "kech2an.pdf",
+      "sha256": "22cdd518ddb386c1146ee31f61b370076d18ebc161b1a7d3c924782c8627beb1"
+    },
+    {
+      "source_id": "src-1e4cc38ebfd8a6e49090b12eb477615a9103d051dd54d15b43f08089402da7b9",
+      "file": "kech2in.pdf",
+      "sha256": "1e4cc38ebfd8a6e49090b12eb477615a9103d051dd54d15b43f08089402da7b9"
+    },
+    {
+      "source_id": "src-7fd2d1d14b33062028d27af1c3687a42748a048b03a55a02d5f87f3559594424",
+      "file": "lech101.pdf",
+      "sha256": "7fd2d1d14b33062028d27af1c3687a42748a048b03a55a02d5f87f3559594424"
+    },
+    {
+      "source_id": "src-802cc317d870d866b3f18d893baa37be438a3f0f662a6ba30846a3ef104b64bb",
+      "file": "lech102.pdf",
+      "sha256": "802cc317d870d866b3f18d893baa37be438a3f0f662a6ba30846a3ef104b64bb"
+    },
+    {
+      "source_id": "src-723e80b1b0d3d8dfd3192b79a7df566786c37ade81daa6f987cc3cde58806001",
+      "file": "lech103.pdf",
+      "sha256": "723e80b1b0d3d8dfd3192b79a7df566786c37ade81daa6f987cc3cde58806001"
+    },
+    {
+      "source_id": "src-ff81fc70f9f51ae1b61e7856e5cc4388923ae76fb28b9d620be8351f59a35d6d",
+      "file": "lech104.pdf",
+      "sha256": "ff81fc70f9f51ae1b61e7856e5cc4388923ae76fb28b9d620be8351f59a35d6d"
+    },
+    {
+      "source_id": "src-2da9045143d119fdd0aaf9d3a4d96c10469658de99f0b8ced04b4eded81273a2",
+      "file": "lech105.pdf",
+      "sha256": "2da9045143d119fdd0aaf9d3a4d96c10469658de99f0b8ced04b4eded81273a2"
+    },
+    {
+      "source_id": "src-edf689aa6da80671d3f7188a888706825e7419088619ec8e431301ec5a3c2dc1",
+      "file": "lech106.pdf",
+      "sha256": "edf689aa6da80671d3f7188a888706825e7419088619ec8e431301ec5a3c2dc1"
+    },
+    {
+      "source_id": "src-9132bd414827466d29c4649f1a54812e7be53f3a39ab3c3f403bdd8298594b1e",
+      "file": "lech107.pdf",
+      "sha256": "9132bd414827466d29c4649f1a54812e7be53f3a39ab3c3f403bdd8298594b1e"
+    },
+    {
+      "source_id": "src-95ff18162aabd5133ede900a3dc9166e035936b275a74542b2eee55524d61dda",
+      "file": "lech108.pdf",
+      "sha256": "95ff18162aabd5133ede900a3dc9166e035936b275a74542b2eee55524d61dda"
+    },
+    {
+      "source_id": "src-4e27540f3cac941f6189b1f7720f661b54a7c8e782e93f2a68954757fd360336",
+      "file": "lech109.pdf",
+      "sha256": "4e27540f3cac941f6189b1f7720f661b54a7c8e782e93f2a68954757fd360336"
+    },
+    {
+      "source_id": "src-a47ffc632c10bb5d149c7b29133573c0cf77d996d8d4c665506a72b56ced12bc",
+      "file": "lech1ps.pdf",
+      "sha256": "a47ffc632c10bb5d149c7b29133573c0cf77d996d8d4c665506a72b56ced12bc"
+    },
+    {
+      "source_id": "src-290c8400089b5997a80fdd6e44a9d31730f91f45b7f2810f399e0af947caf43a",
+      "file": "lech1an.pdf",
+      "sha256": "290c8400089b5997a80fdd6e44a9d31730f91f45b7f2810f399e0af947caf43a"
+    },
+    {
+      "source_id": "src-2315650e7288bc90006104383d22cc562b10c433813ee85a6d80db4d3c5cde28",
+      "file": "lech1a1.pdf",
+      "sha256": "2315650e7288bc90006104383d22cc562b10c433813ee85a6d80db4d3c5cde28"
+    },
+    {
+      "source_id": "src-e29c8746adc5f11533e8b6587cfd2e1d4d578f5f5b4db09dac514666358289c7",
+      "file": "lech1in.pdf",
+      "sha256": "e29c8746adc5f11533e8b6587cfd2e1d4d578f5f5b4db09dac514666358289c7"
+    },
+    {
+      "source_id": "src-325f9b71d5f6d9956c0e9bc7a0bf3cc00e9d9d197c5260d00382d702c5bd3e8c",
+      "file": "lech201.pdf",
+      "sha256": "325f9b71d5f6d9956c0e9bc7a0bf3cc00e9d9d197c5260d00382d702c5bd3e8c"
+    },
+    {
+      "source_id": "src-1ef9af15c36a970d071e786c31c3d122f3e3cc463e6cb228fab5e602c21a76fe",
+      "file": "lech202.pdf",
+      "sha256": "1ef9af15c36a970d071e786c31c3d122f3e3cc463e6cb228fab5e602c21a76fe"
+    },
+    {
+      "source_id": "src-466e9654d538441e4951f9b6fac7e8e430e02670b33d9e37cdb0864ebb97488a",
+      "file": "lech203.pdf",
+      "sha256": "466e9654d538441e4951f9b6fac7e8e430e02670b33d9e37cdb0864ebb97488a"
+    },
+    {
+      "source_id": "src-ed09ece101e11a9a94270c45860990f08520b7e58cca5a15f901ca63af10140a",
+      "file": "lech204.pdf",
+      "sha256": "ed09ece101e11a9a94270c45860990f08520b7e58cca5a15f901ca63af10140a"
+    },
+    {
+      "source_id": "src-99ab6549a9400312fb5387dfd8d6b779ccc438ef66f2795a42dc4f2b8c150db4",
+      "file": "lech205.pdf",
+      "sha256": "99ab6549a9400312fb5387dfd8d6b779ccc438ef66f2795a42dc4f2b8c150db4"
+    },
+    {
+      "source_id": "src-43343d3a764996db6bc11ec37f077619be204d0d45e50bee87ba750b2de5044d",
+      "file": "lech206.pdf",
+      "sha256": "43343d3a764996db6bc11ec37f077619be204d0d45e50bee87ba750b2de5044d"
+    },
+    {
+      "source_id": "src-8dd84c868a9acffd5757a7737c50ae05507964f1ebf2829b9b56a820134a7546",
+      "file": "lech207.pdf",
+      "sha256": "8dd84c868a9acffd5757a7737c50ae05507964f1ebf2829b9b56a820134a7546"
+    },
+    {
+      "source_id": "src-491d34c84baa47c92250eecca1202f739f4c9f0ef0282453ba3c4d649da74cde",
+      "file": "lech2ps.pdf",
+      "sha256": "491d34c84baa47c92250eecca1202f739f4c9f0ef0282453ba3c4d649da74cde"
+    },
+    {
+      "source_id": "src-a8584c3949599e9bf17b10e4a6a5ad89e6056556fd2724abf6554cd9f03ff6b0",
+      "file": "lech2an.pdf",
+      "sha256": "a8584c3949599e9bf17b10e4a6a5ad89e6056556fd2724abf6554cd9f03ff6b0"
+    },
+    {
+      "source_id": "src-791ab9f9097112852510f3855bce9e9c7350437b7cb817a2e032cf1ebc874199",
+      "file": "lech2in.pdf",
+      "sha256": "791ab9f9097112852510f3855bce9e9c7350437b7cb817a2e032cf1ebc874199"
+    }
+  ],
+  "chapters_produced": 58,
+  "by_status": {
+    "needs_review": 18,
+    "success": 40
+  },
+  "rejected_records": 0,
+  "integrity_errors": [],
+  "validation_outcome": "passed",
+  "files": [
+    {
+      "file": "keph101.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-2685cb3e2582bc0b3eb48f121a3959a3ad7e93d87bcda03762e605f034fa8380-ch-1",
+      "review_reasons": [
+        "table_not_reconstructed:1"
+      ],
+      "pages": 12,
+      "blocks": 191,
+      "block_types": {
+        "figure": 13,
+        "heading": 11,
+        "paragraph": 115,
+        "list": 8,
+        "caption": 2,
+        "table": 1,
+        "equation": 41
+      },
+      "fractions_rebuilt": 3,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 1,
+      "fragmented_equation_blocks": 4,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph102.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-cd0307176cef6d2ccf50a48f4342d82cec49d191f1869dc71da4ff5173846f27-ch-2",
+      "review_reasons": [
+        "table_not_reconstructed:2"
+      ],
+      "pages": 14,
+      "blocks": 295,
+      "block_types": {
+        "figure": 16,
+        "heading": 8,
+        "paragraph": 155,
+        "equation": 85,
+        "caption": 17,
+        "list": 14
+      },
+      "fractions_rebuilt": 13,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 2,
+      "fragmented_equation_blocks": 34,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph103.pdf",
+      "outcome": "success",
+      "chapter_id": "src-7619da28a2e58c099426fe256a966383a8d7da6e23c69deee42b62481aecd355-ch-3",
+      "review_reasons": [],
+      "pages": 22,
+      "blocks": 745,
+      "block_types": {
+        "figure": 23,
+        "heading": 18,
+        "paragraph": 406,
+        "caption": 21,
+        "equation": 260,
+        "list": 17
+      },
+      "fractions_rebuilt": 21,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 106,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph104.pdf",
+      "outcome": "success",
+      "chapter_id": "src-8a5df412b53d86040d73ec589ddc98ae23201c420973c7b910e1acca85d234ef-ch-4",
+      "review_reasons": [],
+      "pages": 22,
+      "blocks": 386,
+      "block_types": {
+        "figure": 25,
+        "heading": 16,
+        "paragraph": 248,
+        "list": 15,
+        "caption": 15,
+        "equation": 67
+      },
+      "fractions_rebuilt": 8,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 27,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph105.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-a6d4b72b0fc10230bd54393f86e58630ccd258d54269b60de226c68d0eaa937e-ch-5",
+      "review_reasons": [
+        "table_not_reconstructed:2"
+      ],
+      "pages": 21,
+      "blocks": 591,
+      "block_types": {
+        "figure": 22,
+        "heading": 20,
+        "paragraph": 360,
+        "equation": 163,
+        "caption": 18,
+        "list": 8
+      },
+      "fractions_rebuilt": 24,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 2,
+      "fragmented_equation_blocks": 69,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph106.pdf",
+      "outcome": "success",
+      "chapter_id": "src-88e0ad16f315b3510e40cdc20e6d70d7b5412bac1926fd505a6a1836464ca3bb-ch-6",
+      "review_reasons": [],
+      "pages": 35,
+      "blocks": 867,
+      "block_types": {
+        "figure": 41,
+        "heading": 23,
+        "paragraph": 562,
+        "caption": 39,
+        "list": 25,
+        "equation": 175,
+        "table": 2
+      },
+      "fractions_rebuilt": 19,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 109,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph107.pdf",
+      "outcome": "success",
+      "chapter_id": "src-631fbe30827cd5faa745698fe337ca2cf829356aa8124f1abb4f3d82b44d499a-ch-7",
+      "review_reasons": [],
+      "pages": 17,
+      "blocks": 599,
+      "block_types": {
+        "figure": 18,
+        "heading": 14,
+        "paragraph": 408,
+        "caption": 13,
+        "equation": 142,
+        "list": 4
+      },
+      "fractions_rebuilt": 26,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 66,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph1ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "keph1an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "keph1a1.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "keph201.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-54ef32e2d3eb1e47e87f9d8e6a49423b8b2cc77e4ac5efbc7c34670c49462de6-ch-8",
+      "review_reasons": [
+        "table_not_reconstructed:1"
+      ],
+      "pages": 13,
+      "blocks": 196,
+      "block_types": {
+        "figure": 15,
+        "heading": 16,
+        "paragraph": 105,
+        "equation": 30,
+        "list": 12,
+        "caption": 15,
+        "table": 3
+      },
+      "fractions_rebuilt": 3,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 1,
+      "fragmented_equation_blocks": 4,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph202.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-3ff64c89dcbfaf99ecec307d753b0bd2d3f731f17e2f16875d74749840d223b6-ch-9",
+      "review_reasons": [
+        "table_not_reconstructed:1"
+      ],
+      "pages": 22,
+      "blocks": 374,
+      "block_types": {
+        "figure": 30,
+        "heading": 23,
+        "paragraph": 210,
+        "equation": 65,
+        "list": 20,
+        "caption": 24,
+        "table": 2
+      },
+      "fractions_rebuilt": 10,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 1,
+      "fragmented_equation_blocks": 11,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph203.pdf",
+      "outcome": "success",
+      "chapter_id": "src-b062894aea80298f8df2f83e34dc11f5f96577bfe08d0ad35e2e647a8446854e-ch-10",
+      "review_reasons": [],
+      "pages": 24,
+      "blocks": 443,
+      "block_types": {
+        "figure": 27,
+        "heading": 19,
+        "paragraph": 248,
+        "caption": 25,
+        "equation": 95,
+        "table": 6,
+        "list": 23
+      },
+      "fractions_rebuilt": 10,
+      "tables_reconstructed": 6,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 28,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph204.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-00462650d55bda8843f5fbf4eba1a7996faf13d04a8858fa04061b1309e090ba-ch-11",
+      "review_reasons": [
+        "table_not_reconstructed:1"
+      ],
+      "pages": 18,
+      "blocks": 440,
+      "block_types": {
+        "figure": 19,
+        "heading": 17,
+        "paragraph": 262,
+        "caption": 13,
+        "equation": 111,
+        "table": 1,
+        "list": 17
+      },
+      "fractions_rebuilt": 13,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 1,
+      "fragmented_equation_blocks": 20,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph205.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-198ca1df5f392ee6aaac7fa8541d65a3354345a79eeca05875c19247adc7ddd9-ch-12",
+      "review_reasons": [
+        "table_not_reconstructed:2"
+      ],
+      "pages": 15,
+      "blocks": 335,
+      "block_types": {
+        "figure": 16,
+        "heading": 16,
+        "paragraph": 208,
+        "equation": 74,
+        "caption": 10,
+        "list": 10,
+        "table": 1
+      },
+      "fractions_rebuilt": 14,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 2,
+      "fragmented_equation_blocks": 30,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph206.pdf",
+      "outcome": "success",
+      "chapter_id": "src-adc85e61480ab919f13c6b0951a91d44315958b37bc5f6bfb3304fd256b1978d-ch-13",
+      "review_reasons": [],
+      "pages": 19,
+      "blocks": 405,
+      "block_types": {
+        "figure": 22,
+        "heading": 11,
+        "paragraph": 208,
+        "equation": 115,
+        "caption": 23,
+        "list": 26
+      },
+      "fractions_rebuilt": 21,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 15,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph207.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-9f39d09b0556c3a59b89d6b979189f960e5c663af11cdd52d6c7af0cd2e7d1c9-ch-14",
+      "review_reasons": [
+        "table_not_reconstructed:1"
+      ],
+      "pages": 22,
+      "blocks": 543,
+      "block_types": {
+        "figure": 24,
+        "heading": 17,
+        "paragraph": 273,
+        "equation": 165,
+        "caption": 17,
+        "list": 47
+      },
+      "fractions_rebuilt": 11,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 1,
+      "fragmented_equation_blocks": 40,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "keph2ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "keph2an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "leph101.pdf",
+      "outcome": "success",
+      "chapter_id": "src-7e04fbe6f06673180cec58afc6a618f7c409ff260777be4b9a946394e998433f-ch-1",
+      "review_reasons": [],
+      "pages": 50,
+      "blocks": 958,
+      "block_types": {
+        "figure": 55,
+        "heading": 50,
+        "paragraph": 645,
+        "caption": 35,
+        "equation": 154,
+        "list": 19
+      },
+      "fractions_rebuilt": 34,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 69,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph102.pdf",
+      "outcome": "success",
+      "chapter_id": "src-45acbe82552c2c3ad08f7b40c2923249115b7014d1bb4e6fc99de6f0610980c1-ch-2",
+      "review_reasons": [],
+      "pages": 42,
+      "blocks": 967,
+      "block_types": {
+        "figure": 44,
+        "heading": 49,
+        "paragraph": 597,
+        "caption": 34,
+        "equation": 169,
+        "list": 74
+      },
+      "fractions_rebuilt": 44,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 82,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph103.pdf",
+      "outcome": "success",
+      "chapter_id": "src-a1ac65af1e09f341276f6a9f2fcf36376d60f66123e58aaa19e686fd0e531701-ch-3",
+      "review_reasons": [],
+      "pages": 39,
+      "blocks": 857,
+      "block_types": {
+        "figure": 42,
+        "heading": 40,
+        "paragraph": 540,
+        "equation": 186,
+        "caption": 34,
+        "list": 13,
+        "table": 2
+      },
+      "fractions_rebuilt": 37,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 60,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph104.pdf",
+      "outcome": "success",
+      "chapter_id": "src-43f0d3d9db3a4b25ffdfca17d788b3ebfcaeff1a207fa7e85a4a7c1de7a0f908-ch-4",
+      "review_reasons": [],
+      "pages": 41,
+      "blocks": 773,
+      "block_types": {
+        "figure": 46,
+        "paragraph": 509,
+        "heading": 50,
+        "caption": 29,
+        "equation": 126,
+        "table": 1,
+        "list": 12
+      },
+      "fractions_rebuilt": 24,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 45,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph105.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-0b5723c7a021a77d4d75f5a0155ad04c6bba9624c8055afc4b7a33305aeba4d2-ch-5",
+      "review_reasons": [
+        "table_not_reconstructed:1"
+      ],
+      "pages": 31,
+      "blocks": 555,
+      "block_types": {
+        "figure": 39,
+        "heading": 38,
+        "paragraph": 367,
+        "caption": 21,
+        "list": 22,
+        "equation": 65,
+        "table": 3
+      },
+      "fractions_rebuilt": 16,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 1,
+      "fragmented_equation_blocks": 24,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph106.pdf",
+      "outcome": "success",
+      "chapter_id": "src-e8cf03b14e9700e71d5db8b0ecfd90669cbc9e5c3315caae55d184ef58ab0e78-ch-6",
+      "review_reasons": [],
+      "pages": 29,
+      "blocks": 563,
+      "block_types": {
+        "figure": 32,
+        "paragraph": 347,
+        "heading": 34,
+        "caption": 21,
+        "equation": 117,
+        "list": 12
+      },
+      "fractions_rebuilt": 20,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 43,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph107.pdf",
+      "outcome": "success",
+      "chapter_id": "src-170130c82f3e9c0de6f32b74d0991e338720992275b474e1bc9c9a9511e77f43-ch-7",
+      "review_reasons": [],
+      "pages": 36,
+      "blocks": 933,
+      "block_types": {
+        "figure": 39,
+        "heading": 33,
+        "paragraph": 549,
+        "caption": 22,
+        "equation": 266,
+        "list": 23,
+        "table": 1
+      },
+      "fractions_rebuilt": 36,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 137,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph108.pdf",
+      "outcome": "success",
+      "chapter_id": "src-487ea535178ea202c2e9f5e0deb56ddfc77e728ad03e11717f8ddb01739f2212-ch-8",
+      "review_reasons": [],
+      "pages": 19,
+      "blocks": 328,
+      "block_types": {
+        "figure": 23,
+        "heading": 26,
+        "paragraph": 181,
+        "equation": 79,
+        "caption": 8,
+        "list": 10,
+        "table": 1
+      },
+      "fractions_rebuilt": 6,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 34,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph1ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "leph1an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "leph209.pdf",
+      "outcome": "success",
+      "chapter_id": "src-7d14d31796fb25178aa9708f51b34c1a716e5856b2a97c46f4afacc2b5167f7e-ch-9",
+      "review_reasons": [],
+      "pages": 42,
+      "blocks": 778,
+      "block_types": {
+        "figure": 44,
+        "heading": 36,
+        "paragraph": 467,
+        "caption": 38,
+        "equation": 150,
+        "list": 41,
+        "table": 2
+      },
+      "fractions_rebuilt": 48,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 47,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph210.pdf",
+      "outcome": "success",
+      "chapter_id": "src-c21a9eb92a9a3f5672a6111e9dfb81c50997918f8209456ac1bb594855fac76d-ch-10",
+      "review_reasons": [],
+      "pages": 35,
+      "blocks": 642,
+      "block_types": {
+        "figure": 48,
+        "paragraph": 423,
+        "heading": 36,
+        "caption": 24,
+        "equation": 83,
+        "list": 28
+      },
+      "fractions_rebuilt": 18,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 18,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph211.pdf",
+      "outcome": "success",
+      "chapter_id": "src-23611b2904f80b6bc924c36b3ee7b6eb9770e1786f9485e8ac7c552fbdc5f9ec-ch-11",
+      "review_reasons": [],
+      "pages": 28,
+      "blocks": 431,
+      "block_types": {
+        "figure": 31,
+        "paragraph": 298,
+        "heading": 30,
+        "caption": 8,
+        "table": 1,
+        "list": 17,
+        "equation": 46
+      },
+      "fractions_rebuilt": 18,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 8,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph212.pdf",
+      "outcome": "success",
+      "chapter_id": "src-1e8230c2e2bc55802659384b1cbea5b7262fe3c837ed0164055e867b49ac7f17-ch-12",
+      "review_reasons": [],
+      "pages": 24,
+      "blocks": 452,
+      "block_types": {
+        "figure": 27,
+        "paragraph": 295,
+        "heading": 25,
+        "caption": 12,
+        "equation": 87,
+        "list": 6
+      },
+      "fractions_rebuilt": 5,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 34,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph213.pdf",
+      "outcome": "success",
+      "chapter_id": "src-f35cef5a0939ba9bfd50ec73b5f036a68723971e3a66dee4604f5fcb8014ee8e-ch-13",
+      "review_reasons": [],
+      "pages": 29,
+      "blocks": 602,
+      "block_types": {
+        "figure": 31,
+        "paragraph": 417,
+        "heading": 30,
+        "equation": 91,
+        "caption": 5,
+        "list": 28
+      },
+      "fractions_rebuilt": 7,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 8,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph214.pdf",
+      "outcome": "success",
+      "chapter_id": "src-7110b0aa217a27cd55d98d8d9baca50fc3f7f2cba243b9ef3417cbfa794a8548-ch-14",
+      "review_reasons": [],
+      "pages": 33,
+      "blocks": 433,
+      "block_types": {
+        "figure": 34,
+        "heading": 33,
+        "paragraph": 297,
+        "list": 21,
+        "caption": 38,
+        "equation": 10
+      },
+      "fractions_rebuilt": 1,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "leph2ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "leph2an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "leph2a1.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "leph2BL.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "kech101.pdf",
+      "outcome": "success",
+      "chapter_id": "src-332d21e2ebd7423b9850bf32fa171a95694a3f8397d02d138eb46a05640e36cd-ch-1",
+      "review_reasons": [],
+      "pages": 28,
+      "blocks": 654,
+      "block_types": {
+        "figure": 48,
+        "heading": 27,
+        "paragraph": 410,
+        "list": 67,
+        "caption": 15,
+        "table": 4,
+        "equation": 83
+      },
+      "fractions_rebuilt": 13,
+      "tables_reconstructed": 4,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 10,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech102.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-2202ba73ff2126c61322fabcc003ebce4ac6c9ef19727d52eae4b2ea44da2a3e-ch-2",
+      "review_reasons": [
+        "table_not_reconstructed:4"
+      ],
+      "pages": 45,
+      "blocks": 786,
+      "block_types": {
+        "heading": 17,
+        "figure": 60,
+        "paragraph": 521,
+        "list": 40,
+        "caption": 24,
+        "equation": 122,
+        "table": 2
+      },
+      "fractions_rebuilt": 16,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 4,
+      "fragmented_equation_blocks": 26,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech103.pdf",
+      "outcome": "success",
+      "chapter_id": "src-ecbff15c0bf10913d28d65f6270a55771a7d870b4ec6d4b90f6e575865adb3bb-ch-3",
+      "review_reasons": [],
+      "pages": 26,
+      "blocks": 378,
+      "block_types": {
+        "figure": 30,
+        "heading": 11,
+        "paragraph": 246,
+        "list": 58,
+        "caption": 18,
+        "table": 11,
+        "equation": 4
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 11,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 1,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech104.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-7b8ac46dc1d7337a7f2568cde80b86216e76097a116b675304a5130bf25d7266-ch-4",
+      "review_reasons": [
+        "table_not_reconstructed:6"
+      ],
+      "pages": 36,
+      "blocks": 601,
+      "block_types": {
+        "figure": 41,
+        "heading": 19,
+        "paragraph": 414,
+        "list": 39,
+        "caption": 31,
+        "equation": 54,
+        "table": 3
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 6,
+      "fragmented_equation_blocks": 18,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech105.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-a7941f4921eb9bf700bdfd02e899bc99fcc5fe973bdb390b6fc58c03227169cd-ch-5",
+      "review_reasons": [
+        "table_not_reconstructed:2"
+      ],
+      "pages": 24,
+      "blocks": 528,
+      "block_types": {
+        "figure": 25,
+        "heading": 11,
+        "paragraph": 365,
+        "list": 13,
+        "caption": 21,
+        "equation": 91,
+        "table": 2
+      },
+      "fractions_rebuilt": 16,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 2,
+      "fragmented_equation_blocks": 16,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech106.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-de4db6e4c424d80290c0211ce501f2bc43834033548b942cc58226b1f904348d-ch-6",
+      "review_reasons": [
+        "table_not_reconstructed:2"
+      ],
+      "pages": 32,
+      "blocks": 913,
+      "block_types": {
+        "figure": 35,
+        "heading": 9,
+        "paragraph": 584,
+        "list": 48,
+        "caption": 20,
+        "equation": 214,
+        "table": 3
+      },
+      "fractions_rebuilt": 13,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 2,
+      "fragmented_equation_blocks": 48,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech107.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-0ecb64120a706527428c48ab13221eaed5e162f548b4e269517846749405e22c-ch-7",
+      "review_reasons": [
+        "table_not_reconstructed:5"
+      ],
+      "pages": 47,
+      "blocks": 1299,
+      "block_types": {
+        "figure": 52,
+        "heading": 18,
+        "paragraph": 910,
+        "list": 45,
+        "caption": 18,
+        "table": 4,
+        "equation": 252
+      },
+      "fractions_rebuilt": 7,
+      "tables_reconstructed": 4,
+      "tables_not_reconstructed": 5,
+      "fragmented_equation_blocks": 38,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech1ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "kech1an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "kech1a1.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "kech201.pdf",
+      "outcome": "success",
+      "chapter_id": "src-a8c9c122b25a38c77a929495c7889dd896a115b19c12f5e49c4e933e9623acdb-ch-8",
+      "review_reasons": [],
+      "pages": 21,
+      "blocks": 588,
+      "block_types": {
+        "figure": 22,
+        "heading": 7,
+        "paragraph": 454,
+        "list": 67,
+        "equation": 33,
+        "caption": 4,
+        "table": 1
+      },
+      "fractions_rebuilt": 2,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech202.pdf",
+      "outcome": "success",
+      "chapter_id": "src-86eb2b14ec038858432a8aa105966b9ce1ff9f296b74e0cdbaa1831071e8a120-ch-9",
+      "review_reasons": [],
+      "pages": 15,
+      "blocks": 443,
+      "block_types": {
+        "figure": 16,
+        "heading": 11,
+        "paragraph": 281,
+        "list": 26,
+        "caption": 7,
+        "table": 5,
+        "equation": 97
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 5,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 60,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech203.pdf",
+      "outcome": "success",
+      "chapter_id": "src-c8ae2e9b04ef32f1a7dfd91e9ea1a969a14cc3641a94772218147eb0df9dbdf8-ch-10",
+      "review_reasons": [],
+      "pages": 16,
+      "blocks": 328,
+      "block_types": {
+        "heading": 9,
+        "figure": 17,
+        "paragraph": 268,
+        "list": 20,
+        "caption": 2,
+        "table": 2,
+        "equation": 10
+      },
+      "fractions_rebuilt": 6,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 3,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech204.pdf",
+      "outcome": "success",
+      "chapter_id": "src-a9bfcf2677d70be262ddbada05f87c561c11aece65d33cc67a8b7b050efc2d5c-ch-11",
+      "review_reasons": [],
+      "pages": 19,
+      "blocks": 406,
+      "block_types": {
+        "figure": 20,
+        "heading": 13,
+        "paragraph": 307,
+        "list": 34,
+        "caption": 10,
+        "table": 3,
+        "equation": 19
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 5,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech205.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-2d57d0a53da25a4d14e0cb56b72811e75f39cd8fa8ab515de3879d56b428711d-ch-12",
+      "review_reasons": [
+        "table_not_reconstructed:4"
+      ],
+      "pages": 39,
+      "blocks": 733,
+      "block_types": {
+        "figure": 40,
+        "heading": 22,
+        "paragraph": 530,
+        "list": 56,
+        "equation": 61,
+        "caption": 24
+      },
+      "fractions_rebuilt": 9,
+      "tables_reconstructed": 0,
+      "tables_not_reconstructed": 4,
+      "fragmented_equation_blocks": 11,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech206.pdf",
+      "outcome": "success",
+      "chapter_id": "src-a1d6b0406f9ddd7a2f6ba289740b96a1c8b7801d6e1497ea89c931eb2ad0cbe6-ch-13",
+      "review_reasons": [],
+      "pages": 33,
+      "blocks": 689,
+      "block_types": {
+        "figure": 35,
+        "heading": 14,
+        "paragraph": 469,
+        "list": 43,
+        "caption": 12,
+        "table": 3,
+        "equation": 113
+      },
+      "fractions_rebuilt": 1,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 37,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech207.pdf",
+      "outcome": "success",
+      "chapter_id": "src-697013b6d6d81ee6a4cf6201b5e6045b8a8d4028d7ca98530d5c271d7916474b-ch-14",
+      "review_reasons": [],
+      "pages": 17,
+      "blocks": 242,
+      "block_types": {
+        "figure": 36,
+        "heading": 8,
+        "paragraph": 155,
+        "list": 30,
+        "caption": 5,
+        "equation": 6,
+        "table": 2
+      },
+      "fractions_rebuilt": 1,
+      "tables_reconstructed": 2,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "kech2ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "kech2an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "kech2in.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "lech101.pdf",
+      "outcome": "success",
+      "chapter_id": "src-7fd2d1d14b33062028d27af1c3687a42748a048b03a55a02d5f87f3559594424-ch-1",
+      "review_reasons": [],
+      "pages": 34,
+      "blocks": 784,
+      "block_types": {
+        "figure": 169,
+        "heading": 18,
+        "paragraph": 439,
+        "list": 67,
+        "caption": 38,
+        "table": 3,
+        "equation": 50
+      },
+      "fractions_rebuilt": 7,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 14,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech102.pdf",
+      "outcome": "success",
+      "chapter_id": "src-802cc317d870d866b3f18d893baa37be438a3f0f662a6ba30846a3ef104b64bb-ch-2",
+      "review_reasons": [],
+      "pages": 30,
+      "blocks": 820,
+      "block_types": {
+        "figure": 142,
+        "paragraph": 489,
+        "heading": 13,
+        "list": 22,
+        "caption": 15,
+        "table": 4,
+        "equation": 135
+      },
+      "fractions_rebuilt": 15,
+      "tables_reconstructed": 4,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 17,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech103.pdf",
+      "outcome": "success",
+      "chapter_id": "src-723e80b1b0d3d8dfd3192b79a7df566786c37ade81daa6f987cc3cde58806001-ch-3",
+      "review_reasons": [],
+      "pages": 30,
+      "blocks": 923,
+      "block_types": {
+        "figure": 149,
+        "heading": 12,
+        "paragraph": 541,
+        "caption": 16,
+        "equation": 169,
+        "list": 32,
+        "table": 4
+      },
+      "fractions_rebuilt": 18,
+      "tables_reconstructed": 4,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 40,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech104.pdf",
+      "outcome": "success",
+      "chapter_id": "src-ff81fc70f9f51ae1b61e7856e5cc4388923ae76fb28b9d620be8351f59a35d6d-ch-4",
+      "review_reasons": [],
+      "pages": 28,
+      "blocks": 816,
+      "block_types": {
+        "figure": 134,
+        "heading": 11,
+        "paragraph": 465,
+        "list": 16,
+        "caption": 16,
+        "table": 4,
+        "equation": 170
+      },
+      "fractions_rebuilt": 22,
+      "tables_reconstructed": 4,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 51,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech105.pdf",
+      "outcome": "success",
+      "chapter_id": "src-2da9045143d119fdd0aaf9d3a4d96c10469658de99f0b8ced04b4eded81273a2-ch-5",
+      "review_reasons": [],
+      "pages": 26,
+      "blocks": 713,
+      "block_types": {
+        "figure": 121,
+        "paragraph": 495,
+        "heading": 16,
+        "list": 49,
+        "caption": 19,
+        "table": 4,
+        "equation": 9
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 4,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech106.pdf",
+      "outcome": "success",
+      "chapter_id": "src-edf689aa6da80671d3f7188a888706825e7419088619ec8e431301ec5a3c2dc1-ch-6",
+      "review_reasons": [],
+      "pages": 21,
+      "blocks": 475,
+      "block_types": {
+        "figure": 98,
+        "paragraph": 297,
+        "heading": 8,
+        "caption": 9,
+        "table": 1,
+        "list": 34,
+        "equation": 28
+      },
+      "fractions_rebuilt": 4,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 1,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech107.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-9132bd414827466d29c4649f1a54812e7be53f3a39ab3c3f403bdd8298594b1e-ch-7",
+      "review_reasons": [
+        "table_not_reconstructed:2"
+      ],
+      "pages": 45,
+      "blocks": 1428,
+      "block_types": {
+        "figure": 231,
+        "paragraph": 1029,
+        "heading": 53,
+        "caption": 21,
+        "table": 10,
+        "list": 30,
+        "equation": 54
+      },
+      "fractions_rebuilt": 4,
+      "tables_reconstructed": 10,
+      "tables_not_reconstructed": 2,
+      "fragmented_equation_blocks": 37,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech108.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-95ff18162aabd5133ede900a3dc9166e035936b275a74542b2eee55524d61dda-ch-8",
+      "review_reasons": [
+        "table_not_reconstructed:1"
+      ],
+      "pages": 29,
+      "blocks": 1020,
+      "block_types": {
+        "figure": 153,
+        "heading": 24,
+        "paragraph": 783,
+        "caption": 18,
+        "list": 22,
+        "equation": 10,
+        "table": 10
+      },
+      "fractions_rebuilt": 3,
+      "tables_reconstructed": 10,
+      "tables_not_reconstructed": 1,
+      "fragmented_equation_blocks": 2,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech109.pdf",
+      "outcome": "success",
+      "chapter_id": "src-4e27540f3cac941f6189b1f7720f661b54a7c8e782e93f2a68954757fd360336-ch-9",
+      "review_reasons": [],
+      "pages": 24,
+      "blocks": 701,
+      "block_types": {
+        "figure": 119,
+        "heading": 13,
+        "paragraph": 484,
+        "caption": 16,
+        "table": 3,
+        "list": 63,
+        "equation": 3
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech1ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "lech1an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "lech1a1.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "lech1in.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "lech201.pdf",
+      "outcome": "success",
+      "chapter_id": "src-325f9b71d5f6d9956c0e9bc7a0bf3cc00e9d9d197c5260d00382d702c5bd3e8c-ch-10",
+      "review_reasons": [],
+      "pages": 34,
+      "blocks": 516,
+      "block_types": {
+        "figure": 100,
+        "heading": 21,
+        "paragraph": 308,
+        "list": 69,
+        "caption": 11,
+        "table": 4,
+        "equation": 3
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 4,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech202.pdf",
+      "outcome": "success",
+      "chapter_id": "src-1ef9af15c36a970d071e786c31c3d122f3e3cc463e6cb228fab5e602c21a76fe-ch-11",
+      "review_reasons": [],
+      "pages": 34,
+      "blocks": 638,
+      "block_types": {
+        "figure": 89,
+        "heading": 14,
+        "paragraph": 430,
+        "list": 96,
+        "caption": 4,
+        "table": 3,
+        "equation": 2
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 2,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech203.pdf",
+      "outcome": "success",
+      "chapter_id": "src-466e9654d538441e4951f9b6fac7e8e430e02670b33d9e37cdb0864ebb97488a-ch-12",
+      "review_reasons": [],
+      "pages": 32,
+      "blocks": 489,
+      "block_types": {
+        "figure": 87,
+        "heading": 18,
+        "paragraph": 296,
+        "list": 72,
+        "caption": 5,
+        "table": 3,
+        "equation": 8
+      },
+      "fractions_rebuilt": 1,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech204.pdf",
+      "outcome": "success",
+      "chapter_id": "src-ed09ece101e11a9a94270c45860990f08520b7e58cca5a15f901ca63af10140a-ch-13",
+      "review_reasons": [],
+      "pages": 22,
+      "blocks": 409,
+      "block_types": {
+        "figure": 59,
+        "heading": 10,
+        "paragraph": 235,
+        "caption": 5,
+        "table": 3,
+        "list": 81,
+        "equation": 16
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 9,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech205.pdf",
+      "outcome": "success",
+      "chapter_id": "src-99ab6549a9400312fb5387dfd8d6b779ccc438ef66f2795a42dc4f2b8c150db4-ch-14",
+      "review_reasons": [],
+      "pages": 22,
+      "blocks": 376,
+      "block_types": {
+        "figure": 61,
+        "heading": 22,
+        "paragraph": 235,
+        "list": 44,
+        "caption": 10,
+        "table": 3,
+        "equation": 1
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 3,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech206.pdf",
+      "outcome": "success",
+      "chapter_id": "src-43343d3a764996db6bc11ec37f077619be204d0d45e50bee87ba750b2de5044d-ch-15",
+      "review_reasons": [],
+      "pages": 14,
+      "blocks": 209,
+      "block_types": {
+        "figure": 36,
+        "heading": 10,
+        "paragraph": 140,
+        "list": 21,
+        "caption": 1,
+        "table": 1
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": false
+    },
+    {
+      "file": "lech207.pdf",
+      "outcome": "needs_review",
+      "chapter_id": "src-8dd84c868a9acffd5757a7737c50ae05507964f1ebf2829b9b56a820134a7546-ch-16",
+      "review_reasons": [
+        "chapter_title_unreliable"
+      ],
+      "pages": 17,
+      "blocks": 262,
+      "block_types": {
+        "figure": 51,
+        "heading": 17,
+        "paragraph": 164,
+        "list": 23,
+        "caption": 6,
+        "table": 1
+      },
+      "fractions_rebuilt": 0,
+      "tables_reconstructed": 1,
+      "tables_not_reconstructed": 0,
+      "fragmented_equation_blocks": 0,
+      "chapter_title_missing": true
+    },
+    {
+      "file": "lech2ps.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "lech2an.pdf",
+      "outcome": "skipped_non_chapter"
+    },
+    {
+      "file": "lech2in.pdf",
+      "outcome": "skipped_non_chapter"
+    }
+  ]
+}

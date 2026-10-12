@@ -1,7 +1,16 @@
-# Environments & Local Configs
+# Environments & Credentials
 env/
 venv/
+.venv/
 .env
+.env.*
+*.env
+aws_access_key.txt
+*access_key*
+*credentials*
+*.pem
+*.key
+.aws/
 
 # Python Caches & Testing
 **/__pycache__/
@@ -17,6 +26,7 @@ htmlcov/
 
 # Data Directories & Binary Assets (Tracked by DVC)
 data/raw/
+/data/raw/
 data/processed/
 data/assets/
 data/quarantine/
