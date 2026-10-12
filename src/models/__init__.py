@@ -1,10 +1,18 @@
 
 # src/models/__init__.py
 
-from src.models.source import SourceRecord
-from src.models.ncert import NCERTChapterRecord, ContentBlock
-from src.models.assets import AssetRecord, BoundingBox
-from src.models.jee import JEEQuestionRecord, JEEOption
+from src.models.source import SourceRecord, SourceType, InventoryStatus
+from src.models.ncert import NCERTChapterRecord, ContentBlock, BlockType
+from src.models.assets import AssetRecord, BoundingBox, AssetType
+from src.models.jee import (
+    JEEQuestionRecord,
+    JEEOption,
+    Difficulty,
+    DifficultySource,
+    DifficultyStatus,
+    ExtractionStatus,
+    ReviewStatus,
+)
 
 RECORD_MODELS = {
     "source": SourceRecord,
@@ -15,11 +23,20 @@ RECORD_MODELS = {
 
 __all__ = [
     "SourceRecord",
+    "SourceType",
+    "InventoryStatus",
     "NCERTChapterRecord",
     "ContentBlock",
+    "BlockType",
     "AssetRecord",
     "BoundingBox",
+    "AssetType",
     "JEEQuestionRecord",
     "JEEOption",
+    "Difficulty",
+    "DifficultySource",
+    "DifficultyStatus",
+    "ExtractionStatus",
+    "ReviewStatus",
     "RECORD_MODELS",
 ]
