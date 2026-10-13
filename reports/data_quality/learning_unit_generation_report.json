@@ -1,0 +1,22 @@
+{
+  "contract_version": "1.0.0",
+  "pipeline": "ncert_learning_unit_generation",
+  "run_id": "20261013T071537Z",
+  "input_path": "data\\processed\\ncert_chapters.jsonl",
+  "output_path": "data\\processed\\ncert_learning_units.jsonl",
+  "chapters_seen": 58,
+  "chapters_by_extraction_status": {
+    "needs_review": 18,
+    "success": 40
+  },
+  "failed_chapters_skipped": 0,
+  "learning_units_generated": 876,
+  "units_by_type": {
+    "chapter_intro": 74,
+    "section": 785,
+    "contents_overview": 17
+  },
+  "units_needing_review": 353,
+  "errors": [],
+  "validation_outcome": "passed"
+}
