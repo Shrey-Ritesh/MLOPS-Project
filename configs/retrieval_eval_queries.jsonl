@@ -1,0 +1,10 @@
+{"query_id":"physics_com_001","query_type":"procedure","query":"How do I calculate the centre of mass of a system of particles?","relevant_unit_ids":[]}
+{"query_id":"physics_com_002","query_type":"definition","query":"What is the centre of mass of a system of particles?","relevant_unit_ids":[]}
+{"query_id":"physics_com_003","query_type":"formula","query":"What is the formula for the centre of mass of two particles?","relevant_unit_ids":[]}
+{"query_id":"physics_com_004","query_type":"specific_case","query":"How do I calculate the centre of mass of three particles in a plane?","relevant_unit_ids":[]}
+{"query_id":"physics_com_005","query_type":"conceptual","query":"Why is the centre of mass closer to the heavier particle?","relevant_unit_ids":[]}
+{"query_id":"chem_acid_001","query_type":"conceptual","query":"Why do carboxylic acids have higher acidity than aldehydes or ketones with the same number of carbon atoms?","relevant_unit_ids":[]}
+{"query_id":"chem_acid_002","query_type":"conceptual","query":"Why are carboxylic acids more acidic than alcohols?","relevant_unit_ids":[]}
+{"query_id":"chem_acid_003","query_type":"relationship","query":"How do electron-withdrawing groups affect carboxylic acid acidity?","relevant_unit_ids":[]}
+{"query_id":"physics_dim_001","query_type":"definition","query":"What is dimensional analysis and why is it useful?","relevant_unit_ids":[]}
+{"query_id":"physics_dim_002","query_type":"procedure","query":"How can dimensional analysis be used to check whether a physical equation is dimensionally consistent?","relevant_unit_ids":[]}

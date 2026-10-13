@@ -1,0 +1,21 @@
+{
+  "experiment_type": "retrieval_quality_evaluation",
+  "created_at_utc": "2026-10-13T13:53:20.638759+00:00",
+  "python_version": "3.13.5",
+  "query_set_path": "configs\\retrieval_eval_queries.jsonl",
+  "query_set_sha256": "efe9c56d102ea64301c808b2062bf5db62afe1f0da18754829e0bd1d9e360529",
+  "config_path": "configs\\retrieval.yaml",
+  "config_sha256": "6244826731b91cdc827c4db71001f8a4e704a21eb6d338bb9b09fb76f5fcb9da",
+  "top_k": 5,
+  "total_queries": 10,
+  "labelled_queries": 0,
+  "unlabelled_queries": 10,
+  "metrics_on_labelled_queries_only": {
+    "hit_at_5": null,
+    "reciprocal_rank_at_5": null,
+    "precision_at_5": null,
+    "recall_at_5": null
+  },
+  "results_file": "reports\\retrieval\\evaluations\\retrieval_eval_20261013T135228Z.jsonl",
+  "note": "Retrieval metrics require human-judged relevant_unit_ids. Distances are ranking scores, not confidence probabilities."
+}

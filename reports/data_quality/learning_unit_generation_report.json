@@ -1,7 +1,12 @@
 {
-  "contract_version": "1.0.0",
+  "contract_version": "2.0.0",
   "pipeline": "ncert_learning_unit_generation",
-  "run_id": "20261013T071537Z",
+  "boundary_policy": "learning-unit-v2",
+  "tokenizer_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "target_tokens": 180,
+  "max_tokens": 220,
+  "max_source_blocks_per_unit": 5,
+  "run_id": "20261013T124650Z",
   "input_path": "data\\processed\\ncert_chapters.jsonl",
   "output_path": "data\\processed\\ncert_learning_units.jsonl",
   "chapters_seen": 58,
@@ -10,13 +15,20 @@
     "success": 40
   },
   "failed_chapters_skipped": 0,
-  "learning_units_generated": 876,
+  "learning_units_generated": 9845,
   "units_by_type": {
-    "chapter_intro": 74,
-    "section": 785,
-    "contents_overview": 17
+    "chapter_intro": 477,
+    "section": 9348,
+    "contents_overview": 20
   },
-  "units_needing_review": 353,
+  "units_needing_review": 3235,
+  "units_over_token_limit": 34,
+  "units_over_block_limit": 0,
+  "token_count_summary": {
+    "min": 17,
+    "median": 127,
+    "max": 224
+  },
   "errors": [],
   "validation_outcome": "passed"
 }

@@ -1,21 +1,10 @@
-"""
-Deterministic NCERT learning-unit generation.
+"""Deterministic, fine-grained NCERT learning-unit generation (policy v2).
 
 Run from the repository root:
-    python -m src.data.learning_unit_generation
-    python -m src.data.learning_unit_generation --limit 2 --output data/interim/learning_units_sample.jsonl
+    python -m src.data.learning_unit_generation --input data/processed/ncert_chapters.jsonl
 
-Learning units are final retrieval documents; this script does not create a
-second chunking stage. It groups ordered canonical NCERT content blocks using
-numbered subsection headings and preserves source-block provenance.
-
-Boundary policy v1:
-- A heading such as "14.2 TRANSVERSE AND LONGITUDINAL WAVES" starts a unit.
-- Content before the first subsection is retained in a chapter-opening unit.
-- Likely table-of-contents paragraphs are isolated and flagged for review.
-- Figures, captions, tables and equations stay with their surrounding section.
-- Asset IDs are carried through; empty lists are valid before NCERT asset extraction.
-- Failed source chapters are skipped and reported; needs_review chapters are retained.
+Requires transformers so unit sizes are measured with the embedding model's tokenizer.
+Learning units are final retrieval documents; no downstream chunking is expected.
 """
 from __future__ import annotations
 
@@ -30,15 +19,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-CONTRACT_VERSION = "1.0.0"
+from transformers import AutoTokenizer
+
+CONTRACT_VERSION = "2.0.0"
+POLICY_VERSION = "learning-unit-v2"
+DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+TARGET_TOKENS = 180
+MAX_TOKENS = 220
+MAX_BLOCKS = 5
 SECTION_PREFIX_RE = re.compile(r"^\s*(\d+(?:\.\d+)+)\s*[\.\s:—-]*\s*(.*)$")
 TOC_MARKERS = ("contents", "table of contents", "points to ponder", "exercises", "summary", "appendix", "index")
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z0-9(\[\]])")
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         raise FileNotFoundError(f"Input JSONL does not exist: {path}")
-    rows = []
+    rows: list[dict[str, Any]] = []
     with path.open("r", encoding="utf-8") as stream:
         for line_no, line in enumerate(stream, 1):
             if not line.strip():
@@ -97,31 +94,99 @@ def looks_like_toc(block: dict[str, Any]) -> bool:
     return count >= 3 or (count >= 2 and markers >= 1)
 
 
-def stable_unit_id(chapter_id: str, first_block_id: str, unit_type: str) -> str:
-    raw = f"{chapter_id}|{first_block_id}|{unit_type}|learning-unit-v1"
+def stable_unit_id(chapter_id: str, first_block_id: str, segment_index: int) -> str:
+    raw = f"{chapter_id}|{first_block_id}|{segment_index}|{POLICY_VERSION}"
     return "lu-" + hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 
 
-def make_unit(chapter: dict[str, Any], blocks: list[dict[str, Any]], order: int,
-              title: str, unit_type: str, flags: list[str] | None = None) -> dict[str, Any]:
-    if not blocks:
+def embedding_text(chapter: dict[str, Any], title: str, text: str) -> str:
+    # Keep in sync with configs/retrieval.yaml's document.text_template.
+    return (
+        f"Subject: {chapter.get('subject', '')}\n"
+        f"Class: {chapter.get('class_level') or ''}\n"
+        f"Chapter: {chapter.get('chapter_title') or ''}\n"
+        f"Topic: {title}\n\n{text}"
+    )
+
+
+def token_count(tokenizer: Any, chapter: dict[str, Any], title: str, text: str) -> int:
+    return len(tokenizer.encode(embedding_text(chapter, title, text), add_special_tokens=True, truncation=False))
+
+
+def split_long_text(text: str, tokenizer: Any, chapter: dict[str, Any], title: str) -> list[str]:
+    """Split oversized block text at sentence boundaries, then word boundaries as fallback."""
+    text = text.strip()
+    if not text:
+        return [""]
+    if token_count(tokenizer, chapter, title, text) <= MAX_TOKENS:
+        return [text]
+
+    sentences = [s.strip() for s in SENTENCE_SPLIT_RE.split(text) if s.strip()]
+    if len(sentences) <= 1:
+        # Conservative fallback for long equations/tables or OCR paragraphs.
+        words = text.split()
+        parts: list[str] = []
+        current: list[str] = []
+        for word in words:
+            candidate = " ".join(current + [word])
+            if current and token_count(tokenizer, chapter, title, candidate) > TARGET_TOKENS:
+                parts.append(" ".join(current))
+                current = [word]
+            else:
+                current.append(word)
+        if current:
+            parts.append(" ".join(current))
+        return parts
+
+    parts: list[str] = []
+    current = ""
+    for sentence in sentences:
+        candidate = f"{current} {sentence}".strip()
+        if current and token_count(tokenizer, chapter, title, candidate) > TARGET_TOKENS:
+            parts.append(current)
+            current = sentence
+        else:
+            current = candidate
+        # A single sentence can itself exceed the target; split it safely.
+        if token_count(tokenizer, chapter, title, current) > MAX_TOKENS:
+            parts.extend(split_long_text(current, tokenizer, chapter, title))
+            current = ""
+    if current:
+        parts.append(current)
+    return parts
+
+
+def make_unit(chapter: dict[str, Any], entries: list[dict[str, Any]], order: int,
+              title: str, unit_type: str, tokenizer: Any,
+              flags: list[str] | None = None) -> dict[str, Any]:
+    if not entries:
         raise ValueError("Cannot create a learning unit without source blocks")
-    block_ids = [b["block_id"] for b in blocks]
+    blocks = [entry["block"] for entry in entries]
+    block_ids = list(dict.fromkeys(block["block_id"] for block in blocks))
     pages = [b["page"] for b in blocks if isinstance(b.get("page"), int)]
-    texts = [block_text(b) for b in blocks if block_text(b)]
+    texts = [entry["text"] for entry in entries if entry["text"].strip()]
+    text = "\n\n".join(texts).strip()
     asset_ids: list[str] = []
     for block in blocks:
         for asset_id in block.get("asset_ids", []) or []:
             if asset_id not in asset_ids:
                 asset_ids.append(asset_id)
-    # Attach assets only when a constituent block explicitly references them.
-    # Chapter-level asset_ids are too coarse to assign to every unit safely.
 
     review_flags = list(flags or [])
     if chapter.get("extraction_status") == "needs_review":
         review_flags.append("source_chapter_needs_review")
+    count = token_count(tokenizer, chapter, title, text)
+    if count > MAX_TOKENS:
+        review_flags.append("token_limit_exceeded")
+    if len(block_ids) > MAX_BLOCKS:
+        review_flags.append("block_count_limit_exceeded")
+    if not text:
+        review_flags.append("unit_has_no_textual_content")
+
+    first_entry = entries[0]
+    unit_id = stable_unit_id(chapter["chapter_id"], first_entry["block"]["block_id"], order)
     return {
-        "unit_id": stable_unit_id(chapter["chapter_id"], block_ids[0], unit_type),
+        "unit_id": unit_id,
         "chapter_id": chapter["chapter_id"],
         "source_id": chapter["source_id"],
         "subject": chapter["subject"],
@@ -132,18 +197,19 @@ def make_unit(chapter: dict[str, Any], blocks: list[dict[str, Any]], order: int,
         "unit_order": order,
         "unit_title": title.strip() or f"Unit {order + 1}",
         "unit_type": unit_type,
-        "text": "\n\n".join(texts).strip(),
+        "text": text,
         "block_ids": block_ids,
         "asset_ids": asset_ids,
         "page_start": min(pages) if pages else None,
         "page_end": max(pages) if pages else None,
         "source_extraction_status": chapter.get("extraction_status"),
         "generation_status": "needs_review" if review_flags else "success",
-        "review_flags": review_flags,
+        "review_flags": list(dict.fromkeys(review_flags)),
+        "token_count": count,
     }
 
 
-def generate_chapter_units(chapter: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+def generate_chapter_units(chapter: dict[str, Any], tokenizer: Any) -> tuple[list[dict[str, Any]], list[str]]:
     chapter_id = chapter.get("chapter_id", "<missing-chapter-id>")
     required = ("chapter_id", "source_id", "subject", "language", "content_blocks")
     missing = [key for key in required if key not in chapter]
@@ -174,71 +240,95 @@ def generate_chapter_units(chapter: dict[str, Any]) -> tuple[list[dict[str, Any]
     if errors:
         return [], errors
 
-    boundaries = []
-    for index, block in enumerate(blocks):
-        parsed = section_heading(block)
-        if parsed:
-            boundaries.append((index, parsed[0], parsed[1]))
-
-    if not boundaries:
-        flags = ["no_numbered_subsection_boundaries"]
-        unit = make_unit(chapter, blocks, 0, chapter.get("chapter_title") or "Chapter content",
-                         "chapter_content", flags)
-        return [unit], []
-
-    units: list[dict[str, Any]] = []
-    first_start = boundaries[0][0]
-    if first_start:
-        prefix = blocks[:first_start]
-
-        # Preserve the source order: split the prefix into contiguous runs of
-        # intro content and likely table-of-contents paragraphs. Filtering all
-        # TOC blocks out and appending them afterward would reorder block IDs.
-        runs: list[tuple[str, list[dict[str, Any]]]] = []
+    # Split into semantic sections first. Each source block remains traceable even
+    # when its text must be split across multiple units.
+    sections: list[tuple[str, str, list[dict[str, Any]]]] = []
+    prefix_end = next((i for i, b in enumerate(blocks) if section_heading(b)), len(blocks))
+    if prefix_end:
+        prefix = blocks[:prefix_end]
+        run_type: str | None = None
+        run: list[dict[str, Any]] = []
         for block in prefix:
-            is_toc = (
-                block.get("block_type") == "paragraph"
-                and looks_like_toc(block)
-            )
-            run_type = "contents_overview" if is_toc else "chapter_intro"
-            if runs and runs[-1][0] == run_type:
-                runs[-1][1].append(block)
-            else:
-                runs.append((run_type, [block]))
+            kind = "contents_overview" if block.get("block_type") == "paragraph" and looks_like_toc(block) else "chapter_intro"
+            if run and kind != run_type:
+                title = "Section overview (extracted contents)" if run_type == "contents_overview" else (chapter.get("chapter_title") or "Chapter introduction")
+                sections.append((title, run_type or "chapter_intro", run))
+                run = []
+            run_type = kind
+            run.append(block)
+        if run:
+            title = "Section overview (extracted contents)" if run_type == "contents_overview" else (chapter.get("chapter_title") or "Chapter introduction")
+            sections.append((title, run_type or "chapter_intro", run))
 
-        for run_type, run_blocks in runs:
-            if run_type == "contents_overview":
-                units.append(make_unit(
-                    chapter, run_blocks, len(units),
-                    "Section overview (extracted contents)",
-                    "contents_overview", ["possible_table_of_contents"]
-                ))
-            else:
-                units.append(make_unit(
-                    chapter, run_blocks, len(units),
-                    chapter.get("chapter_title") or "Chapter introduction",
-                    "chapter_intro", ["chapter_opening_content"]
-                ))
-
+    boundaries = [(i, *section_heading(b)) for i, b in enumerate(blocks) if section_heading(b)]
     for idx, (start, number, title) in enumerate(boundaries):
         end = boundaries[idx + 1][0] if idx + 1 < len(boundaries) else len(blocks)
-        group = blocks[start:end]
-        flags = []
-        if not any(block_text(b) for b in group):
-            flags.append("unit_has_no_textual_content")
-        units.append(make_unit(chapter, group, len(units), title or f"Section {number}", "section", flags))
+        sections.append((title or f"Section {number}", "section", blocks[start:end]))
+    if not sections:
+        sections = [(chapter.get("chapter_title") or "Chapter content", "chapter_content", blocks)]
 
-    emitted_ids = [bid for unit in units for bid in unit["block_ids"]]
+    units: list[dict[str, Any]] = []
+    for section_title, section_type, section_blocks in sections:
+        entries: list[dict[str, Any]] = []
+        # Long individual blocks are split into text fragments; each fragment
+        # retains the original block reference and therefore its provenance.
+        for block in section_blocks:
+            text = block_text(block)
+            fragments = split_long_text(text, tokenizer, chapter, section_title) if text else [""]
+            for fragment in fragments:
+                entries.append({"block": block, "text": fragment})
+
+        current: list[dict[str, Any]] = []
+        fragment_counts: Counter[str] = Counter()
+        for entry in entries:
+            candidate = current + [entry]
+            unique_blocks = list(dict.fromkeys(e["block"]["block_id"] for e in candidate))
+            candidate_text = "\n\n".join(e["text"] for e in candidate if e["text"].strip()).strip()
+            count = token_count(tokenizer, chapter, section_title, candidate_text)
+            # If this fragment would exceed token or source-block limits, flush
+            # current first. A single oversized fragment is retained and flagged.
+            if current and (count > TARGET_TOKENS or len(unique_blocks) > MAX_BLOCKS):
+                unit_title = section_title if not fragment_counts["unit"] else f"{section_title} (continued {fragment_counts['unit'] + 1})"
+                units.append(make_unit(chapter, current, len(units), unit_title, section_type, tokenizer))
+                fragment_counts["unit"] += 1
+                current = [entry]
+            else:
+                current = candidate
+
+            current_ids = list(dict.fromkeys(e["block"]["block_id"] for e in current))
+            current_text = "\n\n".join(e["text"] for e in current if e["text"].strip()).strip()
+            # If a single entry still exceeds the hard maximum, mark it during
+            # make_unit; split_long_text should normally prevent this.
+            if len(current_ids) > MAX_BLOCKS:
+                raise AssertionError("Internal error: unit exceeded MAX_BLOCKS")
+        if current:
+            unit_title = section_title if not fragment_counts["unit"] else f"{section_title} (continued {fragment_counts['unit'] + 1})"
+            units.append(make_unit(chapter, current, len(units), unit_title, section_type, tokenizer))
+
+    # A source block may occur in multiple units only when its text was split.
+    # Validate that the first appearances of block IDs preserve source order and
+    # that every original block appears at least once.
+    first_appearances: list[str] = []
+    emitted_set: set[str] = set()
+    for unit in units:
+        for bid in unit["block_ids"]:
+            if bid not in emitted_set:
+                emitted_set.add(bid)
+                first_appearances.append(bid)
     expected_ids = [block["block_id"] for block in blocks]
-    if emitted_ids != expected_ids:
-        return [], [f"{chapter_id}: block coverage/order mismatch"]
+    if first_appearances != expected_ids:
+        return [], [f"{chapter_id}: block coverage/order mismatch after fine-grained splitting"]
     return units, []
 
 
-def run(input_path: Path, output_path: Path, limit: int | None = None) -> dict[str, Any]:
+def run(input_path: Path, output_path: Path, limit: int | None = None,
+        model_name: str = DEFAULT_MODEL) -> dict[str, Any]:
     chapters = read_jsonl(input_path)
     if limit is not None:
         chapters = chapters[:limit]
+    print(f"Loading tokenizer: {model_name}")
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
     units: list[dict[str, Any]] = []
     errors: list[str] = []
     seen_chapters: set[str] = set()
@@ -257,7 +347,7 @@ def run(input_path: Path, output_path: Path, limit: int | None = None) -> dict[s
         if status == "failed":
             skipped_failed_chapters += 1
             continue
-        chapter_units, chapter_errors = generate_chapter_units(chapter)
+        chapter_units, chapter_errors = generate_chapter_units(chapter, tokenizer)
         errors.extend(chapter_errors)
         for unit in chapter_units:
             if unit["unit_id"] in seen_units:
@@ -266,9 +356,15 @@ def run(input_path: Path, output_path: Path, limit: int | None = None) -> dict[s
             seen_units.add(unit["unit_id"])
             units.append(unit)
 
+    token_counts = [u["token_count"] for u in units]
     report = {
         "contract_version": CONTRACT_VERSION,
         "pipeline": "ncert_learning_unit_generation",
+        "boundary_policy": POLICY_VERSION,
+        "tokenizer_model": model_name,
+        "target_tokens": TARGET_TOKENS,
+        "max_tokens": MAX_TOKENS,
+        "max_source_blocks_per_unit": MAX_BLOCKS,
         "run_id": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
         "input_path": str(input_path),
         "output_path": str(output_path),
@@ -278,6 +374,13 @@ def run(input_path: Path, output_path: Path, limit: int | None = None) -> dict[s
         "learning_units_generated": len(units),
         "units_by_type": dict(Counter(u["unit_type"] for u in units)),
         "units_needing_review": sum(u["generation_status"] == "needs_review" for u in units),
+        "units_over_token_limit": sum(n > MAX_TOKENS for n in token_counts),
+        "units_over_block_limit": sum(len(u["block_ids"]) > MAX_BLOCKS for u in units),
+        "token_count_summary": {
+            "min": min(token_counts) if token_counts else 0,
+            "median": sorted(token_counts)[len(token_counts) // 2] if token_counts else 0,
+            "max": max(token_counts) if token_counts else 0,
+        },
         "errors": errors,
         "validation_outcome": "failed" if errors else "passed",
     }
@@ -296,10 +399,11 @@ def main() -> None:
     parser.add_argument("--input", type=Path, default=Path("data/processed/ncert_chapters.jsonl"))
     parser.add_argument("--output", type=Path, default=Path("data/processed/ncert_learning_units.jsonl"))
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument("--model", default=DEFAULT_MODEL, help="Hugging Face tokenizer/model name")
     args = parser.parse_args()
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be >= 1")
-    print(json.dumps(run(args.input, args.output, args.limit), indent=2, ensure_ascii=False))
+    print(json.dumps(run(args.input, args.output, args.limit, args.model), indent=2, ensure_ascii=False))
 
 
 if __name__ == "__main__":
