@@ -1,0 +1,17 @@
+
+services:
+  chroma:
+    image: chromadb/chroma:1.5.3
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  chroma_data:

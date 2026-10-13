@@ -1,0 +1,28 @@
+embedding:
+  provider: sentence-transformers
+  model_name: sentence-transformers/all-MiniLM-L6-v2
+  model_revision: null
+  normalize_embeddings: true
+  batch_size: 32
+document:
+  input_path: data/processed/ncert_learning_units.jsonl
+  id_field: unit_id
+  text_template: |
+    Subject: {subject}
+    Class: {class_level}
+    Chapter: {chapter_title}
+    Topic: {unit_title}
+
+    {text}
+  skip_empty_text: true
+vector_store:
+  provider: chromadb
+  host: localhost
+  port: 8000
+  collection_name: ncert_learning_units_v1
+  distance_metric: cosine
+  upsert_batch_size: 32
+evaluation:
+  default_top_k: 5
+outputs:
+  manifest_path: reports/retrieval/index_build_manifest.json

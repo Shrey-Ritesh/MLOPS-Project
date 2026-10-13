@@ -1,0 +1,19 @@
+{
+  "built_at_utc": "2026-10-13T13:25:49.563196+00:00",
+  "input_path": "data\\processed\\ncert_learning_units.jsonl",
+  "input_sha256": "b62e3f9950c891a406e27a9e15c21a81504f648b5d5caf4b277cb4c551573b9e",
+  "records_read": 9845,
+  "records_indexed_this_run": 9813,
+  "records_skipped_empty": 32,
+  "collection_name": "ncert_learning_units_v1",
+  "collection_count_after_build": 9813,
+  "distance_metric": "cosine",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_model_revision": null,
+  "embedding_dimension": 384,
+  "normalize_embeddings": true,
+  "text_template": "Subject: {subject}\nClass: {class_level}\nChapter: {chapter_title}\nTopic: {unit_title}\n\n{text}\n",
+  "python_version": "3.13.5",
+  "sentence_transformers_version": "5.1.0",
+  "chromadb_client_version": "1.4.1"
+}
