@@ -19,8 +19,8 @@ Policy notes (documented per data_contract.md §4.1):
   operator table for Symbol-style fonts).
 - Chapter openers are "CHAPTER <n>" or "UNIT <n>" (any weight); the title is the
   large heading(s) right after it, and stays null when it is part of a graphic.
-- Images are recorded as `figure` blocks with null text; binary extraction and
-  `asset_ids` linking belong to Track C (asset_ids stay empty here).
+- Embedded raster images are recorded as `figure` blocks with null text and
+  retained as figure candidates for the pipeline's asset-registration step.
 - Vector-only drawings are not detected as figures (Track C territory).
 """
 
@@ -32,6 +32,7 @@ from dataclasses import dataclass, field
 
 import pymupdf
 
+from src.data.asset_store import extract_xobject_png
 from src.data.ids import make_block_id, make_chapter_id
 from src.data.ncert_clean import (
     boilerplate_key,
@@ -94,6 +95,17 @@ class RawBlock:
     math_ratio: float = 0.0
     page_height: float = 0.0
     lines: list[Line] = field(default_factory=list)
+    image_bytes: bytes | None = None
+    image_ext: str | None = None
+
+
+@dataclass
+class FigureAsset:
+    block_id: str
+    page: int
+    bbox: tuple[float, float, float, float]
+    image_bytes: bytes
+    image_ext: str
 
 
 @dataclass
@@ -101,6 +113,7 @@ class ChapterExtraction:
     record: dict
     review_reasons: list[str] = field(default_factory=list)
     stats: dict = field(default_factory=dict)
+    figure_assets: list[FigureAsset] = field(default_factory=list)
 
 
 # --------------------------------------------------------------------------- #
@@ -580,7 +593,16 @@ def _page_blocks(page: pymupdf.Page, page_no: int) -> tuple[list[RawBlock], dict
                 and h >= MIN_FIGURE_SIDE_PT
                 and w * h < MAX_FIGURE_PAGE_FRACTION * width * height
             ):
-                blocks.append(RawBlock(page_no, "image", (x0, y0, x1, y1), page_height=height))
+                blocks.append(
+                    RawBlock(
+                        page_no,
+                        "image",
+                        (x0, y0, x1, y1),
+                        page_height=height,
+                        image_bytes=_image_block_bytes(page, block),
+                        image_ext="png",
+                    )
+                )
 
     blocks.sort(key=lambda b: (round(b.bbox[1] / 3), b.bbox[0]))
     blocks = _merge_label_blocks(blocks)
@@ -588,6 +610,36 @@ def _page_blocks(page: pymupdf.Page, page_no: int) -> tuple[list[RawBlock], dict
     blocks, tables, tables_missed = _detect_tables(page, blocks)
     blocks = _reading_order(blocks, width)
     return blocks, {"fractions_rebuilt": fractions, "tables": tables, "tables_missed": tables_missed}
+
+
+def _image_block_bytes(page: pymupdf.Page, block: dict) -> bytes:
+    """Extract placed raster bytes with a soft mask, or render their page region.
+
+    The fallback uses the composed page display list so transparency and
+    overlapping page content render as seen in the source PDF.
+    """
+    target = pymupdf.Rect(block["bbox"])
+    refs = {int(row[0]): int(row[1]) if len(row) > 1 else 0 for row in page.get_images(full=True)}
+    best = None
+    best_overlap = 0.0
+    for info in page.get_image_info(xrefs=True):
+        xref = int(info.get("xref", 0))
+        if xref <= 0:
+            continue
+        bbox = pymupdf.Rect(info["bbox"])
+        intersection = target & bbox
+        denominator = max(min(target.width * target.height, bbox.width * bbox.height), 1e-6)
+        overlap = 0.0 if intersection.is_empty else intersection.width * intersection.height / denominator
+        if overlap > best_overlap:
+            best_overlap, best = overlap, (xref, refs.get(xref, 0))
+    if best is not None and best_overlap >= 0.8:
+        try:
+            return extract_xobject_png(page.parent, best[0], best[1])
+        except ValueError:
+            # Image bytes from a malformed/missing mask must not be silently
+            # emitted as a black figure; use the PDF renderer instead.
+            pass
+    return page.get_pixmap(clip=target, dpi=200, alpha=True).tobytes("png")
 
 
 # --------------------------------------------------------------------------- #
@@ -808,14 +860,16 @@ def extract_chapter(
     chapter_id = make_chapter_id(source_id, chapter_key)
 
     content_blocks = []
+    figure_assets = []
     cleaned_parts: list[str] = []
     for order, (b, kind, label) in enumerate(classified):
         cleaned = clean_block_text(b.text, kind)
         if cleaned:
             cleaned_parts.append(cleaned)
+        block_id = make_block_id(chapter_id, order)
         content_blocks.append(
             {
-                "block_id": make_block_id(chapter_id, order),
+                "block_id": block_id,
                 "block_type": kind,
                 "text_raw": b.text,
                 "text_cleaned": cleaned,
@@ -825,6 +879,20 @@ def extract_chapter(
                 "original_label": label,
             }
         )
+        if kind == "figure":
+            if b.image_bytes is None or b.image_ext is None:
+                raise ValueError(
+                    f"Embedded image on page {b.page} has no extracted binary data"
+                )
+            figure_assets.append(
+                FigureAsset(
+                    block_id=block_id,
+                    page=b.page,
+                    bbox=b.bbox,
+                    image_bytes=b.image_bytes,
+                    image_ext=b.image_ext,
+                )
+            )
 
     pages_with_blocks = {b.page for b in content}
     empty_pages = [p for p in range(1, n_pages + 1) if p not in pages_with_blocks]
@@ -838,6 +906,7 @@ def extract_chapter(
         status = "failed"
         reasons.append("no_extractable_text")
         content_blocks = []
+        figure_assets = []
     else:
         status = "needs_review" if reasons else "success"
 
@@ -877,4 +946,5 @@ def extract_chapter(
             "fragmented_equation_blocks": fragmented,
             "chapter_title_missing": chapter_title is None,
         },
+        figure_assets=figure_assets,
     )

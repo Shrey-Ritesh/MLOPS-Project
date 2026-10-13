@@ -1,4 +1,6 @@
+import hashlib
 import json
+from pathlib import Path
 
 import pymupdf
 import pytest
@@ -6,7 +8,7 @@ import pytest
 from src.data.ids import make_block_id, make_chapter_id
 from src.data.ncert_clean import clean_block_text, private_use_ratio
 from src.data.ncert_extract import extract_chapter
-from src.data.ncert_pipeline import validate_dataset
+from src.data.ncert_pipeline import run, validate_dataset
 from src.models import NCERTChapterRecord
 
 
@@ -41,6 +43,129 @@ def test_chapter_record_validates_against_contract(chapter_pdf):
     assert record.chapter_title == "MECHANICAL PROPERTIES"
     assert (record.page_start, record.page_end) == (1, 3)
     assert record.extraction_status.value == "success"
+
+
+def test_pipeline_extracts_and_links_embedded_raster_images(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+    image = pymupdf.Pixmap(
+        pymupdf.csRGB,
+        pymupdf.IRect(0, 0, 80, 80),
+        0,
+    )
+    image.clear_with(0x336699)
+    image_bytes = image.tobytes("png")
+
+    doc = pymupdf.open()
+    page = doc.new_page(width=600, height=800)
+    page.insert_text((100, 110), "CHAPTER ONE", fontsize=16, fontname="hebo")
+    page.insert_text((100, 180), "MECHANICAL PROPERTIES", fontsize=18, fontname="hebo")
+    page.insert_text((72, 300), "A solid has a definite shape and size.", fontsize=10)
+    page.insert_image(pymupdf.Rect(100, 400, 220, 520), stream=image_bytes)
+    doc.save(raw_dir / "chapter.pdf")
+
+    config_path = tmp_path / "sources.yaml"
+    config_path.write_text(
+        "raw_dir: raw\n"
+        "defaults:\n"
+        "  source_type: ncert\n"
+        "  subject: Physics\n"
+        "  class_level: 11\n"
+        "  language: en\n"
+        "files:\n"
+        "  - {file: chapter.pdf, kind: chapter}\n",
+        encoding="utf-8",
+    )
+
+    report = run(config_path, Path("data/processed"))
+
+    assert report["assets_extracted"] == 1
+    chapter = json.loads(
+        Path("data/processed/ncert_chapters.jsonl").read_text(encoding="utf-8")
+    )
+    figure = next(block for block in chapter["content_blocks"] if block["block_type"] == "figure")
+    assert len(figure["asset_ids"]) == 1
+    assert chapter["asset_ids"] == figure["asset_ids"]
+
+    asset = json.loads(
+        Path("data/processed/assets_manifest.jsonl").read_text(encoding="utf-8")
+    )
+    assert asset["asset_id"] == figure["asset_ids"][0]
+    assert asset["associated_record_ids"] == [figure["block_id"]]
+    assert asset["source_page"] == figure["page"]
+    asset_path = Path(asset["file_path"])
+    assert asset_path.is_file()
+    assert hashlib.sha256(asset_path.read_bytes()).hexdigest() == asset["sha256"]
+
+
+def test_pipeline_limit_preserves_assets_for_unprocessed_chapters(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    raw_dir = tmp_path / "raw"
+    raw_dir.mkdir()
+    source_files = []
+    for name, text in (
+        ("first.pdf", "First chapter content."),
+        ("second.pdf", "Second chapter content."),
+    ):
+        doc = pymupdf.open()
+        page = doc.new_page(width=600, height=800)
+        page.insert_text((72, 300), text, fontsize=10)
+        path = raw_dir / name
+        doc.save(path)
+        source_files.append(path)
+
+    config_path = tmp_path / "sources.yaml"
+    config_path.write_text(
+        "raw_dir: raw\n"
+        "defaults:\n"
+        "  source_type: ncert\n"
+        "  subject: Physics\n"
+        "  class_level: 11\n"
+        "  language: en\n"
+        "files:\n"
+        "  - {file: first.pdf, kind: chapter}\n"
+        "  - {file: second.pdf, kind: chapter}\n",
+        encoding="utf-8",
+    )
+
+    second_source_id = "src-" + hashlib.sha256(source_files[1].read_bytes()).hexdigest()
+    manifest_path = Path("data/processed/assets_manifest.jsonl")
+    manifest_path.parent.mkdir(parents=True)
+    existing_asset = {"asset_id": "ast-existing", "source_id": second_source_id}
+    manifest_path.write_text(json.dumps(existing_asset) + "\n", encoding="utf-8")
+
+    report = run(config_path, Path("data/processed"), limit=1)
+
+    remaining_assets = [
+        json.loads(line) for line in manifest_path.read_text(encoding="utf-8").splitlines()
+    ]
+    assert report["chapters_produced"] == 1
+    assert existing_asset in remaining_assets
+
+
+def test_pipeline_fails_when_no_configured_chapter_pdfs_exist(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    config_path = tmp_path / "sources.yaml"
+    config_path.write_text(
+        "raw_dir: raw\n"
+        "defaults:\n"
+        "  source_type: ncert\n"
+        "  subject: Physics\n"
+        "  class_level: 11\n"
+        "  language: en\n"
+        "files:\n"
+        "  - {file: missing.pdf, kind: chapter}\n",
+        encoding="utf-8",
+    )
+
+    report = run(config_path, Path("data/processed"))
+
+    assert report["chapters_produced"] == 0
+    assert report["assets_extracted"] == 0
+    assert report["validation_outcome"] == "failed"
+    assert any("no NCERT chapter records" in error for error in report["integrity_errors"])
+    assert not Path("data/processed/ncert_chapters.jsonl").exists()
 
 
 def test_blocks_typed_ordered_and_boilerplate_removed(chapter_pdf):

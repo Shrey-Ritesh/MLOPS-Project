@@ -1,0 +1,9 @@
+{
+  "manifest": "data\\processed\\assets_manifest.jsonl",
+  "records": 751,
+  "unresolved_associations_cleared": 0,
+  "errors": [],
+  "review_items": 794,
+  "review_manifest": "data\\processed\\assets_review.jsonl",
+  "outcome": "passed"
+}

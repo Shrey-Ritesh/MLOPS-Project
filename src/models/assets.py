@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import re
+import math
 from enum import Enum
 from pathlib import PurePosixPath
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from src.models.base import ContractModel
 
@@ -28,7 +28,7 @@ class ReviewStatus(str, Enum):
     NEEDS_REVIEW = "needs_review"
 
 class BoundingBox(ContractModel):
-    """Source-page bounding box. Coordinate origin/units must be documented externally."""
+    """Source-page coordinates in PyMuPDF page points, top-left origin."""
 
     x0: float
     y0: float
@@ -37,8 +37,10 @@ class BoundingBox(ContractModel):
 
     @model_validator(mode="after")
     def validate_box_order(self) -> "BoundingBox":
-        if self.x1 < self.x0 or self.y1 < self.y0:
-            raise ValueError("bbox must satisfy x1 >= x0 and y1 >= y0")
+        if not all(math.isfinite(value) for value in (self.x0, self.y0, self.x1, self.y1)):
+            raise ValueError("bbox coordinates must be finite")
+        if self.x1 <= self.x0 or self.y1 <= self.y0:
+            raise ValueError("bbox must have positive width and height")
         return self
 
 
