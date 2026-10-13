@@ -1,6 +1,40 @@
-docs/
+# Environments & Credentials
+env/
 venv/
-**/__pycache__
-aws_access_key.txt
 .venv/
+.env
+.env.*
+*.env
+aws_access_key.txt
+*access_key*
+*credentials*
+*.pem
+*.key
+.aws/
+
+# Python Caches & Testing
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# DVC Local Files
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+
+# Data Directories & Binary Assets (Tracked by DVC)
+data/raw/
 /data/raw/
+data/quarantine/
+
+# Temporary Session & Preview Test Files
+data/sample_extracted_jee_questions.json
+src/data/preview_single_paper.py
+
+# IDE & OS Artifacts
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
