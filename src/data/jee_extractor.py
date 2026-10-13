@@ -14,7 +14,6 @@ Architecture:
 
 from __future__ import annotations
 
-import hashlib
 import re
 import sys
 from collections import Counter
@@ -27,6 +26,8 @@ from pydantic import ValidationError
 
 from src.data.checksums import file_size, sha256_file
 from src.data.ids import make_source_id
+from src.data.asset_store import build_review_rows, read_jsonl, review_rows, store_asset, validate_asset_records, write_jsonl_atomic
+from src.data.vector_regions import group_drawing_regions
 from src.models import (
     AssetRecord,
     Difficulty,
@@ -610,68 +611,49 @@ def crop_diagram_if_present(
             if crop_bbox.width >= 35.0 and crop_bbox.height >= 25.0:
                 pix = page.get_pixmap(clip=crop_bbox, dpi=200)
                 img_bytes = pix.tobytes("png")
-                import hashlib
-                ast_sha = hashlib.sha256(img_bytes).hexdigest()
-                ast_id = f"ast-{ast_sha[:16]}"
-                assets_dir.mkdir(parents=True, exist_ok=True)
-                crop_path = assets_dir / f"{ast_id}.png"
-                with open(crop_path, "wb") as f:
-                    f.write(img_bytes)
-                rec = {
-                    "asset_id": ast_id,
-                    "source_id": source_id,
-                    "sha256": ast_sha,
-                    "asset_type": "diagram",
-                    "file_path": f"data/assets/crops/{ast_id}.png",
-                    "source_page": source_page,
-                    "bbox": {"x0": crop_bbox.x0, "y0": crop_bbox.y0, "x1": crop_bbox.x1, "y1": crop_bbox.y1},
-                    "associated_record_ids": [qid],
-                    "review_status": "unreviewed",
-                }
-                return ast_id, rec
+                rec = store_asset(
+                    img_bytes,
+                    source_id=source_id,
+                    source_page=source_page,
+                    asset_type="diagram",
+                    bbox={"x0": crop_bbox.x0, "y0": crop_bbox.y0, "x1": crop_bbox.x1, "y1": crop_bbox.y1},
+                    associated_record_ids=[qid],
+                    review_status="unreviewed",
+                ).model_dump(mode="json")
+                return rec["asset_id"], rec
 
     # 2. Vector graphic clusters (circuits, graphs, chemical structures)
-    drawings = page.get_drawings()
-    region_drawings = [
-        d for d in drawings
-        if clip_rect.y0 <= d["rect"].y0 <= clip_rect.y1
-        # Filter 1D fraction bars and brackets
-        and not (d["rect"].height <= 3.0 and d["rect"].width <= 75.0)
-        and not (d["rect"].width <= 3.5 and d["rect"].height <= 45.0)
-    ]
-    if len(region_drawings) >= 8:
-        min_dx = min(d["rect"].x0 for d in region_drawings)
-        min_dy = min(d["rect"].y0 for d in region_drawings)
-        max_dx = max(d["rect"].x1 for d in region_drawings)
-        max_dy = max(d["rect"].y1 for d in region_drawings)
+    grouped = group_drawing_regions(
+        page.get_drawings(), page_width=page_rect.width, page_height=page_rect.height
+    )
+    candidates = []
+    for group in grouped["regions"]:
+        rect = pymupdf.Rect(group["bbox"])
+        rect &= clip_rect & page_rect
+        if rect.width >= 40.0 and rect.height >= 30.0 and rect.width * rect.height < 0.70 * page_rect.width * page_rect.height:
+            candidates.append((rect, group["object_count"]))
+    # Prefer the tightest plausible region; drawing count is reported as
+    # provenance only and is not used as a figure classification threshold.
+    if candidates:
+        cluster_rect, _ = min(candidates, key=lambda item: (item[0].width * item[0].height, item[0].y0, item[0].x0))
         cluster_rect = pymupdf.Rect(
-            max(min_dx - 4, 0),
-            max(min_dy - 4, clip_rect.y0),
-            min(max_dx + 4, page_rect.width),
-            min(max_dy + 4, clip_rect.y1)
+            max(cluster_rect.x0 - 3, clip_rect.x0, 0),
+            max(cluster_rect.y0 - 3, clip_rect.y0, 0),
+            min(cluster_rect.x1 + 3, clip_rect.x1, page_rect.width),
+            min(cluster_rect.y1 + 3, clip_rect.y1, page_rect.height),
         )
         if cluster_rect.width >= 40.0 and cluster_rect.height >= 30.0:
-            pix = page.get_pixmap(clip=cluster_rect, dpi=200)
-            img_bytes = pix.tobytes("png")
-            import hashlib
-            ast_sha = hashlib.sha256(img_bytes).hexdigest()
-            ast_id = f"ast-{ast_sha[:16]}"
-            assets_dir.mkdir(parents=True, exist_ok=True)
-            crop_path = assets_dir / f"{ast_id}.png"
-            with open(crop_path, "wb") as f:
-                f.write(img_bytes)
-            rec = {
-                "asset_id": ast_id,
-                "source_id": source_id,
-                "sha256": ast_sha,
-                "asset_type": "diagram",
-                "file_path": f"data/assets/crops/{ast_id}.png",
-                "source_page": source_page,
-                "bbox": {"x0": cluster_rect.x0, "y0": cluster_rect.y0, "x1": cluster_rect.x1, "y1": cluster_rect.y1},
-                "associated_record_ids": [qid],
-                "review_status": "unreviewed",
-            }
-            return ast_id, rec
+            img_bytes = page.get_pixmap(clip=cluster_rect, dpi=200, alpha=False).tobytes("png")
+            rec = store_asset(
+                img_bytes,
+                source_id=source_id,
+                source_page=source_page,
+                asset_type="diagram",
+                bbox={"x0": cluster_rect.x0, "y0": cluster_rect.y0, "x1": cluster_rect.x1, "y1": cluster_rect.y1},
+                associated_record_ids=[qid],
+                review_status="unreviewed",
+            ).model_dump(mode="json")
+            return rec["asset_id"], rec
 
     return None, None
 
@@ -751,25 +733,16 @@ def crop_math_expression_asset(
 
     pix = page.get_pixmap(clip=crop_box, dpi=200)
     img_bytes = pix.tobytes("png")
-    ast_sha = hashlib.sha256(img_bytes).hexdigest()
-    ast_id = f"ast-{ast_sha[:16]}"
-    assets_dir.mkdir(parents=True, exist_ok=True)
-    crop_path = assets_dir / f"{ast_id}.png"
-    with open(crop_path, "wb") as f:
-        f.write(img_bytes)
-
-    rec = {
-        "asset_id": ast_id,
-        "source_id": source_id,
-        "sha256": ast_sha,
-        "asset_type": "diagram",
-        "file_path": f"data/assets/crops/{ast_id}.png",
-        "source_page": source_page,
-        "bbox": {"x0": crop_box.x0, "y0": crop_box.y0, "x1": crop_box.x1, "y1": crop_box.y1},
-        "associated_record_ids": [qid],
-        "review_status": "unreviewed",
-    }
-    return ast_id, rec
+    rec = store_asset(
+        img_bytes,
+        source_id=source_id,
+        source_page=source_page,
+        asset_type="diagram",
+        bbox={"x0": crop_box.x0, "y0": crop_box.y0, "x1": crop_box.x1, "y1": crop_box.y1},
+        associated_record_ids=[qid],
+        review_status="unreviewed",
+    ).model_dump(mode="json")
+    return rec["asset_id"], rec
 
 
 def extract_questions_from_pdf(
@@ -938,6 +911,7 @@ def process_all_jee_papers(
     all_extracted_questions: list[dict[str, Any]] = []
     all_quarantine: list[dict[str, Any]] = []
     all_assets_records: list[dict[str, Any]] = []
+    processed_source_ids: set[str] = set()
 
     print(f"Discovered {len(pdf_files)} PDF papers to process.")
 
@@ -973,6 +947,8 @@ def process_all_jee_papers(
         else:
             src_record = existing_manifest_sources.get(digest) or existing_manifest_sources[pdf.name]
 
+        processed_source_ids.add(src_record.source_id)
+
         print(f"Processing: {pdf.name} (Source ID: {src_record.source_id[:16]}...)")
         questions, quar, assets = extract_questions_from_pdf(pdf, src_record.source_id)
         all_extracted_questions.extend(questions)
@@ -989,15 +965,46 @@ def process_all_jee_papers(
             rec = JEEQuestionRecord.model_validate(q)
             qf.write(rec.model_dump_json() + "\n")
 
-    # Deduplicate and write assets manifest
-    seen_assets: set[str] = set()
-    with open(assets_file, "w", encoding="utf-8") as af:
-        for ast in all_assets_records:
-            aid = ast["asset_id"]
-            if aid not in seen_assets:
-                seen_assets.add(aid)
-                rec = AssetRecord.model_validate(ast)
-                af.write(rec.model_dump_json() + "\n")
+    # Keep assets for sources not selected in this run. Exact binary
+    # deduplication is by SHA-256 storage path; occurrence rows retain page and
+    # crop provenance and have distinct stable IDs.
+    previous_assets = read_jsonl(assets_file) if assets_file.exists() else []
+    combined_assets = {
+        row["asset_id"]: row
+        for row in previous_assets
+        if row.get("source_id") not in processed_source_ids
+    }
+    for ast in all_assets_records:
+        rec = AssetRecord.model_validate(ast)
+        combined_assets[rec.asset_id] = rec.model_dump(mode="json")
+    asset_rows = list(combined_assets.values())
+    registered_source_ids = {row.source_id for row in all_source_records}
+    ncert_sources_path = Path("data/interim/ncert_source_manifest.jsonl")
+    if ncert_sources_path.exists():
+        registered_source_ids.update(
+            row.get("source_id") for row in read_jsonl(ncert_sources_path) if row.get("source_id")
+        )
+    known_record_ids = {
+        row.get("question_id")
+        for row in (*all_extracted_questions, *all_quarantine)
+        if row.get("question_id")
+    }
+    ncert_chapters_path = Path("data/processed/ncert_chapters.jsonl")
+    if ncert_chapters_path.exists():
+        for row in read_jsonl(ncert_chapters_path):
+            if row.get("chapter_id"):
+                known_record_ids.add(row["chapter_id"])
+            known_record_ids.update(block["block_id"] for block in row.get("content_blocks", []) if block.get("block_id"))
+    asset_errors = validate_asset_records(
+        asset_rows,
+        data_root=Path.cwd(),
+        known_source_ids=registered_source_ids,
+        known_record_ids=known_record_ids or None,
+    )
+    write_jsonl_atomic(asset_rows, assets_file)
+    review_file = assets_file.parent / "assets_review.jsonl"
+    prior_review = read_jsonl(review_file) if review_file.exists() else []
+    write_jsonl_atomic(build_review_rows(asset_rows, existing_review_rows=prior_review), review_file)
 
     if all_quarantine:
         with open(quar_file, "w", encoding="utf-8") as qf:
@@ -1006,12 +1013,17 @@ def process_all_jee_papers(
                 qf.write(json.dumps(q) + "\n")
 
     print(f"\n[Done] Successfully wrote {len(all_extracted_questions)} questions to {out_file}")
-    print(f"[Done] Successfully wrote {len(seen_assets)} assets to {assets_file}")
+    print(f"[Done] Successfully wrote {len(asset_rows)} asset records to {assets_file}")
+    if asset_errors:
+        print(f"[Asset validation] {len(asset_errors)} integrity errors; see {review_file} and validation output.")
     return {
         "sources": len(all_source_records),
         "extracted": len(all_extracted_questions),
         "quarantined": len(all_quarantine),
-        "assets": len(seen_assets),
+        "assets": len(asset_rows),
+        "asset_integrity_errors": len(asset_errors),
+        "asset_integrity_error_details": asset_errors,
+        "assets_needing_review": len(review_rows(asset_rows)),
     }
 
 

@@ -117,6 +117,8 @@ A chapter record is the canonical extracted representation of a textbook chapter
 
 `text_raw` and `text_cleaned` provide whole-chapter text views. `content_blocks` preserves structure and order for downstream learning-unit construction. The block list is nested in the chapter record in contract v1.0.0; it is not a separate JSONL file.
 
+The NCERT pipeline extracts raster images detected as `figure` blocks and links them through each block's `asset_ids`. It applies PDF soft masks when available and renders the composed page region if direct XObject decoding fails. Chapter-level `asset_ids` is the union of those linked figure assets. Vector-only drawing groups are reported as review candidates and may be rendered as explicitly selected crops; geometric grouping alone does not classify them as figures.
+
 ### 4.1 `content_blocks` object
 
 | Field | Type | Required | Description |
@@ -158,7 +160,7 @@ Cleaning must be deterministic and preserve meaningful content. Preserve mathema
 | `asset_type` | enum | Yes | `image`, `diagram`, `page_crop`, or `other`. |
 | `file_path` | string | Yes | Relative path from the documented data root to the stored binary. |
 | `source_page` | integer | Yes | One-based PDF page index. |
-| `bbox` | object or null | Yes | Optional source-page bounding box `{x0, y0, x1, y1}`; coordinate origin and units must be documented consistently. |
+| `bbox` | object or null | Yes | Optional source-page bounding box `{x0, y0, x1, y1}` in PyMuPDF page points, top-left origin; coordinates must be finite and bounds must have positive area. |
 | `associated_record_ids` | array of strings | Yes | Known related chapter/question/block IDs; may be empty if association is unknown. |
 | `review_status` | enum | Yes | `unreviewed`, `verified`, or `needs_review`. |
 
@@ -172,6 +174,9 @@ Cleaning must be deterministic and preserve meaningful content. Preserve mathema
 - Exact duplicate bytes may be reported for deduplication. Do not automatically merge semantically similar but byte-different diagrams.
 - For vector drawings or composite figures, document whether the stored asset is an extracted object, rendered page, or crop.
 - For crops, record source page and bounding box when available.
+- Store binaries content-addressed under `data/assets/sha256/<first-two-hex>/<sha256>.<ext>`. The SHA-256 is computed from the exact stored bytes. Repeated exact bytes reuse this binary path; distinct source/page/crop occurrences keep separate manifest rows and stable IDs.
+- `asset_id` is derived deterministically from `source_id`, stored-byte SHA-256, one-based `source_page`, and bbox coordinates rounded to 0.001 page points (or `none` when absent). It does not use a machine-specific absolute path.
+- `associated_record_ids` is empty when a question/section association is uncertain. Geometric vector groups are review candidates, not semantic figure labels. Extracted assets start `unreviewed` until human review.
 - Dataset-level validation must resolve each `associated_record_ids` value against the correct record namespace.
 
 ## 6. JEE Main question manifest — `jee_questions.jsonl`
