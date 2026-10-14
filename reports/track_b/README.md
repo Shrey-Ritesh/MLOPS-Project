@@ -42,7 +42,7 @@ The majority-class reference predicts "no switch" for every row (F1 = 0.0, accur
 Runs and models are also logged to a **local** MLflow store (`mlflow.db`, not committed). Re-create it from the saved artifacts, without retraining:
 ```bash
 python -m src.track_b.register_mlflow
-mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001     # open http://localhost:5001 (macOS reserves 5000 for AirPlay Receiver)
+mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001     # open http://localhost:5001
 ```
 - Experiment `track_b_learner_difficulty` has two runs: the baseline and the candidate (parameters, metrics, dataset/config hashes, reports).
 - Registered model `learner-difficulty`: v1 = baseline, alias `production`; v2 = candidate, alias `rejected_candidate`, tagged with the gate decision. The registry follows `promotion_decision.json`.
