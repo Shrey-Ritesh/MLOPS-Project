@@ -32,13 +32,19 @@ drift_measures:
   psi_alert_threshold: 0.2          # conventional "significant shift" level; reported, not used to gate
   ks_alpha: 0.01
 
-# The candidate uses the same model family and hyperparameters as the baseline, trained on the
-# training learners of the SHIFTED dataset (the intended deployment population).
+# The candidate model (v2) upgrades from naive linear regression to non-linear
+# HistGradientBoosting with Easy difficulty boundary guard and train-set threshold tuning.
 candidate:
-  model_id: candidate_logreg_shifted_v1
+  model_id: candidate_hgb_shifted_v2
   dataset: data/synthetic/learner_interactions_shifted_v1.csv
-  model: {type: logistic_regression, C: 1.0, class_weight: balanced, max_iter: 1000, random_state: 20261015}
-  decision_threshold: 0.5
+  model:
+    type: hist_gradient_boosting
+    max_iter: 250
+    class_weight: balanced
+    l2_regularization: 1.0
+    random_state: 20261015
+  decision_threshold: auto_tune
+  apply_boundary_guard: true
   outputs:
     model_dir: models/track_b/candidate
     comparison_report: reports/track_b/candidate_comparison.json

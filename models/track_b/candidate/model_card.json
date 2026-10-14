@@ -1,5 +1,5 @@
 {
-  "model_id": "candidate_logreg_shifted_v1",
+  "model_id": "candidate_hgb_shifted_v2",
   "feature_columns": [
     "topic",
     "selected_difficulty",
@@ -11,18 +11,19 @@
     "previous_difficulty"
   ],
   "target": "switch_to_lower_difficulty",
-  "decision_threshold": 0.5,
+  "decision_threshold": 0.7,
+  "apply_boundary_guard": true,
   "schema_version": "1.0.0",
   "dataset": "data/synthetic/learner_interactions_shifted_v1.csv",
-  "dataset_sha256": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
+  "dataset_sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
   "scenario_id": "shifted_v1",
   "scenario_sha256": "1414a76aea4f7e65b903cd0a313e1a5d87030ad04ad8ab26a26c869a448b79d5",
-  "config": "configs/track_b/drift_experiment.yaml",
-  "config_sha256": "e0f5f5fe89e0ac15aa49a74b24a223574b50a3ed4dd72aa4be495c1ec83bde04",
+  "config": "configs\\track_b\\drift_experiment.yaml",
+  "config_sha256": "9ed91214603c3ebbd1e530b0e9b9e6b37ef5173db923d85da5b69ea30e1c444f",
   "seed": 20261015,
-  "git_commit": "cc6add6e2e24a48b0b3dd66b66866c1c32684580",
-  "sklearn_version": "1.9.1",
-  "trained_at_utc": "2026-10-14T05:19:43+00:00",
+  "git_commit": "f3ad06ec4c54d5948259bd67cb656c5077220032",
+  "sklearn_version": "1.7.2",
+  "trained_at_utc": "2026-10-14T18:00:22+00:00",
   "trained_on": {
     "n_rows": 19737,
     "n_learners": 560

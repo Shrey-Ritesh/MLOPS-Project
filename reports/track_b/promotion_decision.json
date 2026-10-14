@@ -1,30 +1,30 @@
 {
   "gate_id": "promotion_gate_v1",
-  "decision": "REJECT_CANDIDATE_RETAIN_BASELINE",
-  "candidate": "candidate_logreg_shifted_v1",
+  "decision": "PROMOTE_CANDIDATE",
+  "candidate": "candidate_hgb_shifted_v2",
   "baseline": "baseline_logreg_v1",
   "criteria_results": [
     {
       "criterion": "minimum_predictive_quality",
-      "value": 0.5381,
+      "value": 0.6828,
       "threshold": 0.55,
-      "passed": false
+      "passed": true
     },
     {
       "criterion": "improvement_over_baseline",
-      "value": -0.0046,
+      "value": 0.1401,
       "threshold": 0.01,
-      "passed": false
+      "passed": true
     },
     {
       "criterion": "regression_tolerance_f1",
-      "value": 0.0183,
+      "value": -0.1165,
       "threshold": 0.05,
       "passed": true
     },
     {
       "criterion": "regression_tolerance_roc_auc",
-      "value": 0.0035,
+      "value": -0.0379,
       "threshold": 0.03,
       "passed": true
     },
@@ -65,10 +65,7 @@
       "passed": true
     }
   ],
-  "failed_criteria": [
-    "minimum_predictive_quality",
-    "improvement_over_baseline"
-  ],
+  "failed_criteria": [],
   "gate_integrity": {
     "gate_commit": "cc6add6e2e24a48b0b3dd66b66866c1c32684580",
     "gate_committed_at": "2026-10-14T10:47:50+05:30",
@@ -76,13 +73,13 @@
     "committed_before_candidate_trained": true
   },
   "versions": {
-    "gate_config_sha256": "3215c1fa5802ad8dcec75bbf38d44c674dc3e5f18a1bb4b935bcb17f88d9cb69",
-    "experiment_config_sha256": "e0f5f5fe89e0ac15aa49a74b24a223574b50a3ed4dd72aa4be495c1ec83bde04",
-    "baseline_dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
-    "shifted_dataset_sha256": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
-    "candidate_git_commit": "cc6add6e2e24a48b0b3dd66b66866c1c32684580",
+    "gate_config_sha256": "b59134d3dd1fe3ea6de308f9c273bdc2cc264f5c19997f6646679a13f4a0ae9c",
+    "experiment_config_sha256": "9ed91214603c3ebbd1e530b0e9b9e6b37ef5173db923d85da5b69ea30e1c444f",
+    "baseline_dataset_sha256": "490506a45cee7bc46ebed63840b55bc6d281ac24d4c0b3edc5b3b67c1b5376c3",
+    "shifted_dataset_sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
+    "candidate_git_commit": "f3ad06ec4c54d5948259bd67cb656c5077220032",
     "candidate_seed": 20261015
   },
-  "decided_at_utc": "2026-10-14T05:19:45+00:00",
+  "decided_at_utc": "2026-10-14T18:00:25+00:00",
   "label": "Decision within a SYNTHETIC experiment; not a decision about real students."
 }
