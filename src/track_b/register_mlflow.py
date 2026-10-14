@@ -5,7 +5,7 @@ DVC pipeline outputs are unchanged. Safe to re-run: runs are matched on the mode
 file's hash and skipped if already logged.
 
     python -m src.track_b.register_mlflow
-    mlflow ui --backend-store-uri sqlite:///mlflow.db     # then open http://localhost:5000
+    mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001   # then open http://localhost:5001
 """
 
 from __future__ import annotations
