@@ -1,0 +1,195 @@
+schema: '2.0'
+stages:
+  generate_baseline:
+    cmd: python -m src.track_b.generate_learners --out 
+      data/synthetic/learner_interactions_v1.csv
+    deps:
+    - path: configs/track_b/learner_scenarios.yaml
+      hash: md5
+      md5: 1402b01a0feeafca0f0ec2737030959b
+      size: 3375
+    - path: configs/track_b/topic_difficulty_priors.csv
+      hash: md5
+      md5: 2b57e1ea2e6cf5d6d49ec4e89fc85f4d
+      size: 14016
+    - path: src/track_b/generate_learners.py
+      hash: md5
+      md5: 90610727bbfa6ed94905975c22c379ee
+      size: 9785
+    - path: src/track_b/schema.py
+      hash: md5
+      md5: 1531e87f5e40f45f07a5fe20fb4e0110
+      size: 3609
+    outs:
+    - path: data/synthetic/learner_interactions_v1.csv
+      hash: md5
+      md5: d3303869089470cb84b3c449373faa28
+      size: 2079059
+    - path: data/synthetic/learner_interactions_v1.meta.json
+      hash: md5
+      md5: 075025fae498fac898c7eba0d41e89d8
+      size: 3891
+  train_baseline:
+    cmd: python -m src.track_b.train_baseline --config 
+      configs/track_b/baseline.yaml
+    deps:
+    - path: configs/track_b/baseline.yaml
+      hash: md5
+      md5: d0a4dd914485ea32f2468c73fcfdc577
+      size: 545
+    - path: data/synthetic/learner_interactions_v1.csv
+      hash: md5
+      md5: d3303869089470cb84b3c449373faa28
+      size: 2079059
+    - path: data/synthetic/learner_interactions_v1.meta.json
+      hash: md5
+      md5: 075025fae498fac898c7eba0d41e89d8
+      size: 3891
+    - path: src/track_b/modeling.py
+      hash: md5
+      md5: 4ab215f771512b14842d02395aa62169
+      size: 4351
+    - path: src/track_b/train_baseline.py
+      hash: md5
+      md5: f46e0e1f34d18259a42d7a22c1449941
+      size: 2884
+    outs:
+    - path: models/track_b/baseline
+      hash: md5
+      md5: a8c50ed4e446f6b862487fa5497a8a50.dir
+      size: 7241
+      nfiles: 2
+    - path: reports/track_b/baseline_evaluation.json
+      hash: md5
+      md5: 025ebb725816702d183292a77bd9f2f2
+      size: 1323
+  generate_shifted:
+    cmd: python -m src.track_b.generate_learners --overrides 
+      configs/track_b/drift_experiment.yaml --out 
+      data/synthetic/learner_interactions_shifted_v1.csv
+    deps:
+    - path: configs/track_b/drift_experiment.yaml
+      hash: md5
+      md5: 5020696447d43179fecee6fc79fce26f
+      size: 2412
+    - path: configs/track_b/learner_scenarios.yaml
+      hash: md5
+      md5: 1402b01a0feeafca0f0ec2737030959b
+      size: 3375
+    - path: configs/track_b/topic_difficulty_priors.csv
+      hash: md5
+      md5: 2b57e1ea2e6cf5d6d49ec4e89fc85f4d
+      size: 14016
+    - path: src/track_b/generate_learners.py
+      hash: md5
+      md5: 90610727bbfa6ed94905975c22c379ee
+      size: 9785
+    outs:
+    - path: data/synthetic/learner_interactions_shifted_v1.csv
+      hash: md5
+      md5: b954997dbbd12da78f5abc521315f19e
+      size: 2092354
+    - path: data/synthetic/learner_interactions_shifted_v1.meta.json
+      hash: md5
+      md5: c9b6c5919cc9ced511dc9da7d744e334
+      size: 3890
+  evaluate_drift:
+    cmd: python -m src.track_b.evaluate_drift
+    deps:
+    - path: configs/track_b/drift_experiment.yaml
+      hash: md5
+      md5: 5020696447d43179fecee6fc79fce26f
+      size: 2412
+    - path: data/synthetic/learner_interactions_shifted_v1.csv
+      hash: md5
+      md5: b954997dbbd12da78f5abc521315f19e
+      size: 2092354
+    - path: data/synthetic/learner_interactions_v1.csv
+      hash: md5
+      md5: d3303869089470cb84b3c449373faa28
+      size: 2079059
+    - path: models/track_b/baseline
+      hash: md5
+      md5: a8c50ed4e446f6b862487fa5497a8a50.dir
+      size: 7241
+      nfiles: 2
+    - path: src/track_b/drift.py
+      hash: md5
+      md5: f6bc7f9dcccb2e295c4056cce3c50011
+      size: 1892
+    - path: src/track_b/evaluate_drift.py
+      hash: md5
+      md5: 5417b73332680293f6a15e2a2aa242dd
+      size: 5035
+    outs:
+    - path: reports/track_b/drift_report.json
+      hash: md5
+      md5: deea646da6ac44638562b2ed41bb8461
+      size: 3671
+    - path: reports/track_b/shifted_evaluation.json
+      hash: md5
+      md5: f472aa09114067c34ef695a74a204d83
+      size: 1386
+  train_candidate:
+    cmd: python -m src.track_b.train_candidate
+    deps:
+    - path: configs/track_b/drift_experiment.yaml
+      hash: md5
+      md5: 5020696447d43179fecee6fc79fce26f
+      size: 2412
+    - path: data/synthetic/learner_interactions_shifted_v1.csv
+      hash: md5
+      md5: b954997dbbd12da78f5abc521315f19e
+      size: 2092354
+    - path: data/synthetic/learner_interactions_v1.csv
+      hash: md5
+      md5: d3303869089470cb84b3c449373faa28
+      size: 2079059
+    - path: models/track_b/baseline
+      hash: md5
+      md5: a8c50ed4e446f6b862487fa5497a8a50.dir
+      size: 7241
+      nfiles: 2
+    - path: src/track_b/train_candidate.py
+      hash: md5
+      md5: b71dd326c7462e3b1c935e80f72199c8
+      size: 4710
+    outs:
+    - path: models/track_b/candidate
+      hash: md5
+      md5: 68475782c66b4be84b6842329ca560b2.dir
+      size: 7419
+      nfiles: 2
+    - path: reports/track_b/candidate_comparison.json
+      hash: md5
+      md5: 40664247b155a717df70e01a073e7f3e
+      size: 3043
+  promotion_gate:
+    cmd: python -m src.track_b.promotion_gate
+    deps:
+    - path: configs/track_b/drift_experiment.yaml
+      hash: md5
+      md5: 5020696447d43179fecee6fc79fce26f
+      size: 2412
+    - path: configs/track_b/promotion_gate.yaml
+      hash: md5
+      md5: a0ff62da15f30e75ebd5e64159d7cafe
+      size: 1475
+    - path: models/track_b/candidate
+      hash: md5
+      md5: 68475782c66b4be84b6842329ca560b2.dir
+      size: 7419
+      nfiles: 2
+    - path: reports/track_b/candidate_comparison.json
+      hash: md5
+      md5: 40664247b155a717df70e01a073e7f3e
+      size: 3043
+    - path: src/track_b/promotion_gate.py
+      hash: md5
+      md5: e0c2aa1a9afcf74a2237cb41c0ffc9b8
+      size: 6677
+    outs:
+    - path: reports/track_b/promotion_decision.json
+      hash: md5
+      md5: 9896657094e5f92e2db670ee5ddbbf7b
+      size: 2500

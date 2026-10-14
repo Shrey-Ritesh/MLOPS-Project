@@ -1,0 +1,88 @@
+{
+  "gate_id": "promotion_gate_v1",
+  "decision": "REJECT_CANDIDATE_RETAIN_BASELINE",
+  "candidate": "candidate_logreg_shifted_v1",
+  "baseline": "baseline_logreg_v1",
+  "criteria_results": [
+    {
+      "criterion": "minimum_predictive_quality",
+      "value": 0.5381,
+      "threshold": 0.55,
+      "passed": false
+    },
+    {
+      "criterion": "improvement_over_baseline",
+      "value": -0.0046,
+      "threshold": 0.01,
+      "passed": false
+    },
+    {
+      "criterion": "regression_tolerance_f1",
+      "value": 0.0183,
+      "threshold": 0.05,
+      "passed": true
+    },
+    {
+      "criterion": "regression_tolerance_roc_auc",
+      "value": 0.0035,
+      "threshold": 0.03,
+      "passed": true
+    },
+    {
+      "criterion": "data_validity.schema_validation",
+      "value": true,
+      "threshold": "required",
+      "passed": true
+    },
+    {
+      "criterion": "data_validity.leakage_check",
+      "value": true,
+      "threshold": "required",
+      "passed": true
+    },
+    {
+      "criterion": "data_validity.learner_level_split",
+      "value": true,
+      "threshold": "required",
+      "passed": true
+    },
+    {
+      "criterion": "reproducibility",
+      "value": {
+        "dataset_sha256": true,
+        "scenario_sha256": true,
+        "config_sha256": true,
+        "git_commit": true,
+        "seed": true
+      },
+      "threshold": [
+        "dataset_sha256",
+        "scenario_sha256",
+        "config_sha256",
+        "git_commit",
+        "seed"
+      ],
+      "passed": true
+    }
+  ],
+  "failed_criteria": [
+    "minimum_predictive_quality",
+    "improvement_over_baseline"
+  ],
+  "gate_integrity": {
+    "gate_commit": "cc6add6e2e24a48b0b3dd66b66866c1c32684580",
+    "gate_committed_at": "2026-10-14T10:47:50+05:30",
+    "gate_file_unmodified": true,
+    "committed_before_candidate_trained": true
+  },
+  "versions": {
+    "gate_config_sha256": "3215c1fa5802ad8dcec75bbf38d44c674dc3e5f18a1bb4b935bcb17f88d9cb69",
+    "experiment_config_sha256": "e0f5f5fe89e0ac15aa49a74b24a223574b50a3ed4dd72aa4be495c1ec83bde04",
+    "baseline_dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+    "shifted_dataset_sha256": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
+    "candidate_git_commit": "cc6add6e2e24a48b0b3dd66b66866c1c32684580",
+    "candidate_seed": 20261015
+  },
+  "decided_at_utc": "2026-10-14T05:19:45+00:00",
+  "label": "Decision within a SYNTHETIC experiment; not a decision about real students."
+}

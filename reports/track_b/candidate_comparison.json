@@ -1,0 +1,128 @@
+{
+  "label": "Candidate vs baseline on SYNTHETIC data, same fixed held-out learners",
+  "protocol": "both models scored on the same shifted_test and original_test learners; test learners never used for training",
+  "datasets": {
+    "shifted": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
+    "original": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe"
+  },
+  "baseline": {
+    "model_id": "baseline_logreg_v1",
+    "shifted_test": {
+      "n_rows": 8500,
+      "n_learners": 240,
+      "positive_rate": 0.1646,
+      "model": {
+        "precision": 0.4161,
+        "recall": 0.7798,
+        "f1": 0.5427,
+        "roc_auc": 0.8793,
+        "confusion_matrix": {
+          "tn": 5570,
+          "fp": 1531,
+          "fn": 308,
+          "tp": 1091
+        }
+      },
+      "majority_class_baseline": {
+        "predicts": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.8354
+      },
+      "model_accuracy": 0.7836
+    },
+    "original_test": {
+      "n_rows": 8697,
+      "n_learners": 240,
+      "positive_rate": 0.1668,
+      "model": {
+        "precision": 0.4754,
+        "recall": 0.7802,
+        "f1": 0.5908,
+        "roc_auc": 0.8972,
+        "confusion_matrix": {
+          "tn": 5997,
+          "fp": 1249,
+          "fn": 319,
+          "tp": 1132
+        }
+      },
+      "majority_class_baseline": {
+        "predicts": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.8332
+      },
+      "model_accuracy": 0.8197
+    }
+  },
+  "candidate": {
+    "model_id": "candidate_logreg_shifted_v1",
+    "shifted_test": {
+      "n_rows": 8500,
+      "n_learners": 240,
+      "positive_rate": 0.1646,
+      "model": {
+        "precision": 0.4148,
+        "recall": 0.7655,
+        "f1": 0.5381,
+        "roc_auc": 0.8779,
+        "confusion_matrix": {
+          "tn": 5590,
+          "fp": 1511,
+          "fn": 328,
+          "tp": 1071
+        }
+      },
+      "majority_class_baseline": {
+        "predicts": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.8354
+      },
+      "model_accuracy": 0.7836
+    },
+    "original_test": {
+      "n_rows": 8697,
+      "n_learners": 240,
+      "positive_rate": 0.1668,
+      "model": {
+        "precision": 0.4574,
+        "recall": 0.765,
+        "f1": 0.5725,
+        "roc_auc": 0.8937,
+        "confusion_matrix": {
+          "tn": 5929,
+          "fp": 1317,
+          "fn": 341,
+          "tp": 1110
+        }
+      },
+      "majority_class_baseline": {
+        "predicts": 0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "accuracy": 0.8332
+      },
+      "model_accuracy": 0.8094
+    }
+  },
+  "candidate_minus_baseline": {
+    "shifted_test": {
+      "precision": -0.0013,
+      "recall": -0.0143,
+      "f1": -0.0046,
+      "roc_auc": -0.0014
+    },
+    "original_test": {
+      "precision": -0.018,
+      "recall": -0.0152,
+      "f1": -0.0183,
+      "roc_auc": -0.0035
+    }
+  }
+}

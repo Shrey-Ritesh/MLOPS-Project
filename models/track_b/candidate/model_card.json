@@ -1,0 +1,32 @@
+{
+  "model_id": "candidate_logreg_shifted_v1",
+  "feature_columns": [
+    "topic",
+    "selected_difficulty",
+    "recent_accuracy",
+    "mistake_count",
+    "hint_count",
+    "response_time_seconds",
+    "prior_interaction_count",
+    "previous_difficulty"
+  ],
+  "target": "switch_to_lower_difficulty",
+  "decision_threshold": 0.5,
+  "schema_version": "1.0.0",
+  "dataset": "data/synthetic/learner_interactions_shifted_v1.csv",
+  "dataset_sha256": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
+  "scenario_id": "shifted_v1",
+  "scenario_sha256": "1414a76aea4f7e65b903cd0a313e1a5d87030ad04ad8ab26a26c869a448b79d5",
+  "config": "configs/track_b/drift_experiment.yaml",
+  "config_sha256": "e0f5f5fe89e0ac15aa49a74b24a223574b50a3ed4dd72aa4be495c1ec83bde04",
+  "seed": 20261015,
+  "git_commit": "cc6add6e2e24a48b0b3dd66b66866c1c32684580",
+  "sklearn_version": "1.9.1",
+  "trained_at_utc": "2026-10-14T05:19:43+00:00",
+  "trained_on": {
+    "n_rows": 19737,
+    "n_learners": 560
+  },
+  "test_learners_used_for_training": [],
+  "label": "Trained and evaluated on SYNTHETIC data only; not validated for real students."
+}

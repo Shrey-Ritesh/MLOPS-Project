@@ -1,0 +1,68 @@
+# Track B MLOps demonstration pipeline. Reproduce with:  dvc repro
+# Outputs use cache: false so the small CSVs, models and reports stay in Git
+# (S3 is reserved for the processed JSONL datasets).
+stages:
+  generate_baseline:
+    cmd: python -m src.track_b.generate_learners --out data/synthetic/learner_interactions_v1.csv
+    deps:
+      - src/track_b/generate_learners.py
+      - src/track_b/schema.py
+      - configs/track_b/learner_scenarios.yaml
+      - configs/track_b/topic_difficulty_priors.csv
+    outs:
+      - data/synthetic/learner_interactions_v1.csv: {cache: false}
+      - data/synthetic/learner_interactions_v1.meta.json: {cache: false}
+  train_baseline:
+    cmd: python -m src.track_b.train_baseline --config configs/track_b/baseline.yaml
+    deps:
+      - src/track_b/train_baseline.py
+      - src/track_b/modeling.py
+      - configs/track_b/baseline.yaml
+      - data/synthetic/learner_interactions_v1.csv
+      - data/synthetic/learner_interactions_v1.meta.json
+    outs:
+      - models/track_b/baseline: {cache: false}
+      - reports/track_b/baseline_evaluation.json: {cache: false}
+  generate_shifted:
+    cmd: python -m src.track_b.generate_learners --overrides configs/track_b/drift_experiment.yaml --out data/synthetic/learner_interactions_shifted_v1.csv
+    deps:
+      - src/track_b/generate_learners.py
+      - configs/track_b/learner_scenarios.yaml
+      - configs/track_b/drift_experiment.yaml
+      - configs/track_b/topic_difficulty_priors.csv
+    outs:
+      - data/synthetic/learner_interactions_shifted_v1.csv: {cache: false}
+      - data/synthetic/learner_interactions_shifted_v1.meta.json: {cache: false}
+  evaluate_drift:
+    cmd: python -m src.track_b.evaluate_drift
+    deps:
+      - src/track_b/evaluate_drift.py
+      - src/track_b/drift.py
+      - configs/track_b/drift_experiment.yaml
+      - models/track_b/baseline
+      - data/synthetic/learner_interactions_v1.csv
+      - data/synthetic/learner_interactions_shifted_v1.csv
+    outs:
+      - reports/track_b/drift_report.json: {cache: false}
+      - reports/track_b/shifted_evaluation.json: {cache: false}
+  train_candidate:
+    cmd: python -m src.track_b.train_candidate
+    deps:
+      - src/track_b/train_candidate.py
+      - configs/track_b/drift_experiment.yaml
+      - models/track_b/baseline
+      - data/synthetic/learner_interactions_v1.csv
+      - data/synthetic/learner_interactions_shifted_v1.csv
+    outs:
+      - models/track_b/candidate: {cache: false}
+      - reports/track_b/candidate_comparison.json: {cache: false}
+  promotion_gate:
+    cmd: python -m src.track_b.promotion_gate
+    deps:
+      - src/track_b/promotion_gate.py
+      - configs/track_b/promotion_gate.yaml
+      - configs/track_b/drift_experiment.yaml
+      - models/track_b/candidate
+      - reports/track_b/candidate_comparison.json
+    outs:
+      - reports/track_b/promotion_decision.json: {cache: false}

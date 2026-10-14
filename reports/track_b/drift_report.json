@@ -1,0 +1,134 @@
+{
+  "kind": "DATA DRIFT (input and target distributions); says nothing by itself about model quality",
+  "reference": {
+    "dataset": "data/synthetic/learner_interactions_v1.csv",
+    "sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+    "scenario_id": "baseline_v1"
+  },
+  "current": {
+    "dataset": "data/synthetic/learner_interactions_shifted_v1.csv",
+    "sha256": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
+    "scenario_id": "shifted_v1"
+  },
+  "documented_changes": {
+    "population": {
+      "pattern_mix": {
+        "steady": 0.25,
+        "hint_reliant": 0.45,
+        "fast_guesser": 0.15,
+        "persistent": 0.15
+      }
+    },
+    "topic_overrides": {
+      "Rotational Motion": {
+        "score_delta": 0.5,
+        "success_logit_delta": -0.4
+      },
+      "Electromagnetic Induction": {
+        "score_delta": 0.5,
+        "success_logit_delta": -0.4
+      },
+      "Thermodynamics": {
+        "score_delta": 0.5,
+        "success_logit_delta": -0.4
+      },
+      "Chemical Thermodynamics": {
+        "score_delta": 0.5,
+        "success_logit_delta": -0.4
+      },
+      "Coordination Compounds": {
+        "score_delta": 0.5,
+        "success_logit_delta": -0.4
+      },
+      "Atoms and Nuclei": {
+        "score_delta": 0.5,
+        "success_logit_delta": -0.4
+      }
+    }
+  },
+  "numeric_features": {
+    "recent_accuracy": {
+      "psi": 0.0017,
+      "psi_reading": "no meaningful shift",
+      "ks_statistic": 0.0142,
+      "ks_p_value": 0.006816750887470487,
+      "ks_significant": true,
+      "reference_mean": 0.6079,
+      "current_mean": 0.6041
+    },
+    "mistake_count": {
+      "psi": 0.0001,
+      "psi_reading": "no meaningful shift",
+      "ks_statistic": 0.0069,
+      "ks_p_value": 0.5076512724700704,
+      "ks_significant": false,
+      "reference_mean": 0.7606,
+      "current_mean": 0.7868
+    },
+    "hint_count": {
+      "psi": 0.0564,
+      "psi_reading": "no meaningful shift",
+      "ks_statistic": 0.0969,
+      "ks_p_value": 1.8828881720542392e-115,
+      "ks_significant": true,
+      "reference_mean": 0.5339,
+      "current_mean": 0.7594
+    },
+    "response_time_seconds": {
+      "psi": 0.0066,
+      "psi_reading": "no meaningful shift",
+      "ks_statistic": 0.0317,
+      "ks_p_value": 1.0328779236709697e-12,
+      "ks_significant": true,
+      "reference_mean": 454.293,
+      "current_mean": 482.3848
+    },
+    "prior_interaction_count": {
+      "psi": 0.0002,
+      "psi_reading": "no meaningful shift",
+      "ks_statistic": 0.0044,
+      "ks_p_value": 0.942502591043286,
+      "ks_significant": false,
+      "reference_mean": 18.2205,
+      "current_mean": 18.329
+    }
+  },
+  "categorical_features": {
+    "topic": {
+      "psi": 0.0119,
+      "psi_reading": "no meaningful shift",
+      "largest_share_changes": {
+        "Current Electricity": 0.0063,
+        "Semiconductor Devices": -0.0058,
+        "p-Block Elements": 0.0055,
+        "Polymers": -0.0053,
+        "Organic Compounds Containing Oxygen": 0.0043
+      }
+    },
+    "selected_difficulty": {
+      "psi": 0.0011,
+      "psi_reading": "no meaningful shift",
+      "largest_share_changes": {
+        "Easy": 0.0167,
+        "Medium": -0.0096,
+        "Hard": -0.007
+      }
+    },
+    "previous_difficulty": {
+      "psi": 0.0009,
+      "psi_reading": "no meaningful shift",
+      "largest_share_changes": {
+        "Easy": 0.0151,
+        "Medium": -0.009,
+        "Hard": -0.0061
+      }
+    }
+  },
+  "target": {
+    "reference_prevalence": 0.1601,
+    "current_prevalence": 0.1611,
+    "psi": 0.0
+  },
+  "features_over_psi_alert_threshold": [],
+  "psi_alert_threshold": 0.2
+}
