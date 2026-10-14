@@ -1,0 +1,44 @@
+# Controlled distribution shift for the Track B demo.
+#
+# Two documented changes relative to the baseline scenario (everything else, including the
+# seed-independent behavioural rules, is unchanged):
+#   1. A larger share of hint-reliant learners (0.15 -> 0.45). Their policy_hint_weight is 0.3, so
+#      hints are a weaker struggle signal for them: this changes the feature->target relationship.
+#   2. Six multi-step / calculation-heavy chapters become harder (score +0.5, success logit -0.4),
+#      following the "more difficulty in multistep problems" example in the spec.
+# Both are simulation assumptions, not findings about real students.
+scenario_id: shifted_v1
+seed: 20261015                      # new seed: independent learners, same rules
+baseline_scenario: configs/track_b/learner_scenarios.yaml
+overrides:
+  population:
+    pattern_mix: {steady: 0.25, hint_reliant: 0.45, fast_guesser: 0.15, persistent: 0.15}
+  topic_overrides:
+    Rotational Motion:        {score_delta: 0.5, success_logit_delta: -0.4}
+    Electromagnetic Induction: {score_delta: 0.5, success_logit_delta: -0.4}
+    Thermodynamics:           {score_delta: 0.5, success_logit_delta: -0.4}
+    Chemical Thermodynamics:  {score_delta: 0.5, success_logit_delta: -0.4}
+    Coordination Compounds:   {score_delta: 0.5, success_logit_delta: -0.4}
+    Atoms and Nuclei:         {score_delta: 0.5, success_logit_delta: -0.4}
+
+datasets:
+  baseline: data/synthetic/learner_interactions_v1.csv
+  shifted: data/synthetic/learner_interactions_shifted_v1.csv
+
+drift_measures:
+  numeric_features: [recent_accuracy, mistake_count, hint_count, response_time_seconds, prior_interaction_count]
+  categorical_features: [topic, selected_difficulty, previous_difficulty]
+  psi_bins: 10
+  psi_alert_threshold: 0.2          # conventional "significant shift" level; reported, not used to gate
+  ks_alpha: 0.01
+
+# The candidate uses the same model family and hyperparameters as the baseline, trained on the
+# training learners of the SHIFTED dataset (the intended deployment population).
+candidate:
+  model_id: candidate_logreg_shifted_v1
+  dataset: data/synthetic/learner_interactions_shifted_v1.csv
+  model: {type: logistic_regression, C: 1.0, class_weight: balanced, max_iter: 1000, random_state: 20261015}
+  decision_threshold: 0.5
+  outputs:
+    model_dir: models/track_b/candidate
+    comparison_report: reports/track_b/candidate_comparison.json

@@ -1,0 +1,64 @@
+# Baseline synthetic-learner scenario for the Track B MLOps demonstration.
+#
+# EVERYTHING in this file is a SIMULATION ASSUMPTION. Public sources (see
+# reports/track_b/public_difficulty_themes.md) motivate the direction of the
+# effects, not their size. Per-topic priors come from
+# configs/track_b/topic_difficulty_priors.csv (SATHEE; low-medium confidence).
+scenario_id: baseline_v1
+schema_version: "1.0.0"
+seed: 20261014
+topic_priors_csv: configs/track_b/topic_difficulty_priors.csv
+
+population:
+  n_learners: 800
+  interactions_per_learner: {min: 20, max: 50}
+  test_fraction: 0.30            # split by learner, never by interaction
+  topic_run_length: {min: 3, max: 8}   # interactions on a topic before moving on
+  ability: {mean: 0.0, sd: 1.0}
+  # Learner behaviour patterns (shares sum to 1).
+  pattern_mix: {steady: 0.45, hint_reliant: 0.15, fast_guesser: 0.20, persistent: 0.20}
+
+# Per-pattern knobs. Direction motivated by the themes report; sizes are assumptions.
+patterns:
+  steady:       {hint_mult: 1.0, speed_mult: 1.0, success_logit_shift:  0.0, policy_hint_weight: 1.0, switch_down_bias: 0.0}
+  hint_reliant: {hint_mult: 2.2, speed_mult: 1.1, success_logit_shift:  0.0, policy_hint_weight: 0.3, switch_down_bias: 0.0}   # uses hints routinely, so hints are a weak struggle signal
+  fast_guesser: {hint_mult: 0.5, speed_mult: 0.6, success_logit_shift: -0.4, policy_hint_weight: 1.0, switch_down_bias: 0.0}
+  persistent:   {hint_mult: 0.8, speed_mult: 1.2, success_logit_shift:  0.0, policy_hint_weight: 1.0, switch_down_bias: 1.2}   # reluctant to drop difficulty
+
+# How a topic's prior turns into behaviour.
+attempt_model:
+  ability_coef: 0.8              # logit change per SD of ability
+  difficulty_coef: 0.9           # logit decrease per difficulty level above Medium
+  success_prob_clip: [0.05, 0.95]
+  max_mistakes: 5
+hints:
+  base_rate: 0.35                # expected hints at score 2.5, no mistakes
+  score_slope: 0.25              # relative increase per SATHEE score point above 2.5
+  mistake_slope: 0.5             # relative increase per mistake
+  max_hints: 4
+response_time:
+  sigma: 0.35                    # log-normal spread
+  difficulty_mult_per_level: 0.35
+  mistake_mult: 0.25
+  hint_mult: 0.15
+  ability_exp: 0.15              # time scales by exp(-ability_exp * ability)
+  min_seconds: 5
+  max_seconds: 3600
+recent_accuracy:
+  window: 5                      # last 5 interactions: share solved with no mistakes
+  neutral_default: 0.5           # used before any history exists
+first_previous_difficulty: same_as_selected   # no predecessor: previous_difficulty = selected_difficulty
+
+# Next-difficulty choice: a "struggle score" with logistic noise.
+next_difficulty_policy:
+  weights:
+    mistakes: 0.9
+    hints: 0.6                   # multiplied by the pattern's policy_hint_weight
+    log_time_ratio: 0.8          # log(time / expected time at this topic and difficulty)
+    recent_accuracy: 2.0         # applied to (0.5 - recent_accuracy)
+    topic_score: 0.4             # per SATHEE score point above 2.5
+  switch_down_threshold: 1.9     # struggle score at which dropping becomes likely
+  switch_up_threshold: -0.6      # struggle score below which raising becomes likely
+  noise_scale: 0.9
+  # Sanity bounds checked after generation (target = next difficulty lower than current).
+  expected_target_prevalence: [0.12, 0.35]

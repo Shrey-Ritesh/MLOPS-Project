@@ -1,0 +1,28 @@
+{
+  "model_id": "baseline_logreg_v1",
+  "feature_columns": [
+    "topic",
+    "selected_difficulty",
+    "recent_accuracy",
+    "mistake_count",
+    "hint_count",
+    "response_time_seconds",
+    "prior_interaction_count",
+    "previous_difficulty"
+  ],
+  "target": "switch_to_lower_difficulty",
+  "decision_threshold": 0.5,
+  "schema_version": "1.0.0",
+  "dataset": "data/synthetic/learner_interactions_v1.csv",
+  "dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "dataset_scenario_id": "baseline_v1",
+  "dataset_scenario_sha256": "157f3dca5c05cbe1b17aa93b21afd4e1d5622891545fd3ab76c36f6e278d37e2",
+  "config": "configs/track_b/baseline.yaml",
+  "config_sha256": "793a3cf436a0d1737d897dba33c362d9e300230538d32926da3d443504b4a057",
+  "sklearn_version": "1.9.1",
+  "trained_on": {
+    "n_rows": 19341,
+    "n_learners": 560
+  },
+  "label": "Trained and evaluated on SYNTHETIC data only; not validated for real students."
+}

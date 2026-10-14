@@ -1,0 +1,25 @@
+# Predefined promotion gate for the Track B demo.
+# Thresholds were fixed after the BASELINE was evaluated and BEFORE any candidate was trained or
+# evaluated; the git history of this file is the evidence. All criteria are mandatory.
+gate_id: promotion_gate_v1
+baseline_test_f1_reference: 0.5908     # baseline F1 on its original held-out learners (reports/track_b/baseline_evaluation.json)
+criteria:
+  minimum_predictive_quality:
+    metric: f1
+    dataset: shifted_test              # candidate on held-out learners of the shifted dataset
+    minimum: 0.55
+  improvement_over_baseline:
+    metric: f1
+    dataset: shifted_test              # same fixed test learners for both models
+    minimum_gain: 0.01                 # candidate F1 - baseline F1 on shifted_test
+  regression_tolerance:
+    dataset: original_test             # candidate must not regress on the original population
+    max_f1_drop: 0.05                  # baseline_f1 - candidate_f1 on original_test
+    max_roc_auc_drop: 0.03
+  data_validity:
+    schema_validation: required        # both datasets pass src/track_b/schema.validate_dataset
+    leakage_check: required            # feature list contains no banned columns
+    learner_level_split: required      # train and test learners are disjoint
+  reproducibility:
+    required_fields: [dataset_sha256, scenario_sha256, config_sha256, git_commit, seed]
+decision_rule: promote only if every criterion passes; otherwise reject and retain the baseline

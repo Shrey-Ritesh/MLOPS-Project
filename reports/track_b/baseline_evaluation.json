@@ -1,0 +1,57 @@
+{
+  "label": "Performance on SYNTHETIC data (held-out learners)",
+  "model_id": "baseline_logreg_v1",
+  "dataset": "data/synthetic/learner_interactions_v1.csv",
+  "dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "split": "by learner; test learners listed in the dataset's .meta.json",
+  "train": {
+    "n_rows": 19341,
+    "n_learners": 560,
+    "positive_rate": 0.1571,
+    "model": {
+      "precision": 0.4354,
+      "recall": 0.7795,
+      "f1": 0.5587,
+      "roc_auc": 0.8902,
+      "confusion_matrix": {
+        "tn": 13230,
+        "fp": 3072,
+        "fn": 670,
+        "tp": 2369
+      }
+    },
+    "majority_class_baseline": {
+      "predicts": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "accuracy": 0.8429
+    },
+    "model_accuracy": 0.8065
+  },
+  "test": {
+    "n_rows": 8697,
+    "n_learners": 240,
+    "positive_rate": 0.1668,
+    "model": {
+      "precision": 0.4754,
+      "recall": 0.7802,
+      "f1": 0.5908,
+      "roc_auc": 0.8972,
+      "confusion_matrix": {
+        "tn": 5997,
+        "fp": 1249,
+        "fn": 319,
+        "tp": 1132
+      }
+    },
+    "majority_class_baseline": {
+      "predicts": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "accuracy": 0.8332
+    },
+    "model_accuracy": 0.8197
+  }
+}

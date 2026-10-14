@@ -1,0 +1,13 @@
+# Baseline model for the Track B demo. Evaluated on held-out LEARNERS of synthetic data.
+model_id: baseline_logreg_v1
+dataset: data/synthetic/learner_interactions_v1.csv      # sidecar .meta.json lists the test learners
+model:
+  type: logistic_regression
+  C: 1.0
+  class_weight: balanced     # the positive class is the minority; chosen up front, not tuned on test data
+  max_iter: 1000
+  random_state: 20261014
+decision_threshold: 0.5
+outputs:
+  model_dir: models/track_b/baseline
+  evaluation_report: reports/track_b/baseline_evaluation.json
