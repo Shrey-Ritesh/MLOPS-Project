@@ -161,3 +161,11 @@ def test_gate_rejects_failed_validity_or_missing_reproducibility_fields():
     assert "data_validity.leakage_check" in [r["criterion"] for r in evaluate_gate(GATE, _comparison(0.6), bad) if not r["passed"]]
     missing = {**OK_CHECKS, "reproducibility_fields_present": {**OK_CHECKS["reproducibility_fields_present"], "git_commit": False}}
     assert "reproducibility" in [r["criterion"] for r in evaluate_gate(GATE, _comparison(0.6), missing) if not r["passed"]]
+
+
+def test_tracking_uses_env_override_and_local_default(monkeypatch):
+    from src.track_b import tracking
+
+    monkeypatch.delenv("MLFLOW_TRACKING_URI", raising=False)
+    assert tracking.DEFAULT_TRACKING_URI == "sqlite:///mlflow.db"
+    assert tracking.REGISTERED_MODEL_NAME == "learner-difficulty"
