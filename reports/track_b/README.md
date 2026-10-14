@@ -37,3 +37,14 @@ The majority-class reference predicts "no switch" for every row (F1 = 0.0, accur
 - The shift was deliberately mild and mostly changed how one feature (hints) relates to the target. Retraining on shifted data did not recover enough to clear the gate, so the baseline is retained. A rejection is a valid outcome of the gate, not a failure of the experiment.
 - Thresholds were not changed after seeing the candidate's results. A stronger shift would be a new experiment (v2) with its own gate committed first.
 - All numbers describe synthetic data. Real-student validity would need real interaction data.
+
+## MLflow (local)
+Runs and models are also logged to a **local** MLflow store (`mlflow.db`, not committed). Re-create it from the saved artifacts, without retraining:
+```bash
+python -m src.track_b.register_mlflow
+mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001     # open http://localhost:5001
+```
+- Experiment `track_b_learner_difficulty` has two runs: the baseline and the candidate (parameters, metrics, dataset/config hashes, reports).
+- Registered model `learner-difficulty`: v1 = baseline, alias `production`; v2 = candidate, alias `rejected_candidate`, tagged with the gate decision. The registry follows `promotion_decision.json`.
+- To use a shared server later, set `MLFLOW_TRACKING_URI=http://<server>:5000`; no code changes.
+- Loading a registered model needs the repo on `PYTHONPATH` (the pipeline uses helpers from `src.track_b.modeling`).
