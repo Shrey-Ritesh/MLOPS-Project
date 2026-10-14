@@ -1,0 +1,22 @@
+{
+  "embedder_version": "v1",
+  "built_at_utc": "2026-10-14T03:31:24.897716+00:00",
+  "input_path": "data\\processed\\jee_questions.jsonl",
+  "input_sha256": "82236e361be80553d9fbdf8d964942e8d64d99ec34a7a7c2414632b9f463e4b8",
+  "records_read_before_limit": 598,
+  "records_considered": 598,
+  "records_indexed": 598,
+  "records_skipped_empty": 0,
+  "collection_name": "jee_questions_v1",
+  "distance_metric": "cosine",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_model_revision": null,
+  "embedding_dimension": 384,
+  "normalize_embeddings": true,
+  "text_template": "{question_text}",
+  "python_version": "3.13.5",
+  "sentence_transformers_version": "5.7.0",
+  "chromadb_client_version": "1.5.9",
+  "collection_count_after_build": 598,
+  "note": "Derived index; rebuild from JSONL/config. chapter_id is not required for embedding."
+}

@@ -1,0 +1,20 @@
+# JEE question embedding/index configuration v1; separate from NCERT.
+embedding:
+  model_name: sentence-transformers/all-MiniLM-L6-v2
+  model_revision: null
+  normalize_embeddings: true
+  max_input_tokens: 256
+
+document:
+  input_path: data/processed/jee_questions.jsonl
+  id_field: question_id
+  skip_empty_text: true
+  # One canonical question = one document. Answers/solutions are excluded.
+  text_template: "{question_text}"
+
+vector_store:
+  host: localhost
+  port: 8000
+  collection_name: jee_questions_v1
+  distance_metric: cosine
+  upsert_batch_size: 64
