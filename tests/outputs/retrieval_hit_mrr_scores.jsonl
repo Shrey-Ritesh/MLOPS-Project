@@ -1,0 +1,18 @@
+{
+  "corpus": "ncert",
+  "k": 4,
+  "labelled_queries": 8,
+  "total_queries": 10,
+  "Hit@k": 1.0,
+  "MRR@k": 0.9167,
+  "note": null
+}
+{
+  "corpus": "jee",
+  "k": 4,
+  "labelled_queries": 7,
+  "total_queries": 10,
+  "Hit@k": 1.0,
+  "MRR@k": 1.0,
+  "note": null
+}
