@@ -4,6 +4,7 @@ venv/
 .venv/
 .env
 .env.*
+!.env.example
 *.env
 aws_access_key.txt
 *access_key*
