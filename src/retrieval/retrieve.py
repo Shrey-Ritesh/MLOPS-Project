@@ -332,6 +332,7 @@ def retrieve(
     ncert_config_path: str = "configs/retrieval.yaml",
     jee_config_path: str = "configs/jee_retrieval_v1.yaml",
     fetch_multiplier: int = FETCH_MULTIPLIER,
+    subject: str | None = None,
 ) -> dict[str, Any]:
     query = query.strip()
     level = level.casefold().strip()
@@ -342,8 +343,17 @@ def retrieve(
         raise ValueError("Level must be easy, medium, or hard.")
     if fetch_multiplier < 1:
         raise ValueError("fetch_multiplier must be >= 1")
+    if subject is not None and subject.casefold().strip() not in {
+        "physics", "chemistry", "mathematics", "math"
+    }:
+        raise ValueError("Subject must be Physics, Chemistry, or Mathematics.")
 
     query_request = build_query_request(query, difficulty=level)
+    if subject:
+        query_request["subject"] = (
+            "mathematics" if subject.casefold().strip() == "math"
+            else subject.casefold().strip()
+        )
 
     # UNCLEAR should not trigger arbitrary vector searches.
     if query_request["needs_clarification"] or not query_request["retrieval_targets"]:
@@ -429,6 +439,8 @@ def retrieve(
             ids, documents, metadatas, distances
         ):
             metadata = metadata or {}
+            if subject and str(metadata.get("subject") or "").casefold() != query_request["subject"]:
+                continue
             document = document or ""
 
             if corpus == "ncert":
