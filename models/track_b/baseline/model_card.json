@@ -14,12 +14,12 @@
   "decision_threshold": 0.5,
   "schema_version": "1.0.0",
   "dataset": "data/synthetic/learner_interactions_v1.csv",
-  "dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "dataset_sha256": "490506a45cee7bc46ebed63840b55bc6d281ac24d4c0b3edc5b3b67c1b5376c3",
   "dataset_scenario_id": "baseline_v1",
   "dataset_scenario_sha256": "157f3dca5c05cbe1b17aa93b21afd4e1d5622891545fd3ab76c36f6e278d37e2",
-  "config": "configs/track_b/baseline.yaml",
-  "config_sha256": "793a3cf436a0d1737d897dba33c362d9e300230538d32926da3d443504b4a057",
-  "sklearn_version": "1.9.1",
+  "config": "configs\\track_b\\baseline.yaml",
+  "config_sha256": "76a5a7cdf9337c58792793cf3ca56c81e838f0a59132588ef91e348c6142cad2",
+  "sklearn_version": "1.7.2",
   "trained_on": {
     "n_rows": 19341,
     "n_learners": 560

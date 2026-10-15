@@ -2,8 +2,8 @@
   "label": "Candidate vs baseline on SYNTHETIC data, same fixed held-out learners",
   "protocol": "both models scored on the same shifted_test and original_test learners; test learners never used for training",
   "datasets": {
-    "shifted": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
-    "original": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe"
+    "shifted": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
+    "original": "490506a45cee7bc46ebed63840b55bc6d281ac24d4c0b3edc5b3b67c1b5376c3"
   },
   "baseline": {
     "model_id": "baseline_logreg_v1",
@@ -11,6 +11,8 @@
       "n_rows": 8500,
       "n_learners": 240,
       "positive_rate": 0.1646,
+      "decision_threshold": 0.5,
+      "boundary_guard_applied": false,
       "model": {
         "precision": 0.4161,
         "recall": 0.7798,
@@ -36,6 +38,8 @@
       "n_rows": 8697,
       "n_learners": 240,
       "positive_rate": 0.1668,
+      "decision_threshold": 0.5,
+      "boundary_guard_applied": false,
       "model": {
         "precision": 0.4754,
         "recall": 0.7802,
@@ -59,21 +63,23 @@
     }
   },
   "candidate": {
-    "model_id": "candidate_logreg_shifted_v1",
+    "model_id": "candidate_hgb_shifted_v2",
     "shifted_test": {
       "n_rows": 8500,
       "n_learners": 240,
       "positive_rate": 0.1646,
+      "decision_threshold": 0.7,
+      "boundary_guard_applied": true,
       "model": {
-        "precision": 0.4148,
-        "recall": 0.7655,
-        "f1": 0.5381,
-        "roc_auc": 0.8779,
+        "precision": 0.6692,
+        "recall": 0.6969,
+        "f1": 0.6828,
+        "roc_auc": 0.9269,
         "confusion_matrix": {
-          "tn": 5590,
-          "fp": 1511,
-          "fn": 328,
-          "tp": 1071
+          "tn": 6619,
+          "fp": 482,
+          "fn": 424,
+          "tp": 975
         }
       },
       "majority_class_baseline": {
@@ -83,22 +89,24 @@
         "f1": 0.0,
         "accuracy": 0.8354
       },
-      "model_accuracy": 0.7836
+      "model_accuracy": 0.8934
     },
     "original_test": {
       "n_rows": 8697,
       "n_learners": 240,
       "positive_rate": 0.1668,
+      "decision_threshold": 0.7,
+      "boundary_guard_applied": true,
       "model": {
-        "precision": 0.4574,
-        "recall": 0.765,
-        "f1": 0.5725,
-        "roc_auc": 0.8937,
+        "precision": 0.7145,
+        "recall": 0.7002,
+        "f1": 0.7073,
+        "roc_auc": 0.9351,
         "confusion_matrix": {
-          "tn": 5929,
-          "fp": 1317,
-          "fn": 341,
-          "tp": 1110
+          "tn": 6840,
+          "fp": 406,
+          "fn": 435,
+          "tp": 1016
         }
       },
       "majority_class_baseline": {
@@ -108,21 +116,21 @@
         "f1": 0.0,
         "accuracy": 0.8332
       },
-      "model_accuracy": 0.8094
+      "model_accuracy": 0.9033
     }
   },
   "candidate_minus_baseline": {
     "shifted_test": {
-      "precision": -0.0013,
-      "recall": -0.0143,
-      "f1": -0.0046,
-      "roc_auc": -0.0014
+      "precision": 0.2531,
+      "recall": -0.0829,
+      "f1": 0.1401,
+      "roc_auc": 0.0476
     },
     "original_test": {
-      "precision": -0.018,
-      "recall": -0.0152,
-      "f1": -0.0183,
-      "roc_auc": -0.0035
+      "precision": 0.2391,
+      "recall": -0.08,
+      "f1": 0.1165,
+      "roc_auc": 0.0379
     }
   }
 }

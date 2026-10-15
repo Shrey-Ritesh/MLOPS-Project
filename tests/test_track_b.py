@@ -13,7 +13,9 @@ from src.track_b.schema import (
     BANNED_FEATURES,
     COLUMNS,
     FEATURE_COLUMNS,
+    SCHEMA_VERSION,
     SchemaError,
+    TARGET,
     check_feature_list,
     validate_dataset,
 )
@@ -163,7 +165,28 @@ def test_gate_rejects_failed_validity_or_missing_reproducibility_fields():
     assert "reproducibility" in [r["criterion"] for r in evaluate_gate(GATE, _comparison(0.6), missing) if not r["passed"]]
 
 
+def test_difficulty_boundary_guard_zeros_easy():
+    from src.track_b.modeling import apply_difficulty_boundary_guard
+    proba = np.array([0.9, 0.8, 0.7])
+    diff = pd.Series(["Easy", "Medium", "Hard"])
+    guarded = apply_difficulty_boundary_guard(proba, diff)
+    assert guarded[0] == 0.0
+    assert guarded[1] == 0.8
+    assert guarded[2] == 0.7
+
+
+def test_hgb_pipeline_construction_and_tuning(small_dataset):
+    from src.track_b.modeling import build_pipeline, tune_threshold_on_train
+    df, _ = small_dataset
+    pipe = build_pipeline({"type": "hist_gradient_boosting", "max_iter": 10})
+    pipe.fit(df[FEATURE_COLUMNS], df[TARGET])
+    proba = pipe.predict_proba(df[FEATURE_COLUMNS])[:, 1]
+    thr = tune_threshold_on_train(df[TARGET].to_numpy(), proba)
+    assert 0.2 <= thr <= 0.85
+
+
 def test_tracking_uses_env_override_and_local_default(monkeypatch):
+    pytest.importorskip("mlflow")
     from src.track_b import tracking
 
     monkeypatch.delenv("MLFLOW_TRACKING_URI", raising=False)
