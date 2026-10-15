@@ -107,10 +107,16 @@ def main() -> None:
         **_metrics("shifted_test", comparison["candidate"]["shifted_test"]),
         **_metrics("original_test", comparison["candidate"]["original_test"]),
     }
+    cand_model_id = cand_card.get("model_id", comparison["candidate"]["model_id"])
+    cand_params = {
+        "model_id": cand_model_id,
+        "decision_threshold": cand_card["decision_threshold"],
+        "apply_boundary_guard": cand_card.get("apply_boundary_guard", True),
+        "dataset": cand_card["dataset"],
+    }
     cand_run, cand_version = log_model_run(
-        client, experiment_id, Path("models/track_b/candidate"), "candidate_logreg_shifted_v1",
-        {"model_type": "logistic_regression", "C": 1.0, "class_weight": "balanced",
-         "decision_threshold": cand_card["decision_threshold"], "dataset": cand_card["dataset"]},
+        client, experiment_id, Path("models/track_b/candidate"), cand_model_id,
+        cand_params,
         cand_metrics,
         {"role": "candidate", "gate_decision": decision["decision"],
          "gate_failed_criteria": ",".join(decision["failed_criteria"]) or "none"},
