@@ -38,3 +38,8 @@ src/data/preview_single_paper.py
 .idea/
 .DS_Store
 Thumbs.db
+
+# MLflow local tracking data (runs and artifacts are not source)
+mlflow.db
+mlruns/
+mlartifacts/

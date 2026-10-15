@@ -184,3 +184,11 @@ def test_hgb_pipeline_construction_and_tuning(small_dataset):
     thr = tune_threshold_on_train(df[TARGET].to_numpy(), proba)
     assert 0.2 <= thr <= 0.85
 
+
+def test_tracking_uses_env_override_and_local_default(monkeypatch):
+    pytest.importorskip("mlflow")
+    from src.track_b import tracking
+
+    monkeypatch.delenv("MLFLOW_TRACKING_URI", raising=False)
+    assert tracking.DEFAULT_TRACKING_URI == "sqlite:///mlflow.db"
+    assert tracking.REGISTERED_MODEL_NAME == "learner-difficulty"

@@ -44,7 +44,18 @@ The majority-class reference predicts "no switch" for every row (F1 = 0.0, accur
 4. **Promotion Decision (`promotion_decision.json`)**: **`PROMOTE_CANDIDATE`**. All criteria passed with large safety margins (+0.1401 F1 gain over baseline, zero regression on original population, verified schema/leakage integrity, and pre-committed gate integrity).
 
 ## Interpretation and Limits
-- A rejected candidate is an essential milestone in authentic model governance: it proves that the promotion gate actively blocks degraded models rather than rubber-stamping retrains.
-- Candidate v2 resolves the architectural bottleneck and achieves high precision (0.6692 vs 0.4148) and strong generalization.
+- A rejected candidate (v1) was an essential milestone in authentic model governance: it proved that the promotion gate actively blocks degraded models rather than rubber-stamping retrains.
+- Candidate v2 resolved the architectural bottleneck through non-linear gradient boosting, the domain difficulty guard, and calibrated threshold tuning, achieving high precision (0.6692 vs 0.4148) and strong generalization.
 - All numbers describe synthetic data. Real-student validity would require real interaction telemetry.
+
+## MLflow (local)
+Runs and models are also logged to a **local** MLflow store (`mlflow.db`, not committed). Re-create it from the saved artifacts, without retraining:
+```bash
+python -m src.track_b.register_mlflow
+mlflow ui --backend-store-uri sqlite:///mlflow.db --port 5001     # open http://localhost:5001
+```
+- Experiment `track_b_learner_difficulty` logs both runs: the baseline and the candidate (parameters, metrics, dataset/config hashes, reports).
+- Registered model `learner-difficulty`: v1 = baseline, alias `production` (or predecessor); v2 = candidate, alias `production` (when promoted via the gate) or `rejected_candidate` (when rejected). The registry follows `promotion_decision.json`.
+- To use a shared server later, set `MLFLOW_TRACKING_URI=http://<server>:5000`; no code changes.
+- Loading a registered model needs the repo on `PYTHONPATH` (the pipeline uses helpers from `src.track_b.modeling`).
 
