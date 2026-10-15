@@ -44,7 +44,18 @@ def main() -> None:
 
     model = build_pipeline(cand["model"])
     model.fit(shifted_train[FEATURE_COLUMNS], shifted_train[TARGET])
-    thr = cand["decision_threshold"]
+
+    apply_guard = bool(cand.get("apply_boundary_guard", True))
+    thr_cfg = cand.get("decision_threshold", 0.5)
+    if thr_cfg == "auto_tune" or thr_cfg == "tune_on_train":
+        from src.track_b.modeling import apply_difficulty_boundary_guard, tune_threshold_on_train
+        tr_proba = model.predict_proba(shifted_train[FEATURE_COLUMNS])[:, 1]
+        if apply_guard:
+            tr_proba = apply_difficulty_boundary_guard(tr_proba, shifted_train["selected_difficulty"])
+        thr = tune_threshold_on_train(shifted_train[TARGET].to_numpy(), tr_proba)
+        print(f"Optimized decision threshold on train learners: {thr:.4f}")
+    else:
+        thr = float(thr_cfg)
 
     model_dir = Path(cand["outputs"]["model_dir"])
     model_dir.mkdir(parents=True, exist_ok=True)
@@ -54,6 +65,7 @@ def main() -> None:
         "feature_columns": FEATURE_COLUMNS,
         "target": TARGET,
         "decision_threshold": thr,
+        "apply_boundary_guard": apply_guard,
         "schema_version": SCHEMA_VERSION,
         "dataset": cand["dataset"],
         "dataset_sha256": file_sha256(cand["dataset"]),
@@ -76,13 +88,13 @@ def main() -> None:
     results = {
         "baseline": {
             "model_id": base_card["model_id"],
-            "shifted_test": evaluate(baseline, shifted_test, base_card["decision_threshold"]),
-            "original_test": evaluate(baseline, original_test, base_card["decision_threshold"]),
+            "shifted_test": evaluate(baseline, shifted_test, base_card["decision_threshold"], apply_guard=False),
+            "original_test": evaluate(baseline, original_test, base_card["decision_threshold"], apply_guard=False),
         },
         "candidate": {
             "model_id": cand["model_id"],
-            "shifted_test": evaluate(model, shifted_test, thr),
-            "original_test": evaluate(model, original_test, thr),
+            "shifted_test": evaluate(model, shifted_test, thr, apply_guard=apply_guard),
+            "original_test": evaluate(model, original_test, thr, apply_guard=apply_guard),
         },
     }
     delta = {}

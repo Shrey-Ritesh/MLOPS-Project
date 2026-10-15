@@ -2,12 +2,12 @@
   "kind": "DATA DRIFT (input and target distributions); says nothing by itself about model quality",
   "reference": {
     "dataset": "data/synthetic/learner_interactions_v1.csv",
-    "sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+    "sha256": "490506a45cee7bc46ebed63840b55bc6d281ac24d4c0b3edc5b3b67c1b5376c3",
     "scenario_id": "baseline_v1"
   },
   "current": {
     "dataset": "data/synthetic/learner_interactions_shifted_v1.csv",
-    "sha256": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
+    "sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
     "scenario_id": "shifted_v1"
   },
   "documented_changes": {
@@ -51,7 +51,7 @@
       "psi": 0.0017,
       "psi_reading": "no meaningful shift",
       "ks_statistic": 0.0142,
-      "ks_p_value": 0.006816750887470487,
+      "ks_p_value": 0.006816750887470515,
       "ks_significant": true,
       "reference_mean": 0.6079,
       "current_mean": 0.6041
@@ -69,7 +69,7 @@
       "psi": 0.0564,
       "psi_reading": "no meaningful shift",
       "ks_statistic": 0.0969,
-      "ks_p_value": 1.8828881720542392e-115,
+      "ks_p_value": 1.8828881720530767e-115,
       "ks_significant": true,
       "reference_mean": 0.5339,
       "current_mean": 0.7594
@@ -78,7 +78,7 @@
       "psi": 0.0066,
       "psi_reading": "no meaningful shift",
       "ks_statistic": 0.0317,
-      "ks_p_value": 1.0328779236709697e-12,
+      "ks_p_value": 1.0328779236710733e-12,
       "ks_significant": true,
       "reference_mean": 454.293,
       "current_mean": 482.3848

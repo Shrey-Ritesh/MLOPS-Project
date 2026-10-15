@@ -2,12 +2,14 @@
   "label": "Performance on SYNTHETIC data (held-out learners)",
   "model_id": "baseline_logreg_v1",
   "dataset": "data/synthetic/learner_interactions_v1.csv",
-  "dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "dataset_sha256": "490506a45cee7bc46ebed63840b55bc6d281ac24d4c0b3edc5b3b67c1b5376c3",
   "split": "by learner; test learners listed in the dataset's .meta.json",
   "train": {
     "n_rows": 19341,
     "n_learners": 560,
     "positive_rate": 0.1571,
+    "decision_threshold": 0.5,
+    "boundary_guard_applied": false,
     "model": {
       "precision": 0.4354,
       "recall": 0.7795,
@@ -33,6 +35,8 @@
     "n_rows": 8697,
     "n_learners": 240,
     "positive_rate": 0.1668,
+    "decision_threshold": 0.5,
+    "boundary_guard_applied": false,
     "model": {
       "precision": 0.4754,
       "recall": 0.7802,
