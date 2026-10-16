@@ -7,7 +7,7 @@ import streamlit as st
 from groq import Groq
 from dotenv import load_dotenv
 
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = "qwen/qwen3.8-27b"
 SUBJECTS = ("Physics", "Chemistry", "Mathematics")
 DIFFICULTIES = ("Easy", "Medium", "Hard")
 

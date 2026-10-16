@@ -21,7 +21,7 @@ from src.track_b import tracking
 from src.track_b.modeling import file_sha256
 
 REPORTS = Path("reports/track_b")
-TRUSTED_TYPES = ["src.track_b.modeling._log1p", "src.track_b.modeling._ordinal"]
+TRUSTED_TYPES = ["src.track_b.modeling._log1p", "src.track_b.modeling._ordinal", "sklearn.ensemble._hist_gradient_boosting.predictor.TreePredictor"]
 
 
 def _read(path: Path) -> dict:
