@@ -2,7 +2,7 @@
 
 ## Current state (audited Day 1)
 
-- Branches: `main` plus feature branches on origin (`feature/track-b`, `feature/track-d-universal-extractor`, `frontend`, `track-b-ncert`). There is **no `dev` branch** yet and no branch protection verified.
+- Branches: `main` plus feature branches on origin (`feature/track-b`, `feature/track-d-universal-extractor`, `frontend`, `track-b-ncert`). There is **no `dev` branch** yet and no branch protection at the time of the audit (since added, see below).
 - No CI existed (`.github/` was absent). Remote: `git@github.com:Shrey-Ritesh/MLOPS-Project.git`.
 - No lint/format config (`pyproject.toml`, `ruff.toml`, `setup.cfg` all absent). Tests are plain `pytest` in `tests/`.
 - `.env.example` is referenced by the README but is not in the repo (Day 2 task).
@@ -13,7 +13,7 @@
 1. Branch from `dev` using short-lived names: `feat/...`, `chore/...`, `fix/...`.
 2. Open a PR into `dev`; CI must be green; keep PRs to one workstream.
 3. Release PR `dev` -> `main` after integration review. Keep `main` release-ready.
-4. One-time setup needed by someone with repo admin rights: create `dev` from `main`, set it as the PR target, and require the `CI / checks` status on `dev` and `main`.
+4. Branch protection is configured on `dev` and `main` (the repo is public, so GitHub enforces it on the free plan): a PR is required before merging, the `checks` CI status must pass, and force pushes/deletions are blocked. Admins are not forced to follow the rules (bypass is allowed) so the owner can recover from mistakes.
 
 ## CI (`.github/workflows/ci.yml`)
 
