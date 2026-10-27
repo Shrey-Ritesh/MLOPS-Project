@@ -52,7 +52,7 @@ jobs:
         #  - test_query_gateway: asserts a 'subject' key the code no longer returns
         #  - test_source_record_creation: needs DVC-pulled data/raw
         run: >
-          pytest -q
+          python -m pytest -q
           --ignore=tests/test_retrieval.py
           --ignore=tests/test_retriever_gateway.py
           --ignore=tests/test_query_gateway.py
