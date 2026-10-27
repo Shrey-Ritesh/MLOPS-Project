@@ -44,3 +44,11 @@ Thumbs.db
 mlflow.db
 mlruns/
 mlartifacts/
+
+# Local services / caches (Chroma persistence, model caches)
+chroma_data/
+.chroma/
+chroma/
+.cache/
+hf_cache/
+*.sqlite3
