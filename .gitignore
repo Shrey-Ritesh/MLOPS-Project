@@ -44,3 +44,4 @@ Thumbs.db
 mlflow.db
 mlruns/
 mlartifacts/
+data/learner_history.sqlite3*
