@@ -21,6 +21,9 @@ The frontend retrieves subject-matched NCERT excerpts and JEE questions from
 the project's Chroma indexes and supplies them to Groq as reference material.
 If retrieval is unavailable, the tutor still responds without project context.
 
+Environment variables, Docker usage and health checks are documented in
+[`docs/local_startup.md`](docs/local_startup.md).
+
 ### Prepare DVC data and retrieval indexes
 
 The processed source records are tracked with DVC. Pull them first (access to

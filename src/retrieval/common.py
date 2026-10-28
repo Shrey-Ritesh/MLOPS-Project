@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -65,9 +66,10 @@ def document_text(record: dict[str, Any], template: str) -> str:
 
 def connect_chroma(config: dict[str, Any]):
     store = config["vector_store"]
+    # CHROMA_HOST / CHROMA_PORT override the YAML so containers can reach the service.
     client = chromadb.HttpClient(
-        host=str(store.get("host", "localhost")),
-        port=int(store.get("port", 8000)),
+        host=os.environ.get("CHROMA_HOST") or str(store.get("host", "localhost")),
+        port=int(os.environ.get("CHROMA_PORT") or store.get("port", 8000)),
     )
     client.heartbeat()
     return client
