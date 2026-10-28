@@ -7,6 +7,13 @@ import streamlit as st
 from groq import Groq
 from dotenv import load_dotenv
 
+from src.handwriting.ocr_space import (
+    ImageValidationError,
+    OCRSpaceError,
+    OCRSpaceRecognizer,
+    validate_image,
+)
+
 DEFAULT_MODEL = "qwen/qwen3.8-27b"
 SUBJECTS = ("Physics", "Chemistry", "Mathematics")
 DIFFICULTIES = ("Easy", "Medium", "Hard")
@@ -20,6 +27,103 @@ def _api_key() -> str | None:
     except (FileNotFoundError, RuntimeError):
         secret_key = ""
     return secret_key
+
+
+def _ocr_space_api_key() -> str:
+    """Read the OCR.space API key from environment or Streamlit secrets."""
+    load_dotenv()
+    api_key = os.getenv("OCR_SPACE_API_KEY", "")
+    try:
+        api_key = api_key or st.secrets.get("OCR_SPACE_API_KEY", "")
+    except (FileNotFoundError, RuntimeError):
+        pass
+    return api_key
+
+
+def render_handwriting_submission() -> None:
+    """Render image transcription and learner correction, ready for evaluation."""
+    st.subheader("Submit a handwritten answer")
+    st.caption(
+        "Upload a clear image of your work. Review and correct the transcription "
+        "before it is used; chemical notation may need manual edits."
+    )
+
+    with st.form("handwriting_upload_form"):
+        image_file = st.file_uploader(
+            "Answer image",
+            type=["png", "jpg", "jpeg"],
+            help="PNG or JPEG; maximum 1 MB on the free OCR.space tier.",
+            key="handwriting_image_upload",
+        )
+        transcribe = st.form_submit_button("Transcribe with OCR.space")
+
+    if transcribe:
+        if image_file is None:
+            st.warning("Choose an image before requesting transcription.")
+        else:
+            st.session_state.pop("handwriting_transcription", None)
+            st.session_state.pop("handwriting_transcription_meta", None)
+            st.session_state.pop("handwriting_confirmed_text", None)
+            api_key = _ocr_space_api_key()
+            if not api_key or api_key.startswith("your_"):
+                st.error(
+                    "OCR.space is not configured. Set OCR_SPACE_API_KEY "
+                    "in .env or Streamlit secrets."
+                )
+            else:
+                try:
+                    image_bytes = image_file.getvalue()
+                    image_format, mime_type = validate_image(image_bytes)
+                    recognizer = OCRSpaceRecognizer(api_key)
+                    with st.spinner("Reading your handwriting…"):
+                        result = recognizer.transcribe(
+                            image_bytes,
+                            mime_type=mime_type,
+                            image_format=image_format,
+                        )
+                    st.session_state["handwriting_transcription"] = result.text
+                    st.session_state["handwriting_transcription_meta"] = {
+                        "recognizer": result.recognizer,
+                        "exit_code": result.exit_code,
+                        "filename": image_file.name,
+                    }
+                    st.session_state.pop("handwriting_confirmed_text", None)
+                except ImageValidationError as exc:
+                    st.error(str(exc))
+                except OCRSpaceError as exc:
+                    st.error(f"OCR.space could not transcribe this image: {exc}")
+
+    transcription = st.session_state.get("handwriting_transcription")
+    if transcription:
+        metadata = st.session_state.get("handwriting_transcription_meta", {})
+        st.caption(
+            f"Recognized by {metadata.get('recognizer', 'OCR.space Engine 3')} "
+            f"from {metadata.get('filename', 'uploaded image')}."
+        )
+        st.info("OCR may misread handwriting and chemical notation. Review every symbol carefully.")
+
+        with st.form("handwriting_correction_form"):
+            corrected_text = st.text_area(
+                "Review and correct the transcription",
+                value=transcription,
+                height=180,
+                help="Fix subscripts, charges, reaction arrows, signs, and any other OCR errors.",
+            )
+            confirm = st.form_submit_button("Confirm transcription")
+
+        if confirm:
+            if not corrected_text.strip():
+                st.warning("The corrected answer cannot be empty. Edit it or use typed entry.")
+            else:
+                st.session_state["handwriting_confirmed_text"] = corrected_text.strip()
+
+        confirmed_text = st.session_state.get("handwriting_confirmed_text")
+        if confirmed_text:
+            st.success("Transcription confirmed and ready for answer evaluation.")
+            st.caption(
+                "The current main branch does not yet include the shared answer evaluator; "
+                "the confirmed text is retained in this Streamlit session for that integration."
+            )
 
 
 def generate_tutoring_response(
@@ -108,6 +212,9 @@ def main() -> None:
     st.title("🎓 JEE Tutor")
     st.caption("Ask a question and get a guided explanation tailored to you.")
 
+    with st.expander("Handwritten answer input", expanded=False):
+        render_handwriting_submission()
+
     with st.form("tutor_prompt_form"):
         prompt = st.text_area(
             "What would you like help with?",
@@ -118,50 +225,47 @@ def main() -> None:
         difficulty = st.selectbox("Difficulty", DIFFICULTIES, index=1)
         submitted = st.form_submit_button("Ask the tutor", type="primary")
 
-    if not submitted:
-        return
-    if not prompt.strip():
-        st.warning("Enter a question or topic first.")
-        return
-
-    api_key = _api_key()
-    if not api_key or api_key == "your_groq_api_key_here":
-        st.error(
-            "Groq API key is not configured. Set GROQ_API_KEY in your environment "
-            "or Streamlit secrets, using .env.example as a reference."
-        )
-        return
-
-    retrieval_sources: list[str] = []
-    retrieval_error: str | None = None
-    retrieval_context = ""
-    try:
-        with st.spinner("Preparing your explanation…"):
-            try:
-                retrieval_context, retrieval_sources = retrieve_project_context(
-                    prompt.strip(), subject, difficulty
-                )
-            except Exception as exc:
-                # Retrieval is optional so a missing index never blocks tutoring.
-                retrieval_error = str(exc)
-            answer = generate_tutoring_response(
-                prompt.strip(), subject, difficulty, api_key, retrieval_context
-            )
-        st.subheader("Your tutor's response")
-        st.markdown(answer)
-        if retrieval_sources:
-            with st.expander("Project references used"):
-                for source in retrieval_sources:
-                    st.markdown(f"- {source}")
-        elif retrieval_error:
-            st.info(
-                "The answer was generated without project references because "
-                "the local retrieval index was unavailable. See setup steps in README.md."
-            )
+    if submitted:
+        if not prompt.strip():
+            st.warning("Enter a question or topic first.")
         else:
-            st.info("No matching project references were found for this prompt.")
-    except Exception as exc:  # Surface SDK/network errors in the UI.
-        st.error(f"Could not get a response from Groq: {exc}")
+            api_key = _api_key()
+            if not api_key or api_key == "your_groq_api_key_here":
+                st.error(
+                    "Groq API key is not configured. Set GROQ_API_KEY in your environment "
+                    "or Streamlit secrets, using .env.example as a reference."
+                )
+            else:
+                retrieval_sources: list[str] = []
+                retrieval_error: str | None = None
+                retrieval_context = ""
+                try:
+                    with st.spinner("Preparing your explanation…"):
+                        try:
+                            retrieval_context, retrieval_sources = retrieve_project_context(
+                                prompt.strip(), subject, difficulty
+                            )
+                        except Exception as exc:
+                            # Retrieval is optional so a missing index never blocks tutoring.
+                            retrieval_error = str(exc)
+                        answer = generate_tutoring_response(
+                            prompt.strip(), subject, difficulty, api_key, retrieval_context
+                        )
+                    st.subheader("Your tutor's response")
+                    st.markdown(answer)
+                    if retrieval_sources:
+                        with st.expander("Project references used"):
+                            for source in retrieval_sources:
+                                st.markdown(f"- {source}")
+                    elif retrieval_error:
+                        st.info(
+                            "The answer was generated without project references because "
+                            "the local retrieval index was unavailable. See setup steps in README.md."
+                        )
+                    else:
+                        st.info("No matching project references were found for this prompt.")
+                except Exception as exc:  # Surface SDK/network errors in the UI.
+                    st.error(f"Could not get a response from Groq: {exc}")
 
 
 if __name__ == "__main__":
