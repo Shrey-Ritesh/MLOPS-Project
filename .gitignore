@@ -45,3 +45,11 @@ mlflow.db
 mlruns/
 mlartifacts/
 data/learner_history.sqlite3*
+
+# Local services / caches (Chroma persistence, model caches)
+chroma_data/
+.chroma/
+chroma/
+.cache/
+hf_cache/
+*.sqlite3

@@ -1,0 +1,14 @@
+# Minimal dependencies for the fast PR checks (lint + unit tests + config validation).
+# The full requirements.txt is a Windows pip-freeze (UTF-16, includes pywin32, torch,
+# transformers) and is too heavy/non-portable for per-PR CI.
+pytest==9.1.1
+ruff
+pydantic==2.13.5
+PyYAML==6.0.3
+numpy==2.5.4
+pandas==3.0.6
+scikit-learn==1.9.1
+scipy==1.18.1
+joblib==1.6.0
+mlflow==3.17.1
+PyMuPDF==1.28.2
