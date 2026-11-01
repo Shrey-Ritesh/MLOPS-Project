@@ -32,6 +32,20 @@ LEVEL_ALLOCATION = {
     "hard": {"ncert": 2, "jee": 6},
 }
 
+
+def retrieval_plan(
+    query_request: dict[str, Any],
+    level: str,
+) -> dict[str, int]:
+    """Compute the per-corpus retrieval quota allocation based on intent and difficulty."""
+    level_key = level.casefold().strip()
+    base_allocation = LEVEL_ALLOCATION.get(level_key, {"ncert": 0, "jee": 0})
+    targets = set(query_request.get("retrieval_targets", []))
+    return {
+        corpus: (base_allocation.get(corpus, 0) if corpus in targets else 0)
+        for corpus in ("ncert", "jee")
+    }
+
 # Retrieve more than the final quota so reranking has alternatives.
 FETCH_MULTIPLIER = 5
 MIN_CANDIDATES = 20
@@ -291,21 +305,33 @@ def load_question_lookup(
     return lookup
 
 
+def _validate_embedding_compatibility(
+    ncert_cfg: dict[str, Any],
+    jee_cfg: dict[str, Any],
+) -> None:
+    """Validate that two configurations share an identical, compatible embedding model."""
+    ncert_emb = ncert_cfg.get("embedding", {})
+    jee_emb = jee_cfg.get("embedding", {})
+
+    if ncert_emb.get("model_name") != jee_emb.get("model_name"):
+        raise ValueError(
+            f"Embedding model mismatch: {ncert_emb.get('model_name')!r} and "
+            f"{jee_emb.get('model_name')!r} are incompatible."
+        )
+
+    for field in ("model_revision", "normalize_embeddings"):
+        if ncert_emb.get(field) != jee_emb.get(field):
+            raise ValueError(
+                f"Embedding {field} mismatch: {ncert_emb.get(field)!r} != {jee_emb.get(field)!r}"
+            )
+
+
 def _validate_compatible_configs(
     ncert_cfg: dict[str, Any],
     jee_cfg: dict[str, Any],
 ) -> None:
     """Ensure the same query vector is valid for both collections."""
-    fields = ("model_name", "model_revision", "normalize_embeddings")
-
-    for field in fields:
-        ncert_value = ncert_cfg["embedding"].get(field)
-        jee_value = jee_cfg["embedding"].get(field)
-        if ncert_value != jee_value:
-            raise ValueError(
-                f"NCERT and JEE embedding configs disagree on {field!r}: "
-                f"{ncert_value!r} != {jee_value!r}"
-            )
+    _validate_embedding_compatibility(ncert_cfg, jee_cfg)
 
     ncert_store = ncert_cfg["vector_store"]
     jee_store = jee_cfg["vector_store"]
@@ -395,17 +421,12 @@ def retrieve(
         collections[corpus] = collection
 
     model = load_embedder(ncert_cfg)
-    query_vector = encode_texts(
+    raw_vector = encode_texts(
         model, [query_request["normalized_query"]], ncert_cfg
-    )[0].tolist()
+    )[0]
+    query_vector = raw_vector.tolist() if hasattr(raw_vector, "tolist") else list(raw_vector)
 
-    base_allocation = LEVEL_ALLOCATION[level]
-    final_allocation = {
-        corpus: (
-            base_allocation[corpus] if corpus in targets else 0
-        )
-        for corpus in ("ncert", "jee")
-    }
+    final_allocation = retrieval_plan(query_request, level)
 
     candidates: dict[str, list[dict[str, Any]]] = {
         "ncert": [],
@@ -431,9 +452,12 @@ def retrieve(
         )
 
         ids = (result.get("ids") or [[]])[0]
-        documents = (result.get("documents") or [[]])[0]
-        metadatas = (result.get("metadatas") or [[]])[0]
-        distances = (result.get("distances") or [[]])[0]
+        raw_docs = (result.get("documents") or [[]])[0]
+        documents = raw_docs if len(raw_docs) == len(ids) else ["" for _ in ids]
+        raw_meta = (result.get("metadatas") or [[]])[0]
+        metadatas = raw_meta if len(raw_meta) == len(ids) else [{} for _ in ids]
+        raw_dist = (result.get("distances") or [[]])[0]
+        distances = raw_dist if len(raw_dist) == len(ids) else [0.0 for _ in ids]
 
         for record_id, document, metadata, distance in zip(
             ids, documents, metadatas, distances

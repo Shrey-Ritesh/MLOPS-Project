@@ -8,6 +8,7 @@ Verifies:
 """
 from __future__ import annotations
 
+from pathlib import Path
 import pytest
 
 from src.evaluation.attempts import AttemptStore
@@ -265,13 +266,29 @@ def test_evaluate_question_missing_answer_key(eval_service):
     assert "Answer key is unavailable" in resp.feedback_text
 
 
-# --- Real Dataset Repository Test ---
+# --- Real and Fixture Dataset Repository Tests ---
 
+@pytest.mark.skipif(
+    not Path("data/processed/jee_questions.jsonl").is_file(),
+    reason="Full 215-question DVC dataset data/processed/jee_questions.jsonl not present in runner",
+)
 def test_real_question_repository_loading():
-    repo = QuestionRepository()
+    repo = QuestionRepository(data_path="data/processed/jee_questions.jsonl")
     repo.load()
     chem_questions = repo.list_questions(subject="Chemistry")
     assert len(chem_questions) == 215
+
+    q = repo.get_question("jee-2025-22jan-s1-q52")
+    assert q is not None
+    assert q.subject == "Chemistry"
+    assert q.correct_answer == "2"
+
+
+def test_fixture_question_repository_loading():
+    repo = QuestionRepository(data_path="tests/fixtures/jee_questions_sample.jsonl")
+    repo.load()
+    chem_questions = repo.list_questions(subject="Chemistry")
+    assert len(chem_questions) >= 5
 
     q = repo.get_question("jee-2025-22jan-s1-q52")
     assert q is not None

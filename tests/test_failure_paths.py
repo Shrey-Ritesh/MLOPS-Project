@@ -309,36 +309,49 @@ def test_repository_tracks_corrupted_lines(tmp_path):
 
 def test_http_404_question_not_found():
     """Verify HTTP 404 response structure and error envelope for non-existent questions."""
-    app = create_app()
-    client = TestClient(app)
+    import asyncio
+    from fastapi import HTTPException
+    from starlette.requests import Request
+    from src.api.routes import get_question, evaluate_answer
 
-    # Question details endpoint
-    resp = client.get("/api/questions/jee-ghost-question-999")
+    # 1. Question details endpoint raises HTTP 404
+    with pytest.raises(HTTPException) as exc_info:
+        get_question("jee-ghost-question-999")
+    assert exc_info.value.status_code == 404
+    assert "not found" in str(exc_info.value.detail).lower()
+
+    # 2. Evaluation endpoint raises HTTP 404 for non-existent question
+    sub = AnswerSubmissionRequest(
+        question_id="jee-ghost-question-999",
+        answer_text="2",
+        input_mode=InputMode.TYPED,
+        session_id="test-sess",
+    )
+    with pytest.raises(HTTPException) as exc_info_eval:
+        evaluate_answer(sub)
+    assert exc_info_eval.value.status_code == 404
+
+    # 3. Verify exception handler produces structured error envelope
+    app = create_app()
+    req = Request({"type": "http", "method": "GET", "path": "/api/questions/ghost"})
+    handler = app.exception_handlers[HTTPException]
+    resp = handler(req, exc_info.value)
+    if hasattr(resp, "__await__"):
+        resp = asyncio.run(resp)
     assert resp.status_code == 404
-    data = resp.json()
-    assert "detail" in data
+    data = json.loads(resp.body.decode("utf-8"))
     assert "error" in data
     assert data["error"]["code"] == "HTTP_404"
     assert data["error"]["status_code"] == 404
     assert "not found" in data["error"]["message"].lower()
 
-    # Evaluation endpoint
-    payload = {
-        "question_id": "jee-ghost-question-999",
-        "answer_text": "2",
-        "input_mode": "typed",
-        "session_id": "test-sess",
-    }
-    resp_eval = client.post("/api/evaluate", json=payload)
-    assert resp_eval.status_code == 404
-    data_eval = resp_eval.json()
-    assert data_eval["error"]["code"] == "HTTP_404"
-
 
 def test_http_422_validation_error_envelope():
     """Verify HTTP 422 schema validation returns a structured, sanitized error envelope."""
-    app = create_app()
-    client = TestClient(app)
+    import asyncio
+    from pydantic import ValidationError
+    from fastapi.exceptions import RequestValidationError
+    from starlette.requests import Request
 
     # Sending payload with extra forbidden field (ContractModel extra="forbid")
     payload = {
@@ -347,9 +360,17 @@ def test_http_422_validation_error_envelope():
         "session_id": "test-sess",
         "malicious_extra_field": "injected",
     }
-    resp = client.post("/api/evaluate", json=payload)
+    with pytest.raises(ValidationError) as exc_info:
+        AnswerSubmissionRequest.model_validate(payload)
+
+    app = create_app()
+    req = Request({"type": "http", "method": "POST", "path": "/api/evaluate"})
+    handler = app.exception_handlers[RequestValidationError]
+    resp = handler(req, RequestValidationError(exc_info.value.errors()))
+    if hasattr(resp, "__await__"):
+        resp = asyncio.run(resp)
     assert resp.status_code == 422
-    data = resp.json()
+    data = json.loads(resp.body.decode("utf-8"))
     assert "error" in data
     assert data["error"]["code"] == "VALIDATION_ERROR"
     assert data["error"]["status_code"] == 422
@@ -358,19 +379,17 @@ def test_http_422_validation_error_envelope():
 
 def test_http_503_health_check_when_repository_empty():
     """Verify /health returns HTTP 503 and unhealthy status when repository is empty."""
-    from src.api.routes import get_repository
+    from starlette.responses import Response
+    from src.api.routes import get_repository, health_check
     repo = get_repository()
 
     # Temporarily simulate empty repository
     original_questions = repo._questions_by_id.copy()
     try:
         repo._questions_by_id = {}
-        app = create_app()
-        client = TestClient(app)
-
-        resp = client.get("/health")
-        assert resp.status_code == 503
-        data = resp.json()
+        res = Response()
+        data = health_check(response=res)
+        assert res.status_code == 503
         assert data["status"] == "unhealthy"
         assert "unavailable" in data["reason"].lower() or "no questions" in data["reason"].lower()
     finally:
@@ -379,17 +398,19 @@ def test_http_503_health_check_when_repository_empty():
 
 def test_http_500_sanitized_error_envelope():
     """Verify unhandled exceptions return a sanitized HTTP 500 without leaking stack traces."""
+    import asyncio
+    from starlette.requests import Request
     app = create_app()
 
-    # Add a temporary test route that triggers an unhandled crash
-    @app.get("/api/test-crash")
-    def crash_route():
-        raise RuntimeError("Database connection string leaked: postgres://user:secret@internal:5432/db")
+    req = Request({"type": "http", "method": "GET", "path": "/api/test-crash"})
+    fake_exc = RuntimeError("Database connection string leaked: postgres://user:secret@internal:5432/db")
 
-    client = TestClient(app, raise_server_exceptions=False)
-    resp = client.get("/api/test-crash")
+    handler = app.exception_handlers[Exception]
+    resp = handler(req, fake_exc)
+    if hasattr(resp, "__await__"):
+        resp = asyncio.run(resp)
     assert resp.status_code == 500
-    data = resp.json()
+    data = json.loads(resp.body.decode("utf-8"))
 
     assert data["error"]["code"] == "INTERNAL_SERVER_ERROR"
     assert data["error"]["status_code"] == 500

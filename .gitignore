@@ -31,9 +31,11 @@ data/raw/
 /data/raw/
 data/quarantine/
 
-# Temporary Session & Preview Test Files
-data/sample_extracted_jee_questions.json
-src/data/preview_single_paper.py
+# Temporary & Log Files
+*.log
+*.tmp
+coverage.xml
+.coverage*
 
 # IDE & OS Artifacts
 .vscode/

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -15,6 +16,7 @@ from src.models.jee import JEEQuestionRecord
 logger = logging.getLogger(__name__)
 
 DEFAULT_QUESTIONS_PATH = Path("data/processed/jee_questions.jsonl")
+FIXTURE_QUESTIONS_PATH = Path("tests/fixtures/jee_questions_sample.jsonl")
 
 
 class RepositoryUnavailableError(FileNotFoundError):
@@ -25,8 +27,17 @@ class RepositoryUnavailableError(FileNotFoundError):
 class QuestionRepository:
     """In-memory indexed store for JEE questions."""
 
-    def __init__(self, data_path: str | Path = DEFAULT_QUESTIONS_PATH) -> None:
-        self.data_path = Path(data_path)
+    def __init__(self, data_path: str | Path | None = None) -> None:
+        if data_path is not None:
+            self.data_path = Path(data_path)
+        elif os.environ.get("JEE_QUESTIONS_PATH"):
+            self.data_path = Path(os.environ["JEE_QUESTIONS_PATH"])
+        elif DEFAULT_QUESTIONS_PATH.is_file():
+            self.data_path = DEFAULT_QUESTIONS_PATH
+        elif FIXTURE_QUESTIONS_PATH.is_file():
+            self.data_path = FIXTURE_QUESTIONS_PATH
+        else:
+            self.data_path = DEFAULT_QUESTIONS_PATH
         self._questions_by_id: dict[str, JEEQuestionRecord] = {}
         self.corrupted_records_count: int = 0
         self._loaded = False

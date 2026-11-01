@@ -27,8 +27,46 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8")
 
-from fastapi.testclient import TestClient
-from src.api.app import create_app
+from src.api.routes import (
+    evaluate_answer,
+    get_learner_attempts,
+    get_question,
+    health_check,
+)
+from src.evaluation.schemas import AnswerSubmissionRequest
+
+
+class DirectResponse:
+    def __init__(self, status_code: int, data: Any):
+        self.status_code = status_code
+        self._data = data
+        self.text = json.dumps(data) if isinstance(data, (dict, list)) else str(data)
+
+    def json(self) -> Any:
+        return self._data
+
+
+class DirectAPIClient:
+    """Socket-free in-process client enabling execution across all environments."""
+
+    def get(self, path: str) -> DirectResponse:
+        if path.startswith("/api/questions/"):
+            qid = path.split("/api/questions/")[1]
+            return DirectResponse(200, get_question(qid))
+        elif path.startswith("/api/attempts/"):
+            sess = path.split("/api/attempts/")[1]
+            records = get_learner_attempts(sess)
+            return DirectResponse(200, [r.model_dump(mode="json") for r in records])
+        elif path == "/health":
+            return DirectResponse(200, health_check())
+        raise NotImplementedError(f"Route not mocked in DirectAPIClient: {path}")
+
+    def post(self, path: str, json: dict) -> DirectResponse:
+        if path == "/api/evaluate":
+            req = AnswerSubmissionRequest.model_validate(json)
+            res = evaluate_answer(req)
+            return DirectResponse(200, res.model_dump(mode="json"))
+        raise NotImplementedError(f"Route not mocked in DirectAPIClient: {path}")
 
 
 def print_banner(text: str) -> None:
@@ -43,8 +81,7 @@ def print_step(step_num: int, title: str) -> None:
 
 
 def run_demo() -> None:
-    app = create_app()
-    client = TestClient(app)
+    client = DirectAPIClient()
     session_id = f"jee-demo-session-{int(time.time())}"
 
     print_banner("JEE CHEMISTRY TUTOR — PHASE 2 RELEASE CANDIDATE DEMO")

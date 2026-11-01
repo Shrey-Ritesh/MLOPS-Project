@@ -43,8 +43,13 @@ def get_service() -> EvaluationService:
 @router.get("/health", status_code=status.HTTP_200_OK)
 def health_check(response: Response = None) -> dict[str, Any]:
     """Health and readiness check endpoint for Person 1 / Docker."""
-    count = _repository.count(subject="Chemistry")
-    is_ready = _repository.is_ready
+    try:
+        count = _repository.count(subject="Chemistry")
+        is_ready = _repository.is_ready
+    except Exception:
+        count = 0
+        is_ready = False
+
     if not is_ready or count == 0:
         if response is not None:
             response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
@@ -53,7 +58,7 @@ def health_check(response: Response = None) -> dict[str, Any]:
             "service": "jee-evaluation-api",
             "subject": "Chemistry",
             "chemistry_questions_loaded": count,
-            "corrupted_records_count": _repository.corrupted_records_count,
+            "corrupted_records_count": getattr(_repository, "corrupted_records_count", 0),
             "attempts_recorded": _attempt_store.count(),
             "reason": "Question repository has no questions loaded or is unavailable.",
         }

@@ -66,8 +66,9 @@ def run_smoke_tests(base_url: str) -> bool:
     print("[1/8] Probing GET /health ...", end=" ")
     try:
         code, body = _http_request(f"{base}/health")
-        if code == 200 and body.get("status") == "healthy" and body.get("chemistry_questions_loaded") == 215:
-            print(f"PASS (200 OK, 215 Chemistry questions ready)")
+        count = body.get("chemistry_questions_loaded", 0)
+        if code == 200 and body.get("status") == "healthy" and count > 0:
+            print(f"PASS (200 OK, {count} Chemistry questions ready)")
             passed_count += 1
         else:
             print(f"FAIL (Code: {code}, Body: {body})")

@@ -10,10 +10,9 @@ import warnings
 from typing import Any, Sequence
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
 
-def load_embedder(config: dict[str, Any]) -> SentenceTransformer:
+def load_embedder(config: dict[str, Any]):
     """Load the configured embedding model and report its actual input limit."""
     settings = config.get("embedding")
     if not isinstance(settings, dict):
@@ -47,6 +46,10 @@ def load_embedder(config: dict[str, Any]) -> SentenceTransformer:
         kwargs["device"] = str(device)
 
     print(f"Loading embedding model: {model_name}", flush=True)
+    try:
+        from sentence_transformers import SentenceTransformer
+    except ImportError as exc:
+        raise ImportError("sentence_transformers is required to load the embedding model") from exc
     model = SentenceTransformer(model_name, **kwargs)
 
     dimension = model.get_sentence_embedding_dimension()
