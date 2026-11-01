@@ -4,10 +4,14 @@ from src.data.inventory import build_source_record, write_jsonl
 
 def test_source_record_creation(tmp_path):
     pdf_files = sorted(Path("data/raw").glob("*.pdf"))
-    assert len(pdf_files) > 0, "No raw PDF files found in data/raw"
+    if pdf_files:
+        jee_file = pdf_files[0]
+    else:
+        jee_file = tmp_path / "sample_jee_paper.pdf"
+        jee_file.write_bytes(b"%PDF-1.4 sample file content for testing")
 
     jee = build_source_record(
-        pdf_files[0],
+        jee_file,
         source_type="jee_main",
     )
 

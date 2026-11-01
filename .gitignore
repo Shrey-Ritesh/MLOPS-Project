@@ -17,6 +17,7 @@ aws_access_key.txt
 **/__pycache__/
 *.py[cod]
 .pytest_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 
@@ -30,9 +31,11 @@ data/raw/
 /data/raw/
 data/quarantine/
 
-# Temporary Session & Preview Test Files
-data/sample_extracted_jee_questions.json
-src/data/preview_single_paper.py
+# Temporary & Log Files
+*.log
+*.tmp
+coverage.xml
+.coverage*
 
 # IDE & OS Artifacts
 .vscode/
@@ -48,8 +51,15 @@ data/learner_history.sqlite3*
 
 # Local services / caches (Chroma persistence, model caches)
 chroma_data/
+chroma_db/
 .chroma/
 chroma/
 .cache/
 hf_cache/
 *.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlite3-journal
+
+# Student attempt session records (local data; preserve directory via .gitkeep)
+data/attempts/*.jsonl

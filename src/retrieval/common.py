@@ -6,7 +6,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-import chromadb
 import yaml
 
 
@@ -64,6 +63,11 @@ def document_text(record: dict[str, Any], template: str) -> str:
 
 
 def connect_chroma(config: dict[str, Any]):
+    try:
+        import chromadb
+    except ImportError as exc:
+        raise ImportError("chromadb is required to connect to Chroma vector store") from exc
+
     store = config["vector_store"]
     client = chromadb.HttpClient(
         host=str(store.get("host", "localhost")),

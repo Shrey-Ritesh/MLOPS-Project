@@ -130,7 +130,8 @@ def _comparison(cand_shifted_f1, base_shifted_f1=0.54, cand_orig_f1=0.58, cand_o
     }
 
 
-GATE = yaml.safe_load(open("configs/track_b/promotion_gate.yaml", encoding="utf-8"))
+with open("configs/track_b/promotion_gate.yaml", encoding="utf-8") as _gate_fh:
+    GATE = yaml.safe_load(_gate_fh)
 OK_CHECKS = {
     "schema_validation": True,
     "leakage_check": True,
