@@ -7,7 +7,10 @@ which can silently discard part of an NCERT learning unit.
 from __future__ import annotations
 
 import warnings
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
+
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 import numpy as np
 
