@@ -28,12 +28,14 @@ from src.evaluation.schemas import (
 def test_fastapi_app_initialization():
     app = create_app()
     assert app.title == "JEE Chemistry Tutor Evaluation API"
-    route_paths = []
+    route_paths = set(app.openapi().get("paths", {}).keys())
     for route in app.routes:
         if hasattr(route, "path"):
-            route_paths.append(route.path)
+            route_paths.add(route.path)
         elif hasattr(route, "routes"):
-            route_paths.extend([r.path for r in route.routes if hasattr(r, "path")])
+            route_paths.update(r.path for r in route.routes if hasattr(r, "path"))
+        elif hasattr(route, "router"):
+            route_paths.update(r.path for r in getattr(route.router, "routes", []) if hasattr(r, "path"))
     assert "/health" in route_paths
     assert "/api/evaluate" in route_paths
     assert "/api/questions/{question_id}" in route_paths
