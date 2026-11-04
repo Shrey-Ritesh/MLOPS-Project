@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +18,12 @@ def load_config(path: str | Path = "configs/retrieval.yaml") -> dict[str, Any]:
     for section in ("embedding", "document", "vector_store"):
         if not isinstance(config.get(section), dict):
             raise ValueError(f"Config must contain a '{section}' mapping")
+    # Allow container orchestration to route every service through the same
+    # Chroma endpoint without maintaining a separate in-container YAML config.
+    if os.environ.get("CHROMA_HOST"):
+        config["vector_store"]["host"] = os.environ["CHROMA_HOST"]
+    if os.environ.get("CHROMA_PORT"):
+        config["vector_store"]["port"] = int(os.environ["CHROMA_PORT"])
     return config
 
 

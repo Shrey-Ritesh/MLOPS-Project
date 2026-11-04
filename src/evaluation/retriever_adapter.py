@@ -9,6 +9,7 @@ Provides robust, safe retrieval integration that:
 from __future__ import annotations
 
 import logging
+import os
 import socket
 from typing import Any, Callable
 
@@ -32,12 +33,12 @@ class NCERTRetrieverAdapter:
     def __init__(
         self,
         retrieve_fn: Callable[..., dict[str, Any]] | None = None,
-        chroma_host: str = "localhost",
-        chroma_port: int = 8000,
+        chroma_host: str | None = None,
+        chroma_port: int | None = None,
     ) -> None:
         self._retrieve_fn = retrieve_fn
-        self._chroma_host = chroma_host
-        self._chroma_port = chroma_port
+        self._chroma_host = chroma_host or os.environ.get("CHROMA_HOST", "localhost")
+        self._chroma_port = chroma_port or int(os.environ.get("CHROMA_PORT", "8000"))
 
     def _get_retrieve_fn(self) -> Callable[..., dict[str, Any]]:
         if self._retrieve_fn is not None:
