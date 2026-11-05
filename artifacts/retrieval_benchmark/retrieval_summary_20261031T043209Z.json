@@ -1,0 +1,54 @@
+{
+  "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+  "benchmark_version": "1.0.0",
+  "benchmark_path": "chemistry_retrieval_benchmark_v1.json",
+  "run_timestamp_utc": "20261031T043209Z",
+  "query_mode": "question_and_response",
+  "top_k": 10,
+  "embedding": {
+    "provider": "sentence-transformers",
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "model_revision": null,
+    "normalize_embeddings": true,
+    "batch_size": 32
+  },
+  "collections": {
+    "ncert": {
+      "collection_name": "ncert_learning_units_v1",
+      "count": 5192,
+      "query_count": 10,
+      "labelled_query_count": 0,
+      "mean_metrics_on_labelled_queries": {
+        "Hit@5": null,
+        "MRR@5": null,
+        "Precision@5": null,
+        "Recall@5": null,
+        "nDCG@5": null
+      },
+      "latency_ms": {
+        "mean": 86.821,
+        "p50": 84.196,
+        "p95": 105.831
+      }
+    },
+    "jee": {
+      "collection_name": "jee_questions_v1",
+      "count": 598,
+      "query_count": 10,
+      "labelled_query_count": 0,
+      "mean_metrics_on_labelled_queries": {
+        "Hit@5": null,
+        "MRR@5": null,
+        "Precision@5": null,
+        "Recall@5": null,
+        "nDCG@5": null
+      },
+      "latency_ms": {
+        "mean": 90.64,
+        "p50": 89.519,
+        "p95": 101.909
+      }
+    }
+  },
+  "note": "Raw Chroma vector-search ranking; no heuristic reranking and no distance cutoff. Relevance metrics are omitted for unlabelled queries."
+}

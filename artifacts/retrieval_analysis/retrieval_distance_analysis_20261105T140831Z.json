@@ -1,0 +1,954 @@
+{
+  "analysis_type": "offline_retrieval_distance_and_rank_analysis",
+  "source": {
+    "input_path": "src\\retrieval\\annotated_chunks.json",
+    "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+    "run_timestamp_utc": "20261031T043522Z"
+  },
+  "generated_at_utc": "2026-11-05T14:08:31.421096+00:00",
+  "cutoff": 5,
+  "methodology": {
+    "retrieval_reexecuted": false,
+    "embedding_model_loaded": false,
+    "chroma_accessed": false,
+    "distance_assumption": "Distances are analysed in their stored numeric form. Lower is treated as closer because these are Chroma nearest-neighbour result distances. The script does not assume a particular metric or convert distance to similarity.",
+    "spearman": "Computed between relevance grade (0/1/2) and negative distance, so a positive coefficient indicates that more relevant hits tend to be closer.",
+    "scope": "All analyses describe only the retrieved and annotated hits in this run; they do not describe the full corpus distribution."
+  },
+  "corpora": {
+    "ncert": {
+      "hit_count": 100,
+      "query_count": 10,
+      "grade_counts": {
+        "0": 29,
+        "1": 40,
+        "2": 31
+      },
+      "grade_proportions": {
+        "0": 0.29,
+        "1": 0.4,
+        "2": 0.31
+      },
+      "distance_distribution_by_grade": {
+        "0": {
+          "count": 29,
+          "mean": 0.47231935896551724,
+          "median": 0.45280167,
+          "std_dev": 0.052847004407948595,
+          "min": 0.39208716,
+          "q1": 0.43784076,
+          "q3": 0.48546916,
+          "max": 0.5718319,
+          "iqr": 0.047628400000000015
+        },
+        "1": {
+          "count": 40,
+          "mean": 0.41584936175,
+          "median": 0.42648874999999997,
+          "std_dev": 0.06650694251458149,
+          "min": 0.24276704,
+          "q1": 0.39279258,
+          "q3": 0.45035359249999996,
+          "max": 0.5603694,
+          "iqr": 0.05756101249999995
+        },
+        "2": {
+          "count": 31,
+          "mean": 0.39305094903225807,
+          "median": 0.40313354,
+          "std_dev": 0.07025706542716736,
+          "min": 0.13905296,
+          "q1": 0.358092515,
+          "q3": 0.44221151000000003,
+          "max": 0.4998206,
+          "iqr": 0.08411899500000003
+        }
+      },
+      "rank_distribution_by_grade": {
+        "0": {
+          "count": 29,
+          "mean": 7.379310344827586,
+          "median": 8.0,
+          "std_dev": 2.27429413073671,
+          "min": 2.0,
+          "q1": 6.0,
+          "q3": 9.0,
+          "max": 10.0,
+          "iqr": 3.0
+        },
+        "1": {
+          "count": 40,
+          "mean": 5.2,
+          "median": 5.0,
+          "std_dev": 2.728764160962586,
+          "min": 1.0,
+          "q1": 3.0,
+          "q3": 7.25,
+          "max": 10.0,
+          "iqr": 4.25
+        },
+        "2": {
+          "count": 31,
+          "mean": 4.129032258064516,
+          "median": 3.0,
+          "std_dev": 2.7415559509625305,
+          "min": 1.0,
+          "q1": 2.0,
+          "q3": 6.0,
+          "max": 10.0,
+          "iqr": 4.0
+        }
+      },
+      "distance_relevance_relationship": {
+        "spearman_relevance_vs_negative_distance": 0.44914740441606954,
+        "interpretation": "Positive values mean higher relevance tends to have lower distance. This is an association across the annotated retrieved pool, not proof that distance is a calibrated relevance score.",
+        "valid_hit_count": 100,
+        "queries_with_defined_spearman": 10,
+        "mean_query_spearman": 0.4990614840142342,
+        "per_query": [
+          {
+            "query_id": "Q01",
+            "spearman": 0.6617241025372945
+          },
+          {
+            "query_id": "Q02",
+            "spearman": 0.0
+          },
+          {
+            "query_id": "Q03",
+            "spearman": 0.486884254270229
+          },
+          {
+            "query_id": "Q04",
+            "spearman": 0.8643325211229224
+          },
+          {
+            "query_id": "Q05",
+            "spearman": 0.3133397807202561
+          },
+          {
+            "query_id": "Q06",
+            "spearman": 0.7490253407188311
+          },
+          {
+            "query_id": "Q07",
+            "spearman": 0.5895106848250059
+          },
+          {
+            "query_id": "Q08",
+            "spearman": 0.6579516949597689
+          },
+          {
+            "query_id": "Q09",
+            "spearman": 0.32596473160912093
+          },
+          {
+            "query_id": "Q10",
+            "spearman": 0.3418817293789138
+          }
+        ]
+      },
+      "rank_position_analysis": {
+        "cutoff": 5,
+        "top_k_grade_counts": {
+          "0": 6,
+          "1": 24,
+          "2": 20
+        },
+        "ranks_after_cutoff_to_max_10_grade_counts": {
+          "0": 23,
+          "1": 16,
+          "2": 11
+        },
+        "by_rank": [
+          {
+            "rank": 1,
+            "grade_counts": {
+              "0": 0,
+              "1": 3,
+              "2": 7
+            },
+            "total": 10,
+            "grade_2_rate": 0.7,
+            "grade_1_or_2_rate": 1.0
+          },
+          {
+            "rank": 2,
+            "grade_counts": {
+              "0": 1,
+              "1": 4,
+              "2": 5
+            },
+            "total": 10,
+            "grade_2_rate": 0.5,
+            "grade_1_or_2_rate": 0.9
+          },
+          {
+            "rank": 3,
+            "grade_counts": {
+              "0": 1,
+              "1": 5,
+              "2": 4
+            },
+            "total": 10,
+            "grade_2_rate": 0.4,
+            "grade_1_or_2_rate": 0.9
+          },
+          {
+            "rank": 4,
+            "grade_counts": {
+              "0": 2,
+              "1": 7,
+              "2": 1
+            },
+            "total": 10,
+            "grade_2_rate": 0.1,
+            "grade_1_or_2_rate": 0.8
+          },
+          {
+            "rank": 5,
+            "grade_counts": {
+              "0": 2,
+              "1": 5,
+              "2": 3
+            },
+            "total": 10,
+            "grade_2_rate": 0.3,
+            "grade_1_or_2_rate": 0.8
+          },
+          {
+            "rank": 6,
+            "grade_counts": {
+              "0": 3,
+              "1": 3,
+              "2": 4
+            },
+            "total": 10,
+            "grade_2_rate": 0.4,
+            "grade_1_or_2_rate": 0.7
+          },
+          {
+            "rank": 7,
+            "grade_counts": {
+              "0": 4,
+              "1": 3,
+              "2": 3
+            },
+            "total": 10,
+            "grade_2_rate": 0.3,
+            "grade_1_or_2_rate": 0.6
+          },
+          {
+            "rank": 8,
+            "grade_counts": {
+              "0": 5,
+              "1": 3,
+              "2": 2
+            },
+            "total": 10,
+            "grade_2_rate": 0.2,
+            "grade_1_or_2_rate": 0.5
+          },
+          {
+            "rank": 9,
+            "grade_counts": {
+              "0": 5,
+              "1": 4,
+              "2": 1
+            },
+            "total": 10,
+            "grade_2_rate": 0.1,
+            "grade_1_or_2_rate": 0.5
+          },
+          {
+            "rank": 10,
+            "grade_counts": {
+              "0": 6,
+              "1": 3,
+              "2": 1
+            },
+            "total": 10,
+            "grade_2_rate": 0.1,
+            "grade_1_or_2_rate": 0.4
+          }
+        ],
+        "queries_with_grade_2_first_appearing_after_cutoff": [],
+        "queries_with_grade_2_at_ranks_6_to_10": [
+          "Q01",
+          "Q02",
+          "Q03",
+          "Q07",
+          "Q08",
+          "Q10"
+        ]
+      },
+      "per_query": [
+        {
+          "query_id": "Q01",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 2,
+            "1": 4,
+            "2": 4
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": true,
+          "top_k_grade_counts": {
+            "0": 0,
+            "1": 2,
+            "2": 3
+          }
+        },
+        {
+          "query_id": "Q02",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 0,
+            "1": 2,
+            "2": 8
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": true,
+          "top_k_grade_counts": {
+            "0": 0,
+            "1": 1,
+            "2": 4
+          }
+        },
+        {
+          "query_id": "Q03",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 2,
+            "1": 3,
+            "2": 5
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": true,
+          "top_k_grade_counts": {
+            "0": 0,
+            "1": 2,
+            "2": 3
+          }
+        },
+        {
+          "query_id": "Q04",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 4,
+            "1": 5,
+            "2": 1
+          },
+          "first_grade_2_rank": 2,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 0,
+            "1": 4,
+            "2": 1
+          }
+        },
+        {
+          "query_id": "Q05",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 5,
+            "1": 5,
+            "2": 0
+          },
+          "first_grade_2_rank": null,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": false,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 2,
+            "1": 3,
+            "2": 0
+          }
+        },
+        {
+          "query_id": "Q06",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 6,
+            "1": 3,
+            "2": 1
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 2,
+            "1": 2,
+            "2": 1
+          }
+        },
+        {
+          "query_id": "Q07",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 1,
+            "1": 6,
+            "2": 3
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": true,
+          "top_k_grade_counts": {
+            "0": 0,
+            "1": 3,
+            "2": 2
+          }
+        },
+        {
+          "query_id": "Q08",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 3,
+            "1": 2,
+            "2": 5
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": true,
+          "top_k_grade_counts": {
+            "0": 0,
+            "1": 2,
+            "2": 3
+          }
+        },
+        {
+          "query_id": "Q09",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 6,
+            "1": 3,
+            "2": 1
+          },
+          "first_grade_2_rank": 5,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 2,
+            "1": 2,
+            "2": 1
+          }
+        },
+        {
+          "query_id": "Q10",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 0,
+            "1": 7,
+            "2": 3
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": true,
+          "top_k_grade_counts": {
+            "0": 0,
+            "1": 3,
+            "2": 2
+          }
+        }
+      ],
+      "top_k_distance_summary": {
+        "count": 50,
+        "mean": 0.39888066860000004,
+        "median": 0.40240827,
+        "std_dev": 0.07504337228250313,
+        "min": 0.13905296,
+        "q1": 0.38140307000000007,
+        "q3": 0.4374771275,
+        "max": 0.5524435,
+        "iqr": 0.05607405749999994
+      },
+      "post_cutoff_distance_summary": {
+        "count": 50,
+        "mean": 0.4514356374,
+        "median": 0.448752935,
+        "std_dev": 0.05600908840303272,
+        "min": 0.2990188,
+        "q1": 0.43170807749999995,
+        "q3": 0.476176405,
+        "max": 0.5718319,
+        "iqr": 0.04446832750000007
+      }
+    },
+    "jee": {
+      "hit_count": 100,
+      "query_count": 10,
+      "grade_counts": {
+        "0": 68,
+        "1": 21,
+        "2": 11
+      },
+      "grade_proportions": {
+        "0": 0.68,
+        "1": 0.21,
+        "2": 0.11
+      },
+      "distance_distribution_by_grade": {
+        "0": {
+          "count": 68,
+          "mean": 0.5938509792647059,
+          "median": 0.6006220600000001,
+          "std_dev": 0.05598972010390861,
+          "min": 0.4179491,
+          "q1": 0.5625279750000001,
+          "q3": 0.62737482,
+          "max": 0.70442605,
+          "iqr": 0.06484684499999993
+        },
+        "1": {
+          "count": 21,
+          "mean": 0.5437130695238095,
+          "median": 0.56246984,
+          "std_dev": 0.06395157323877682,
+          "min": 0.38067997,
+          "q1": 0.5182883,
+          "q3": 0.58242893,
+          "max": 0.6420442,
+          "iqr": 0.06414062999999992
+        },
+        "2": {
+          "count": 11,
+          "mean": 0.4828698009090909,
+          "median": 0.49915573,
+          "std_dev": 0.09506903854883748,
+          "min": 0.27480376,
+          "q1": 0.43855087000000004,
+          "q3": 0.555009545,
+          "max": 0.58477485,
+          "iqr": 0.11645867499999996
+        }
+      },
+      "rank_distribution_by_grade": {
+        "0": {
+          "count": 68,
+          "mean": 6.132352941176471,
+          "median": 6.0,
+          "std_dev": 2.7257994131515786,
+          "min": 1.0,
+          "q1": 4.0,
+          "q3": 8.25,
+          "max": 10.0,
+          "iqr": 4.25
+        },
+        "1": {
+          "count": 21,
+          "mean": 4.666666666666667,
+          "median": 4.0,
+          "std_dev": 2.7628487713469467,
+          "min": 1.0,
+          "q1": 2.0,
+          "q3": 8.0,
+          "max": 9.0,
+          "iqr": 6.0
+        },
+        "2": {
+          "count": 11,
+          "mean": 3.1818181818181817,
+          "median": 3.0,
+          "std_dev": 2.7136021011998728,
+          "min": 1.0,
+          "q1": 1.0,
+          "q3": 4.0,
+          "max": 10.0,
+          "iqr": 3.0
+        }
+      },
+      "distance_relevance_relationship": {
+        "spearman_relevance_vs_negative_distance": 0.47819420389076056,
+        "interpretation": "Positive values mean higher relevance tends to have lower distance. This is an association across the annotated retrieved pool, not proof that distance is a calibrated relevance score.",
+        "valid_hit_count": 100,
+        "queries_with_defined_spearman": 9,
+        "mean_query_spearman": 0.42232864832081435,
+        "per_query": [
+          {
+            "query_id": "Q01",
+            "spearman": 0.6227991553292184
+          },
+          {
+            "query_id": "Q02",
+            "spearman": 0.42699324622672
+          },
+          {
+            "query_id": "Q03",
+            "spearman": 0.782962517002125
+          },
+          {
+            "query_id": "Q05",
+            "spearman": 0.5222329678670935
+          },
+          {
+            "query_id": "Q06",
+            "spearman": 0.5222329678670935
+          },
+          {
+            "query_id": "Q07",
+            "spearman": 0.07106690545187015
+          },
+          {
+            "query_id": "Q08",
+            "spearman": 0.3481553119113957
+          },
+          {
+            "query_id": "Q09",
+            "spearman": 0.44946657497549475
+          },
+          {
+            "query_id": "Q10",
+            "spearman": 0.055048188256318034
+          }
+        ]
+      },
+      "rank_position_analysis": {
+        "cutoff": 5,
+        "top_k_grade_counts": {
+          "0": 27,
+          "1": 13,
+          "2": 10
+        },
+        "ranks_after_cutoff_to_max_10_grade_counts": {
+          "0": 41,
+          "1": 8,
+          "2": 1
+        },
+        "by_rank": [
+          {
+            "rank": 1,
+            "grade_counts": {
+              "0": 4,
+              "1": 2,
+              "2": 4
+            },
+            "total": 10,
+            "grade_2_rate": 0.4,
+            "grade_1_or_2_rate": 0.6
+          },
+          {
+            "rank": 2,
+            "grade_counts": {
+              "0": 5,
+              "1": 4,
+              "2": 1
+            },
+            "total": 10,
+            "grade_2_rate": 0.1,
+            "grade_1_or_2_rate": 0.5
+          },
+          {
+            "rank": 3,
+            "grade_counts": {
+              "0": 3,
+              "1": 4,
+              "2": 3
+            },
+            "total": 10,
+            "grade_2_rate": 0.3,
+            "grade_1_or_2_rate": 0.7
+          },
+          {
+            "rank": 4,
+            "grade_counts": {
+              "0": 9,
+              "1": 1,
+              "2": 0
+            },
+            "total": 10,
+            "grade_2_rate": 0.0,
+            "grade_1_or_2_rate": 0.1
+          },
+          {
+            "rank": 5,
+            "grade_counts": {
+              "0": 6,
+              "1": 2,
+              "2": 2
+            },
+            "total": 10,
+            "grade_2_rate": 0.2,
+            "grade_1_or_2_rate": 0.4
+          },
+          {
+            "rank": 6,
+            "grade_counts": {
+              "0": 8,
+              "1": 2,
+              "2": 0
+            },
+            "total": 10,
+            "grade_2_rate": 0.0,
+            "grade_1_or_2_rate": 0.2
+          },
+          {
+            "rank": 7,
+            "grade_counts": {
+              "0": 10,
+              "1": 0,
+              "2": 0
+            },
+            "total": 10,
+            "grade_2_rate": 0.0,
+            "grade_1_or_2_rate": 0.0
+          },
+          {
+            "rank": 8,
+            "grade_counts": {
+              "0": 6,
+              "1": 4,
+              "2": 0
+            },
+            "total": 10,
+            "grade_2_rate": 0.0,
+            "grade_1_or_2_rate": 0.4
+          },
+          {
+            "rank": 9,
+            "grade_counts": {
+              "0": 8,
+              "1": 2,
+              "2": 0
+            },
+            "total": 10,
+            "grade_2_rate": 0.0,
+            "grade_1_or_2_rate": 0.2
+          },
+          {
+            "rank": 10,
+            "grade_counts": {
+              "0": 9,
+              "1": 0,
+              "2": 1
+            },
+            "total": 10,
+            "grade_2_rate": 0.1,
+            "grade_1_or_2_rate": 0.1
+          }
+        ],
+        "queries_with_grade_2_first_appearing_after_cutoff": [],
+        "queries_with_grade_2_at_ranks_6_to_10": [
+          "Q10"
+        ]
+      },
+      "per_query": [
+        {
+          "query_id": "Q01",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 4,
+            "1": 2,
+            "2": 4
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 1,
+            "1": 0,
+            "2": 4
+          }
+        },
+        {
+          "query_id": "Q02",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 7,
+            "1": 1,
+            "2": 2
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 3,
+            "1": 0,
+            "2": 2
+          }
+        },
+        {
+          "query_id": "Q03",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 5,
+            "1": 3,
+            "2": 2
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 1,
+            "1": 2,
+            "2": 2
+          }
+        },
+        {
+          "query_id": "Q04",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 10,
+            "1": 0,
+            "2": 0
+          },
+          "first_grade_2_rank": null,
+          "first_relevant_rank": null,
+          "grade_2_in_top_k": false,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 5,
+            "1": 0,
+            "2": 0
+          }
+        },
+        {
+          "query_id": "Q05",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 8,
+            "1": 2,
+            "2": 0
+          },
+          "first_grade_2_rank": null,
+          "first_relevant_rank": 2,
+          "grade_2_in_top_k": false,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 3,
+            "1": 2,
+            "2": 0
+          }
+        },
+        {
+          "query_id": "Q06",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 9,
+            "1": 1,
+            "2": 0
+          },
+          "first_grade_2_rank": null,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": false,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 4,
+            "1": 1,
+            "2": 0
+          }
+        },
+        {
+          "query_id": "Q07",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 4,
+            "1": 6,
+            "2": 0
+          },
+          "first_grade_2_rank": null,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": false,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 2,
+            "1": 3,
+            "2": 0
+          }
+        },
+        {
+          "query_id": "Q08",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 8,
+            "1": 2,
+            "2": 0
+          },
+          "first_grade_2_rank": null,
+          "first_relevant_rank": 3,
+          "grade_2_in_top_k": false,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 3,
+            "1": 2,
+            "2": 0
+          }
+        },
+        {
+          "query_id": "Q09",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 7,
+            "1": 2,
+            "2": 1
+          },
+          "first_grade_2_rank": 5,
+          "first_relevant_rank": 2,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": false,
+          "top_k_grade_counts": {
+            "0": 2,
+            "1": 2,
+            "2": 1
+          }
+        },
+        {
+          "query_id": "Q10",
+          "hit_count": 10,
+          "grade_counts": {
+            "0": 6,
+            "1": 2,
+            "2": 2
+          },
+          "first_grade_2_rank": 1,
+          "first_relevant_rank": 1,
+          "grade_2_in_top_k": true,
+          "grade_2_in_ranks_6_to_10": true,
+          "top_k_grade_counts": {
+            "0": 3,
+            "1": 1,
+            "2": 1
+          }
+        }
+      ],
+      "top_k_distance_summary": {
+        "count": 50,
+        "mean": 0.5322748476,
+        "median": 0.5511193,
+        "std_dev": 0.07493581655919977,
+        "min": 0.27480376,
+        "q1": 0.49180219249999996,
+        "q3": 0.5845839625,
+        "max": 0.667218,
+        "iqr": 0.09278177000000004
+      },
+      "post_cutoff_distance_summary": {
+        "count": 50,
+        "mean": 0.6099533296,
+        "median": 0.61112353,
+        "std_dev": 0.04351600125983728,
+        "min": 0.51504725,
+        "q1": 0.5877751,
+        "q3": 0.6357971625,
+        "max": 0.70442605,
+        "iqr": 0.04802206249999996
+      }
+    }
+  },
+  "warnings": []
+}
