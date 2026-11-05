@@ -47,13 +47,4 @@ jobs:
         run: ruff check --select E9,F63,F7,F82 src tests app.py
 
       - name: Unit tests
-        # Excluded until fixed (see docs/ci_and_branch_workflow.md):
-        #  - test_retrieval / test_retriever_gateway need chromadb + a Chroma service
-        #  - test_query_gateway: asserts a 'subject' key the code no longer returns
-        #  - test_source_record_creation: needs DVC-pulled data/raw
-        run: >
-          python -m pytest -q
-          --ignore=tests/test_retrieval.py
-          --ignore=tests/test_retriever_gateway.py
-          --ignore=tests/test_query_gateway.py
-          --ignore=tests/test_source_record_creation.py
+        run: python -m pytest -q
