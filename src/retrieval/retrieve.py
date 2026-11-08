@@ -31,7 +31,7 @@ from .embedder import encode_texts, load_embedder
 # This threshold assumes Chroma cosine distance (not cosine similarity).
 DISTANCE_THRESHOLD = 0.8
 CANDIDATE_K = 10
-NCERT_TOP_K = 10
+NCERT_TOP_K = 5
 JEE_TOP_K = 5
 
 # Preserve the relative weighting of the previous semantic/lexical components
