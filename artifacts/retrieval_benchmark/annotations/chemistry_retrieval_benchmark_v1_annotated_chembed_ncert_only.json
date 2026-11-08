@@ -1,0 +1,565 @@
+{
+  "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+  "version": "1.0.0",
+  "description": "Ten Chemistry JEE cases for retrieving evidence needed to evaluate a student's response. Relevance annotations must be completed against actual corpus chunks before ranking metrics are valid.",
+  "retrieval_protocol": {
+    "query_composition": "Use the question plus student_response as the retrieval query; keep it identical across baseline and candidate models.",
+    "corpora": [
+      "ncert"
+    ],
+    "initial_top_k": 10,
+    "annotation_scale": {
+      "0": "Not relevant to evaluating the response",
+      "1": "Useful supporting context or prerequisite concept",
+      "2": "Direct evidence needed to judge or explain the response"
+    },
+    "metrics_after_annotation": [
+      "Hit@5",
+      "MRR@5",
+      "Recall@5",
+      "Recall@10",
+      "Precision@5",
+      "nDCG@5",
+      "p50_latency_ms",
+      "p95_latency_ms"
+    ]
+  },
+  "queries": [
+    {
+      "query_id": "Q01",
+      "subject": "Chemistry",
+      "chapter": "Chemical Bonding",
+      "exam": "JEE Main",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "Which set of molecules have non-zero dipole moment and different shapes?",
+      "options": "A) BF3 and NH3; B) CH4 and CF4; C) BF3 and NF3; D) NH3 and NF3",
+      "official_answer": "A",
+      "official_explanation": "BF3 is trigonal planar with zero net dipole moment; NH3 is trigonal pyramidal with a non-zero net dipole moment.",
+      "student_response": "Both BF3 and NH3 have non-zero dipole moments because their bonds are polar.",
+      "expected_answer": "BF3 is trigonal planar with zero net dipole moment; NH3 is trigonal pyramidal with a non-zero net dipole moment.",
+      "target_concepts": [
+        "molecular_geometry",
+        "VSEPR_theory",
+        "molecular_dipole_moment"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "source_validation_note": "The supplied wording conflicts with answer A: BF3 has zero net dipole moment. Verify original paper wording before scoring.",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-188b26127fec72cb": 2,
+            "lu-764aed855a3f686f": 1,
+            "lu-4d5f1a1aa130f9c0": 1,
+            "lu-25b19cad254efd3f": 1,
+            "lu-7959fd9d2862ce97": 1,
+            "lu-2a679020e7742f72": 2,
+            "lu-45efadc690d45547": 2,
+            "lu-a5488ba31d18d7de": 1,
+            "lu-01a4ca99ba48daf1": 2,
+            "lu-ad58e0c214dd85a3": 1
+          },
+          "relevant_unit_ids": [
+            "lu-188b26127fec72cb",
+            "lu-764aed855a3f686f",
+            "lu-4d5f1a1aa130f9c0",
+            "lu-25b19cad254efd3f",
+            "lu-7959fd9d2862ce97",
+            "lu-2a679020e7742f72",
+            "lu-45efadc690d45547",
+            "lu-a5488ba31d18d7de",
+            "lu-01a4ca99ba48daf1",
+            "lu-ad58e0c214dd85a3"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q02",
+      "subject": "Chemistry",
+      "chapter": "Thermodynamics",
+      "exam": "JEE Main / HTET TGT",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "Delta G for a spontaneous process at constant temperature and pressure is:",
+      "options": "A) Delta G = 0; B) Delta G < 0; C) Delta G > 0; D) Delta G = 1",
+      "official_answer": "B",
+      "official_explanation": "At constant temperature and pressure, spontaneity corresponds to Delta G < 0.",
+      "student_response": "A spontaneous process has Delta G greater than zero.",
+      "expected_answer": "At constant temperature and pressure, spontaneity corresponds to Delta G < 0.",
+      "target_concepts": [
+        "Gibbs_free_energy",
+        "spontaneity",
+        "constant_temperature_pressure"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-e604161fc72b1fc9": 2,
+            "lu-1399f2d52f6210e3": 2,
+            "lu-571c48b9357af3dc": 1,
+            "lu-524c6b1553a48de1": 2,
+            "lu-8435e660cdaf14bf": 1,
+            "lu-ae54331413a05ca6": 2,
+            "lu-9a5c2f75f8946e26": 1,
+            "lu-6b57d847dc2552fa": 1,
+            "lu-debb34128a14a7bd": 0,
+            "lu-f063b64ec976ac1d": 0
+          },
+          "relevant_unit_ids": [
+            "lu-e604161fc72b1fc9",
+            "lu-1399f2d52f6210e3",
+            "lu-571c48b9357af3dc",
+            "lu-524c6b1553a48de1",
+            "lu-8435e660cdaf14bf",
+            "lu-ae54331413a05ca6",
+            "lu-9a5c2f75f8946e26",
+            "lu-6b57d847dc2552fa"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q03",
+      "subject": "Chemistry",
+      "chapter": "Equilibrium",
+      "exam": "JEE Main",
+      "exam_year": 2019,
+      "question_type": "multiple_choice",
+      "question": "For N2(g) + 3H2(g) <=> 2NH3(g), what happens when total pressure increases?",
+      "options": "A) Shifts backward; B) Shifts forward; C) Kc increases; D) No change",
+      "official_answer": "B",
+      "official_explanation": "At constant temperature, increased pressure favours the side with fewer gaseous moles, so equilibrium shifts forward.",
+      "student_response": "Increasing pressure shifts equilibrium backward because the reactant side has more gas molecules.",
+      "expected_answer": "At constant temperature, increased pressure favours the side with fewer gaseous moles, so equilibrium shifts forward.",
+      "target_concepts": [
+        "Le_Chateliers_principle",
+        "gaseous_equilibrium",
+        "pressure_effect"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-c69192984773fcac": 2,
+            "lu-bd88f45784e85f47": 2,
+            "lu-e842b6616b19ecd9": 1,
+            "lu-700a6a20e7dc6b1f": 1,
+            "lu-ff88b663067c53ce": 1,
+            "lu-3ab648ab3f6c774a": 2,
+            "lu-c9e843408db52653": 1,
+            "lu-5305935423c992d5": 1,
+            "lu-e69391f70df82b02": 1,
+            "lu-65ab6195f451780c": 1
+          },
+          "relevant_unit_ids": [
+            "lu-c69192984773fcac",
+            "lu-bd88f45784e85f47",
+            "lu-e842b6616b19ecd9",
+            "lu-700a6a20e7dc6b1f",
+            "lu-ff88b663067c53ce",
+            "lu-3ab648ab3f6c774a",
+            "lu-c9e843408db52653",
+            "lu-5305935423c992d5",
+            "lu-e69391f70df82b02",
+            "lu-65ab6195f451780c"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q04",
+      "subject": "Chemistry",
+      "chapter": "Ionic Equilibrium",
+      "exam": "JEE Main",
+      "exam_year": 2021,
+      "question_type": "multiple_choice",
+      "question": "When a small amount of HCl is added to a CH3COOH/CH3COONa acidic buffer, which species consumes H+?",
+      "options": "A) CH3COOH; B) CH3COO-; C) Na+; D) H2O",
+      "official_answer": "B",
+      "official_explanation": "CH3COO- reacts with added H+ to form CH3COOH, limiting the pH change.",
+      "student_response": "The added H+ is consumed by CH3COOH, the conjugate acid.",
+      "expected_answer": "CH3COO- reacts with added H+ to form CH3COOH, limiting the pH change.",
+      "target_concepts": [
+        "acidic_buffer",
+        "conjugate_acid_base_pair",
+        "buffer_action"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-318035792aad8a0d": 2,
+            "lu-960c0f105bcd5382": 1,
+            "lu-1814bbef3151ba52": 1,
+            "lu-55147ce261c68999": 1,
+            "lu-fe8aabcc5ebfadda": 1,
+            "lu-d696235d38176264": 1,
+            "lu-0a4479ee4656abd6": 1,
+            "lu-c1a0b65a175c1112": 1,
+            "lu-3872f86bb64f0447": 2,
+            "lu-b2854075985a7c8f": 1
+          },
+          "relevant_unit_ids": [
+            "lu-318035792aad8a0d",
+            "lu-960c0f105bcd5382",
+            "lu-1814bbef3151ba52",
+            "lu-55147ce261c68999",
+            "lu-fe8aabcc5ebfadda",
+            "lu-d696235d38176264",
+            "lu-0a4479ee4656abd6",
+            "lu-c1a0b65a175c1112",
+            "lu-3872f86bb64f0447",
+            "lu-b2854075985a7c8f"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q05",
+      "subject": "Chemistry",
+      "chapter": "Electrochemistry",
+      "exam": "JEE Main",
+      "exam_year": 2022,
+      "question_type": "multiple_choice",
+      "question": "For a galvanic cell reaction to be spontaneous under standard conditions, which condition must hold?",
+      "options": "A) E°cell > 0 and Delta G° < 0; B) E°cell < 0 and Delta G° > 0; C) both zero; D) E°cell > 0 and Delta G° > 0",
+      "official_answer": "A",
+      "official_explanation": "Delta G° = -nFE°cell; spontaneity requires Delta G° < 0 and therefore E°cell > 0.",
+      "student_response": "The reaction is spontaneous when E°cell is negative and Delta G° is positive.",
+      "expected_answer": "Delta G° = -nFE°cell; spontaneity requires Delta G° < 0 and therefore E°cell > 0.",
+      "target_concepts": [
+        "standard_cell_potential",
+        "Gibbs_energy_electrochemistry",
+        "spontaneity"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-d1909f598dfa361c": 1,
+            "lu-0b4f2387d6eccc89": 0,
+            "lu-5e11385eb9b0f96a": 1,
+            "lu-7fc0f8862943b6ca": 1,
+            "lu-7cadc4bf4aca54ed": 1,
+            "lu-3c249d08a40a344a": 1,
+            "lu-5b3a9f414e0dbb34": 2,
+            "lu-ae54331413a05ca6": 1,
+            "lu-d111f6177460f12f": 1,
+            "lu-f9c69a5a28365a5a": 1
+          },
+          "relevant_unit_ids": [
+            "lu-d1909f598dfa361c",
+            "lu-5e11385eb9b0f96a",
+            "lu-7fc0f8862943b6ca",
+            "lu-7cadc4bf4aca54ed",
+            "lu-3c249d08a40a344a",
+            "lu-5b3a9f414e0dbb34",
+            "lu-ae54331413a05ca6",
+            "lu-d111f6177460f12f",
+            "lu-f9c69a5a28365a5a"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q06",
+      "subject": "Chemistry",
+      "chapter": "Chemical Kinetics",
+      "exam": "JEE Main",
+      "exam_year": 2025,
+      "question_type": "multiple_choice",
+      "question": "For R = k[A]^n[B]^m, if [A] doubles and [B] halves, what is Rnew/Rinitial?",
+      "options": "A) 2^(n-m); B) 2^(n+m); C) 2^(m-n); D) 1/2^(m+n)",
+      "official_answer": "A",
+      "official_explanation": "Rnew/Rinitial = 2^n * 2^-m = 2^(n-m).",
+      "student_response": "The new rate is 2^(n+m) times the initial rate.",
+      "expected_answer": "Rnew/Rinitial = 2^n * 2^-m = 2^(n-m).",
+      "target_concepts": [
+        "rate_law",
+        "reaction_order",
+        "rate_concentration_relationship"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-7fadad36af7e1ac7": 1,
+            "lu-12be043462006582": 1,
+            "lu-04115e2fb0809d50": 2,
+            "lu-50cb53ec00ca09bb": 1,
+            "lu-0af4c261e6e53c97": 0,
+            "lu-1b51469c439cb20d": 1,
+            "lu-582223deb6dc5986": 1,
+            "lu-6c065876e0d854dd": 0,
+            "lu-2cffc608216d7817": 0,
+            "lu-728f28efbe8d9ed2": 0
+          },
+          "relevant_unit_ids": [
+            "lu-7fadad36af7e1ac7",
+            "lu-12be043462006582",
+            "lu-04115e2fb0809d50",
+            "lu-50cb53ec00ca09bb",
+            "lu-1b51469c439cb20d",
+            "lu-582223deb6dc5986"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q07",
+      "subject": "Chemistry",
+      "chapter": "Coordination Compounds",
+      "exam": "JEE Main",
+      "exam_year": 2019,
+      "question_type": "multiple_choice",
+      "question": "Find the oxidation state and coordination number of cobalt in [Co(NH3)4Cl2]Cl.",
+      "options": "A) +3 and 6; B) +2 and 6; C) +3 and 4; D) +2 and 4",
+      "official_answer": "A",
+      "official_explanation": "The complex cation has charge +1: x + 4(0) + 2(-1) = +1, so Co is +3. Six monodentate ligands are coordinated, so coordination number is 6.",
+      "student_response": "Cobalt is +2 and coordination number is 4 because there are four NH3 ligands.",
+      "expected_answer": "The complex cation has charge +1: x + 4(0) + 2(-1) = +1, so Co is +3. Six monodentate ligands are coordinated, so coordination number is 6.",
+      "target_concepts": [
+        "coordination_number",
+        "oxidation_state",
+        "ligand_denticity",
+        "complex_ion_charge"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-931f128e6ecb442c": 1,
+            "lu-83ceee5386be61ca": 0,
+            "lu-022bfe83cde21787": 2,
+            "lu-02d134d9ba0ed1e3": 1,
+            "lu-06acad96c43071ce": 2,
+            "lu-54e01e8dd74e5073": 0,
+            "lu-761c2fb6c50d5886": 1,
+            "lu-d038ab1f587b1ede": 1,
+            "lu-eeac92f15638a04f": 1,
+            "lu-910e39630f87a913": 0
+          },
+          "relevant_unit_ids": [
+            "lu-931f128e6ecb442c",
+            "lu-022bfe83cde21787",
+            "lu-02d134d9ba0ed1e3",
+            "lu-06acad96c43071ce",
+            "lu-761c2fb6c50d5886",
+            "lu-d038ab1f587b1ede",
+            "lu-eeac92f15638a04f"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q08",
+      "subject": "Chemistry",
+      "chapter": "Aldehydes, Ketones and Carboxylic Acids",
+      "exam": "JEE Main",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "Order the acid strength of (1) HCOOH, (2) CH3COOH, (3) ClCH2COOH, (4) Cl2CHCOOH.",
+      "options": "A) 4 > 3 > 1 > 2; B) 1 > 2 > 3 > 4; C) 3 > 4 > 1 > 2; D) 4 > 3 > 2 > 1",
+      "official_answer": "A",
+      "official_explanation": "Cl2CHCOOH > ClCH2COOH > HCOOH > CH3COOH; chlorine's -I effect stabilizes the carboxylate anion, while methyl's +I effect decreases acidity.",
+      "student_response": "CH3COOH is more acidic than HCOOH because the methyl group stabilizes the conjugate base by its +I effect.",
+      "expected_answer": "Cl2CHCOOH > ClCH2COOH > HCOOH > CH3COOH; chlorine's -I effect stabilizes the carboxylate anion, while methyl's +I effect decreases acidity.",
+      "target_concepts": [
+        "carboxylic_acid_acidity",
+        "inductive_effect",
+        "conjugate_base_stability"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-05a22ad68364d556": 0,
+            "lu-5e6dce8827f0253b": 1,
+            "lu-2b64d9f5b70ac57a": 1,
+            "lu-571a5dd1dfc4149e": 0,
+            "lu-f623031d5ca9da54": 2,
+            "lu-25b19cad254efd3f": 0,
+            "lu-8e365979f59d6ee5": 1,
+            "lu-960c0f105bcd5382": 0,
+            "lu-d82a0ff291732c2a": 1,
+            "lu-5e880f0a291f82e8": 0
+          },
+          "relevant_unit_ids": [
+            "lu-5e6dce8827f0253b",
+            "lu-2b64d9f5b70ac57a",
+            "lu-f623031d5ca9da54",
+            "lu-8e365979f59d6ee5",
+            "lu-d82a0ff291732c2a"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q09",
+      "subject": "Chemistry",
+      "chapter": "Aldehydes, Ketones and Carboxylic Acids",
+      "exam": "JEE Main",
+      "exam_year": 2021,
+      "question_type": "multiple_choice",
+      "question": "Which reagent distinguishes propanal (CH3CH2CHO) from propanone (CH3COCH3)?",
+      "options": "A) 2,4-DNP; B) Tollens' reagent; C) NaHSO3; D) Schiff's reagent",
+      "official_answer": "B",
+      "official_explanation": "Tollens' reagent gives a silver-mirror test with propanal, an aldehyde, but not with simple propanone.",
+      "student_response": "2,4-DNP distinguishes them because it reacts with aldehydes but not ketones.",
+      "expected_answer": "Tollens' reagent gives a silver-mirror test with propanal, an aldehyde, but not with simple propanone.",
+      "target_concepts": [
+        "aldehyde_chemical_tests",
+        "ketone_chemical_tests",
+        "Tollens_reagent"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-f628d5a7d8da558a": 2,
+            "lu-39d57f7308841a7f": 0,
+            "lu-db2de0b83f347e96": 2,
+            "lu-e342fa1039afb9ab": 1,
+            "lu-3128d1140b1a4bb9": 1,
+            "lu-ef5044e226040823": 0,
+            "lu-a1ee9190558efcd2": 2,
+            "lu-7dfb99ab59761502": 0,
+            "lu-c139c351da448b1b": 0,
+            "lu-acb4a139a16059d1": 0
+          },
+          "relevant_unit_ids": [
+            "lu-f628d5a7d8da558a",
+            "lu-db2de0b83f347e96",
+            "lu-e342fa1039afb9ab",
+            "lu-3128d1140b1a4bb9",
+            "lu-a1ee9190558efcd2"
+          ]
+        }
+      }
+    },
+    {
+      "query_id": "Q10",
+      "subject": "Chemistry",
+      "chapter": "Solutions",
+      "exam": "JEE Main",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "18 g glucose (molar mass 180 g/mol) is dissolved in 1 kg water. Given Kb = 0.52 K kg/mol and pure water boils at 373.15 K, find the solution boiling point.",
+      "options": "A) 373.202 K; B) 373.67 K; C) 372.63 K; D) 373.15 K",
+      "official_answer": "A",
+      "official_explanation": "Molality = (18/180)/1 = 0.1 mol/kg; Delta Tb = 0.52*0.1 = 0.052 K; boiling point = 373.202 K.",
+      "student_response": "The molality is 1 mol/kg, so the boiling point is 373.67 K.",
+      "expected_answer": "Molality = (18/180)/1 = 0.1 mol/kg; Delta Tb = 0.52*0.1 = 0.052 K; boiling point = 373.202 K.",
+      "target_concepts": [
+        "colligative_properties",
+        "boiling_point_elevation",
+        "molality"
+      ],
+      "retrieval_corpora": [
+        "ncert"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "chembed_ncert_top_k_annotated",
+      "annotations": {
+        "ncert": {
+          "relevance_grades": {
+            "lu-c3ad4f476168fe5e": 2,
+            "lu-7680f4beb7b5dbb6": 2,
+            "lu-7c10db89188d244d": 2,
+            "lu-65180e328f28024e": 1,
+            "lu-58cb828dd1561a16": 2,
+            "lu-9932994eeba0cb0b": 1,
+            "lu-8223e2db771c667d": 2,
+            "lu-f84044f5c401debd": 1,
+            "lu-ed99105eecbff06a": 1,
+            "lu-cdc012df6e7908fe": 2
+          },
+          "relevant_unit_ids": [
+            "lu-c3ad4f476168fe5e",
+            "lu-7680f4beb7b5dbb6",
+            "lu-7c10db89188d244d",
+            "lu-65180e328f28024e",
+            "lu-58cb828dd1561a16",
+            "lu-9932994eeba0cb0b",
+            "lu-8223e2db771c667d",
+            "lu-f84044f5c401debd",
+            "lu-ed99105eecbff06a",
+            "lu-cdc012df6e7908fe"
+          ]
+        }
+      }
+    }
+  ],
+  "annotation_source": {
+    "source_file": "chembed_retrieval_results_20261108T051714Z.json",
+    "source_benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+    "run_timestamp_utc": "20261108T051714Z",
+    "model": {
+      "provider": "huggingface-transformers",
+      "model_name": "BASF-AI/ChEmbed-full",
+      "model_revision": null,
+      "dimension": 768,
+      "max_seq_length": 256,
+      "pooling": "mean",
+      "normalize_embeddings": true,
+      "document_prefix": "search_document: ",
+      "query_prefix": "search_query: ",
+      "query_task": "query"
+    },
+    "collection": {
+      "name": "chembed_index",
+      "count": 5192,
+      "distance_metric": "cosine"
+    },
+    "corpus": "ncert",
+    "note": "NCERT-only ChEmbed relevance grades imported from the ChEmbed retrieval run. JEE annotations are intentionally absent. Grades: 0=not relevant, 1=supporting context/prerequisite, 2=direct evidence."
+  }
+}

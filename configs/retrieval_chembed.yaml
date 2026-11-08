@@ -3,7 +3,8 @@
 embedding:
   provider: huggingface-transformers
   model_name: BASF-AI/ChEmbed-full
-  model_revision: null  # Pin an exact HF commit before the final experiment.
+  # Verified exact snapshot; loads locally without a model download.
+  model_revision: 3b7415473eb13c0387b9748e000ad29e65ec4672
   trust_remote_code: true
   device: null
   max_seq_length: 256

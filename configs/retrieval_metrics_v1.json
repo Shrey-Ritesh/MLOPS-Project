@@ -1,0 +1,29 @@
+{
+  "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+  "benchmark_version": "1.0.0",
+  "corpus": "ncert",
+  "query_count": 10,
+  "query_composition": "Student question + Student response",
+  "retrieval_mode": "raw vector retrieval",
+  "metric_cutoff": 5,
+  "reranking": false,
+  "distance_cutoff": null,
+  "recall_scope": "judged_pool_not_exhaustive_corpus",
+  "metric_source": "User-provided judged benchmark results; registration logs verbatim.",
+  "models": {
+    "minilm": {
+      "Hit@5": 1.0,
+      "MRR@5": 1.0,
+      "Precision@5": 0.88,
+      "Recall@5": 0.3890659340659341,
+      "nDCG@5": 0.7153042538222497
+    },
+    "chembed": {
+      "Hit@5": 1.0,
+      "MRR@5": 0.95,
+      "Precision@5": 0.86,
+      "Recall@5": 0.38915140415140415,
+      "nDCG@5": 0.6443171358868885
+    }
+  }
+}

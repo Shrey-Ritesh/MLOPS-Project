@@ -1,0 +1,277 @@
+{
+  "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+  "top_k": 5,
+  "inputs": {
+    "minilm": "C:\\Shraddha\\College\\Academics\\5th Semester\\MLOps\\MLOPS-Project\\src\\retrieval\\chemistry_retrieval_benchmark_v1_annotated_minilm.json",
+    "chembed": "C:\\Shraddha\\College\\Academics\\5th Semester\\MLOps\\MLOPS-Project\\src\\retrieval\\chemistry_retrieval_benchmark_v1_annotated_chembed.json"
+  },
+  "evaluation_note": "Both rankings are scored against the union of the two systems' annotated NCERT candidate IDs. Recall is pool-based, not exhaustive corpus recall.",
+  "aggregate_metrics": {
+    "minilm": {
+      "Hit@5": 1.0,
+      "MRR@5": 1.0,
+      "Precision@5": 0.88,
+      "Recall@5": 0.3890659340659341,
+      "nDCG@5": 0.7153042538222497
+    },
+    "chembed": {
+      "Hit@5": 1.0,
+      "MRR@5": 0.95,
+      "Precision@5": 0.86,
+      "Recall@5": 0.38915140415140415,
+      "nDCG@5": 0.6443171358868885
+    }
+  },
+  "per_query": [
+    {
+      "query_id": "Q01",
+      "pooled_candidate_count": 16,
+      "pooled_relevant_count": 14,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.35714285714285715,
+        "nDCG@5": 0.9125299483251055,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 14,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.35714285714285715,
+        "nDCG@5": 0.5594401368490775,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 14,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q02",
+      "pooled_candidate_count": 15,
+      "pooled_relevant_count": 13,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.38461538461538464,
+        "nDCG@5": 0.8151510484299679,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 13,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.38461538461538464,
+        "nDCG@5": 0.7994765465672335,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 13,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q03",
+      "pooled_candidate_count": 14,
+      "pooled_relevant_count": 12,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.4166666666666667,
+        "nDCG@5": 0.843668133758396,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 12,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.4166666666666667,
+        "nDCG@5": 0.7693968268775774,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 12,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q04",
+      "pooled_candidate_count": 18,
+      "pooled_relevant_count": 14,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.35714285714285715,
+        "nDCG@5": 0.47476776900380596,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 14,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.35714285714285715,
+        "nDCG@5": 0.7968124369890611,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 14,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q05",
+      "pooled_candidate_count": 16,
+      "pooled_relevant_count": 10,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.6,
+        "Recall@5": 0.3,
+        "nDCG@5": 0.43062490815403953,
+        "relevant_in_top_k": 3,
+        "relevant_in_pooled_judgements": 10,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.6,
+        "Recall@5": 0.3,
+        "nDCG@5": 0.3901571199623462,
+        "relevant_in_top_k": 3,
+        "relevant_in_pooled_judgements": 10,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q06",
+      "pooled_candidate_count": 19,
+      "pooled_relevant_count": 9,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.6,
+        "Recall@5": 0.3333333333333333,
+        "nDCG@5": 0.665171950479666,
+        "relevant_in_top_k": 3,
+        "relevant_in_pooled_judgements": 9,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.8,
+        "Recall@5": 0.4444444444444444,
+        "nDCG@5": 0.5734981610639276,
+        "relevant_in_top_k": 4,
+        "relevant_in_pooled_judgements": 9,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q07",
+      "pooled_candidate_count": 17,
+      "pooled_relevant_count": 13,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.38461538461538464,
+        "nDCG@5": 0.876109927169651,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 13,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.8,
+        "Recall@5": 0.3076923076923077,
+        "nDCG@5": 0.5068633996106467,
+        "relevant_in_top_k": 4,
+        "relevant_in_pooled_judgements": 13,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q08",
+      "pooled_candidate_count": 17,
+      "pooled_relevant_count": 10,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.5,
+        "nDCG@5": 0.8151510484299679,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 10,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 0.5,
+        "Precision@5": 0.6,
+        "Recall@5": 0.3,
+        "nDCG@5": 0.4017180431258054,
+        "relevant_in_top_k": 3,
+        "relevant_in_pooled_judgements": 10,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q09",
+      "pooled_candidate_count": 16,
+      "pooled_relevant_count": 6,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.6,
+        "Recall@5": 0.5,
+        "nDCG@5": 0.4172467043670346,
+        "relevant_in_top_k": 3,
+        "relevant_in_pooled_judgements": 6,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.8,
+        "Recall@5": 0.6666666666666666,
+        "nDCG@5": 0.8562409894762193,
+        "relevant_in_top_k": 4,
+        "relevant_in_pooled_judgements": 6,
+        "candidate_count": 10
+      }
+    },
+    {
+      "query_id": "Q10",
+      "pooled_candidate_count": 14,
+      "pooled_relevant_count": 14,
+      "minilm": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.35714285714285715,
+        "nDCG@5": 0.9026211001048624,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 14,
+        "candidate_count": 10
+      },
+      "chembed": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 1.0,
+        "Recall@5": 0.35714285714285715,
+        "nDCG@5": 0.7895676983469904,
+        "relevant_in_top_k": 5,
+        "relevant_in_pooled_judgements": 14,
+        "candidate_count": 10
+      }
+    }
+  ]
+}
