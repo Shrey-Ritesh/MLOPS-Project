@@ -1,0 +1,40 @@
+{
+  "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+  "benchmark_version": "1.0.0",
+  "benchmark_path": "C:\\Shraddha\\College\\Academics\\5th Semester\\MLOps\\MLOPS-Project\\chemistry_retrieval_benchmark_v1.json",
+  "run_timestamp_utc": "20261108T051714Z",
+  "model": {
+    "provider": "huggingface-transformers",
+    "model_name": "BASF-AI/ChEmbed-full",
+    "model_revision": null,
+    "dimension": 768,
+    "max_seq_length": 256,
+    "pooling": "mean",
+    "normalize_embeddings": true,
+    "document_prefix": "search_document: ",
+    "query_prefix": "search_query: ",
+    "query_task": "query"
+  },
+  "collection": {
+    "name": "chembed_index",
+    "count": 5192,
+    "distance_metric": "cosine"
+  },
+  "query_protocol": {
+    "composition": "Student question + Student response",
+    "query_count": 10,
+    "top_k": 10,
+    "reranking": false,
+    "distance_cutoff": null
+  },
+  "latency_ms": {
+    "total_p50": 220.0170499854721,
+    "total_p95": 318.10265005915414,
+    "embedding_p50": 144.40360001754016,
+    "embedding_p95": 224.97416004771355,
+    "chroma_query_p50": 75.00089996028692,
+    "chroma_query_p95": 103.96661999984642,
+    "total_mean": 236.02192000253126
+  },
+  "evaluation_note": "Raw vector retrieval only. No relevance metrics are calculated. Annotate newly retrieved ChEmbed chunk IDs in the pooled annotation dataset before computing ranking metrics."
+}

@@ -1,0 +1,26 @@
+{
+  "built_at_utc": "2026-11-07T11:25:01.030360+00:00",
+  "input_path": "C:\\Shraddha\\College\\Academics\\5th Semester\\MLOps\\MLOPS-Project\\data\\processed\\ncert_learning_units.jsonl",
+  "input_sha256": "a4c3571f3db2e66607be1053a419dd4daecb4ca2df10dab593cd6e3f139ac77f",
+  "records_read": 2,
+  "records_indexed_this_run": 2,
+  "records_skipped_empty": 0,
+  "collection_name": "chembed_index",
+  "collection_count_after_build": 2,
+  "distance_metric": "cosine",
+  "embedding": {
+    "provider": "huggingface-transformers",
+    "model_name": "BASF-AI/ChEmbed-full",
+    "model_revision": null,
+    "dimension": 768,
+    "max_seq_length": 256,
+    "normalize_embeddings": true,
+    "pooling": "mean",
+    "document_prefix": "search_document: ",
+    "query_prefix": "search_query: "
+  },
+  "text_template": "Subject: {subject}\nClass: {class_level}\nChapter: {chapter_title}\nTopic: {unit_title}\n\n{text}\n",
+  "python_version": "3.13.5",
+  "chromadb_version": "1.5.9",
+  "reset_requested": false
+}
