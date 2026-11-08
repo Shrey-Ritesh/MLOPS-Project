@@ -1,4 +1,4 @@
-name: Docker build
+name: Docker build and smoke test
 
 # Separate from the fast PR checks: only runs when the image inputs change.
 on:
@@ -7,10 +7,13 @@ on:
     paths:
       - Dockerfile
       - .dockerignore
+      - docker-compose.yml
       - requirements-app.txt
       - app.py
       - src/**
       - configs/**
+      - scripts/smoke_test_api.py
+      - tests/fixtures/**
       - .github/workflows/docker.yml
 
 concurrency:
@@ -21,7 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-and-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -38,17 +41,33 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Missing configuration fails clearly
-        run: |
-          if docker run --rm -e GROQ_API_KEY= jee-tutor:ci; then
-            echo "expected startup to fail without GROQ_API_KEY"; exit 1
-          fi
+      - name: Compose file is valid
+        run: docker compose config -q
 
-      - name: Smoke test health endpoint
+      - name: Missing required configuration fails clearly
+        run: |
+          out=$(docker run --rm -e GROQ_API_KEY= jee-tutor:ci python -m src.settings 2>&1) && {
+            echo "expected failure without GROQ_API_KEY"; exit 1; }
+          echo "$out"
+          echo "$out" | grep -q "GROQ_API_KEY"
+
+      - name: API smoke test (fixture questions, no Chroma, no secrets)
+        run: |
+          docker run -d --name api -p 8000:8000 \
+            -e JEE_QUESTIONS_PATH=/fixtures/jee_questions_sample.jsonl \
+            -v "$PWD/tests/fixtures:/fixtures:ro" \
+            jee-tutor:ci uvicorn src.api.app:app --host 0.0.0.0 --port 8000
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:8000/health >/dev/null && break
+            sleep 2
+          done
+          python scripts/smoke_test_api.py http://localhost:8000 || { docker logs api; exit 1; }
+
+      - name: Streamlit app health endpoint
         run: |
           docker run -d --name tutor -p 8501:8501 -e GROQ_API_KEY=dummy-ci-key jee-tutor:ci
           for i in $(seq 1 30); do
-            if curl -fsS http://localhost:8501/_stcore/health; then exit 0; fi
+            curl -fsS http://localhost:8501/_stcore/health && exit 0
             sleep 2
           done
           docker logs tutor

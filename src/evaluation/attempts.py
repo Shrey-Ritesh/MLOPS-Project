@@ -40,11 +40,12 @@ class AttemptStore:
                             record = AttemptRecord.model_validate(data)
                             self._in_memory_records.append(record)
                         except Exception as exc:
+                            # Validation errors echo the stored answer text; log the type only.
                             logger.warning(
                                 "Skipping invalid attempt record at %s:%d: %s",
                                 self.data_path,
                                 line_no,
-                                exc,
+                                type(exc).__name__,
                             )
             except Exception as exc:
                 logger.warning("Could not read attempt store file %s: %s", self.data_path, exc)

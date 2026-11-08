@@ -9,6 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from src.api.limits import MaxBodySizeMiddleware, cors_origins
 from src.api.routes import router
 
 logger = logging.getLogger(__name__)
@@ -22,14 +23,16 @@ def create_app() -> FastAPI:
         version="0.2.0",
     )
 
-    # Enable CORS for local Streamlit / frontend communication
+    # CORS is limited to configured origins (CORS_ALLOWED_ORIGINS, default: local
+    # Streamlit). No cookies are used, so credentials stay disabled.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=cors_origins(),
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
     )
+    app.add_middleware(MaxBodySizeMiddleware)
 
     @app.exception_handler(RequestValidationError)
     def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:

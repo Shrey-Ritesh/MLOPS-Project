@@ -1,4 +1,4 @@
-from src.settings import validate_environment
+from src.settings import optional_warnings, validate_environment
 
 
 def test_valid_environment():
@@ -28,3 +28,10 @@ def test_chroma_port_validation():
     assert validate_environment({**ok, "CHROMA_PORT": "0"})
     assert validate_environment({**ok, "CHROMA_PORT": "70000"})
     assert validate_environment({**ok, "CHROMA_PORT": "http"})
+
+
+def test_missing_ocr_key_is_only_a_warning():
+    env = {"GROQ_API_KEY": "k"}
+    assert validate_environment(env) == []
+    assert any("OCR_SPACE_API_KEY" in w for w in optional_warnings(env))
+    assert optional_warnings({**env, "OCR_SPACE_API_KEY": "real"}) == []

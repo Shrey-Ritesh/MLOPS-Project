@@ -13,7 +13,7 @@ PLACEHOLDER_VALUES = {"", "your_groq_api_key_here", "changeme"}
 
 
 def validate_environment(env: Mapping[str, str] | None = None) -> list[str]:
-    """Return a list of human-readable problems; empty means the config is valid."""
+    """Return blocking problems; empty means the app can start."""
     env = os.environ if env is None else env
     problems: list[str] = []
 
@@ -28,6 +28,15 @@ def validate_environment(env: Mapping[str, str] | None = None) -> list[str]:
     return problems
 
 
+def optional_warnings(env: Mapping[str, str] | None = None) -> list[str]:
+    """Return non-blocking notices about features that will be unavailable."""
+    env = os.environ if env is None else env
+    warnings: list[str] = []
+    if env.get("OCR_SPACE_API_KEY", "").strip().lower() in PLACEHOLDER_VALUES | {"your_ocr_space_api_key_here"}:
+        warnings.append("OCR_SPACE_API_KEY is not set: handwritten-answer transcription is disabled")
+    return warnings
+
+
 def main() -> int:
     try:
         from dotenv import load_dotenv
@@ -36,6 +45,8 @@ def main() -> int:
     except ImportError:
         pass
     problems = validate_environment()
+    for warning in optional_warnings():
+        print(f"warning: {warning}", file=sys.stderr)
     if not problems:
         print("Configuration OK")
         return 0
