@@ -1,0 +1,67 @@
+{
+  "audited_at_utc": "2026-11-08T05:06:37.229500+00:00",
+  "config_path": "C:\\Shraddha\\College\\Academics\\5th Semester\\MLOps\\MLOPS-Project\\configs\\retrieval_chembed.yaml",
+  "source_path": "C:\\Shraddha\\College\\Academics\\5th Semester\\MLOps\\MLOPS-Project\\data\\processed\\ncert_learning_units.jsonl",
+  "collection": {
+    "name": "chembed_index",
+    "host": "localhost",
+    "port": 8000,
+    "count": 5192,
+    "metadata": {
+      "hnsw:space": "cosine"
+    },
+    "configured_distance_metric": "cosine",
+    "actual_distance_metric": "cosine"
+  },
+  "source": {
+    "records_read": 5215,
+    "records_expected_in_index": 5192,
+    "records_skipped_empty": 23,
+    "sha256": "a4c3571f3db2e66607be1053a419dd4daecb4ca2df10dab593cd6e3f139ac77f"
+  },
+  "id_integrity": {
+    "stored_ids": 5192,
+    "unique_stored_ids": 5192,
+    "missing_count": 0,
+    "missing_sample": [],
+    "unexpected_count": 0,
+    "unexpected_sample": [],
+    "duplicate_count": 0,
+    "empty_document_count": 0,
+    "empty_document_sample": []
+  },
+  "embedding_sample_check": {
+    "passed": true,
+    "sample_size": 5,
+    "dimension": 768,
+    "expected_dimension": 768,
+    "consistent_dimensions": true,
+    "finite": true,
+    "dimension_matches_config": true
+  },
+  "manifest": {
+    "found": true,
+    "path": "C:\\Shraddha\\College\\Academics\\5th Semester\\MLOps\\MLOPS-Project\\reports\\retrieval\\chembed\\index_manifest_20261107T115902Z.json",
+    "collection_name_matches": true,
+    "collection_count_matches": true,
+    "source_sha256_matches": true,
+    "manifest_embedding_dimension": 768
+  },
+  "checks": {
+    "collection_non_empty": true,
+    "expected_count_matches": true,
+    "source_indexable_count_matches": true,
+    "all_expected_ids_present": true,
+    "no_unexpected_ids": true,
+    "no_duplicate_ids": true,
+    "no_empty_stored_documents": true,
+    "distance_metric_matches_config": true,
+    "sample_embeddings_valid": true,
+    "manifest_found": true,
+    "manifest_collection_matches": true,
+    "manifest_count_matches": true,
+    "manifest_source_hash_matches": true
+  },
+  "passed": true,
+  "warnings": []
+}
