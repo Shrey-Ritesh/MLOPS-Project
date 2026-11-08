@@ -4,8 +4,8 @@ from __future__ import annotations
 import os
 
 import streamlit as st
-from groq import Groq
 from dotenv import load_dotenv
+from groq import Groq
 
 from src.handwriting.ocr_space import (
     ImageValidationError,
@@ -13,6 +13,7 @@ from src.handwriting.ocr_space import (
     OCRSpaceRecognizer,
     validate_image,
 )
+from src.tutoring.prompt import build_tutor_user_message
 
 DEFAULT_MODEL = "qwen/qwen3.8-27b"
 SUBJECTS = ("Physics", "Chemistry", "Mathematics")
@@ -41,7 +42,7 @@ def _ocr_space_api_key() -> str:
 
 
 def render_handwriting_submission() -> None:
-    """Render image transcription and learner correction, ready for evaluation."""
+    """Render image transcription and learner correction for tutor input."""
     st.subheader("Submit a handwritten answer")
     st.caption(
         "Upload a clear image of your work. Review and correct the transcription "
@@ -119,11 +120,8 @@ def render_handwriting_submission() -> None:
 
         confirmed_text = st.session_state.get("handwriting_confirmed_text")
         if confirmed_text:
-            st.success("Transcription confirmed and ready for answer evaluation.")
-            st.caption(
-                "The current main branch does not yet include the shared answer evaluator; "
-                "the confirmed text is retained in this Streamlit session for that integration."
-            )
+            st.success("Transcription confirmed and available in the tutor form.")
+            st.caption("Select “Confirmed handwriting” below to send this text to the tutor.")
 
 
 def generate_tutoring_response(
@@ -141,6 +139,11 @@ def generate_tutoring_response(
                 "Explain reasoning clearly, use equations where helpful, "
                 "and adapt the depth to the selected difficulty. If solving "
                 "a problem, show the steps and check the result."
+                " When student work is included, give constructive feedback "
+                "against the supplied question. If the question is missing, "
+                "ask for it rather than guessing. When the user message labels "
+                "work as OCR-transcribed, notation can still be uncertain; call "
+                "out ambiguity instead of silently changing it."
             ),
         },
     ]
@@ -215,19 +218,46 @@ def main() -> None:
     with st.expander("Handwritten answer input", expanded=False):
         render_handwriting_submission()
 
+    answer_input_mode = st.radio(
+        "Answer input",
+        ("Typed answer", "Confirmed handwriting"),
+        horizontal=True,
+        key="answer_input_mode",
+        help="Handwriting must be transcribed and confirmed above before it can be sent.",
+    )
+
     with st.form("tutor_prompt_form"):
-        prompt = st.text_area(
-            "What would you like help with?",
-            placeholder="For example: Explain Newton's second law with an example.",
+        question_or_topic = st.text_area(
+            "Question or topic (optional)",
+            placeholder="For example: Explain Newton's second law, or paste the question you answered.",
             height=150,
         )
+        if answer_input_mode == "Typed answer":
+            answer_text = st.text_area(
+                "Your answer or work (optional)",
+                placeholder="Type the answer or working you want the tutor to review.",
+                height=120,
+            )
+        else:
+            answer_text = st.session_state.get("handwriting_confirmed_text", "")
+            if answer_text:
+                st.text_area(
+                    "Confirmed handwriting transcription",
+                    value=answer_text,
+                    height=120,
+                    disabled=True,
+                )
+            else:
+                st.info("Upload an answer image, transcribe it, and confirm the text above first.")
         subject = st.selectbox("Subject", SUBJECTS)
         difficulty = st.selectbox("Difficulty", DIFFICULTIES, index=1)
         submitted = st.form_submit_button("Ask the tutor", type="primary")
 
     if submitted:
-        if not prompt.strip():
-            st.warning("Enter a question or topic first.")
+        if answer_input_mode == "Confirmed handwriting" and not answer_text.strip():
+            st.warning("Transcribe and confirm a handwriting image before submitting it.")
+        elif not question_or_topic.strip() and not answer_text.strip():
+            st.warning("Enter a question/topic or an answer/work sample first.")
         else:
             api_key = _api_key()
             if not api_key or api_key == "your_groq_api_key_here":
@@ -236,6 +266,14 @@ def main() -> None:
                     "or Streamlit secrets, using .env.example as a reference."
                 )
             else:
+                tutor_prompt = build_tutor_user_message(
+                    question_or_topic=question_or_topic,
+                    answer_text=answer_text,
+                    answer_input_mode=(
+                        "handwriting OCR" if answer_input_mode == "Confirmed handwriting" else "typed"
+                    ),
+                )
+                retrieval_query = question_or_topic.strip() or answer_text.strip()
                 retrieval_sources: list[str] = []
                 retrieval_error: str | None = None
                 retrieval_context = ""
@@ -243,13 +281,13 @@ def main() -> None:
                     with st.spinner("Preparing your explanation…"):
                         try:
                             retrieval_context, retrieval_sources = retrieve_project_context(
-                                prompt.strip(), subject, difficulty
+                                retrieval_query, subject, difficulty
                             )
                         except Exception as exc:
                             # Retrieval is optional so a missing index never blocks tutoring.
                             retrieval_error = str(exc)
                         answer = generate_tutoring_response(
-                            prompt.strip(), subject, difficulty, api_key, retrieval_context
+                            tutor_prompt, subject, difficulty, api_key, retrieval_context
                         )
                     st.subheader("Your tutor's response")
                     st.markdown(answer)

@@ -54,8 +54,12 @@ content before upload. OCR text is shown in an editable review field; correct
 Chemistry notation before confirming it. Uploaded images are sent to OCR.space.
 
 The evaluator API and append-only attempt store run as a separate service from
-the Streamlit page. OCR text is editable and confirmed in the frontend, but the
-current Streamlit page does not automatically submit it to the evaluator.
+the Streamlit page. To get tutor feedback on an image, transcribe it in the
+handwriting panel, review and confirm the text, choose **Confirmed handwriting**
+under **Answer input**, optionally add the original question/topic, and submit.
+The confirmed OCR text then enters the same Groq tutoring request as a typed
+answer. The Streamlit page does not automatically submit it to the evaluator
+API; that API remains a separate question-ID-based workflow.
 
 ## Prepare DVC data and retrieval indexes on the host
 
