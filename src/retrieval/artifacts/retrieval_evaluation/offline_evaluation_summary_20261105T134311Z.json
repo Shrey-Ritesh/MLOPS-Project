@@ -1,0 +1,47 @@
+{
+  "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+  "source_run_timestamp_utc": "20261031T043522Z",
+  "evaluation_timestamp_utc": "20261105T134311Z",
+  "input_file": "annotated_chunks.json",
+  "evaluation_mode": "offline_evaluation_of_existing_ranked_hits",
+  "retrieval_performed": false,
+  "embedding_model_loaded": false,
+  "chroma_accessed": false,
+  "cutoff": 5,
+  "query_count": 10,
+  "collections": {
+    "ncert": {
+      "query_count": 10,
+      "mean_metrics": {
+        "Hit@5": 1.0,
+        "MRR@5": 1.0,
+        "Precision@5": 0.88,
+        "Recall@5": 0.6453174603174603,
+        "nDCG@5": 0.8083049783353979
+      },
+      "total_annotated_hits": 100,
+      "relevance_grade_counts": {
+        "0": 29,
+        "1": 40,
+        "2": 31
+      }
+    },
+    "jee": {
+      "query_count": 10,
+      "mean_metrics": {
+        "Hit@5": 0.9,
+        "MRR@5": 0.7333333333333333,
+        "Precision@5": 0.46,
+        "Recall@5": 0.7925925925925926,
+        "nDCG@5": 0.7489940876143076
+      },
+      "total_annotated_hits": 100,
+      "relevance_grade_counts": {
+        "0": 68,
+        "1": 21,
+        "2": 11
+      }
+    }
+  },
+  "interpretation_note": "Metrics are computed from the already-retrieved and manually graded hit lists in the input file. Recall denominator includes only relevant chunks present in that annotated retrieved pool; it is not exhaustive full-collection recall unless the relevance pool is exhaustive."
+}
