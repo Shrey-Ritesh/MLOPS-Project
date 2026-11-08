@@ -71,10 +71,11 @@ class NCERTRetrieverAdapter:
             retrieve_fn = self._get_retrieve_fn()
             result = retrieve_fn(clean_query, level=level, subject=subject)
         except Exception as exc:
+            # Never log the learner's query text; length is enough to diagnose.
             logger.warning(
-                "Retrieval failed or vector database unreachable for query %r: %s",
-                clean_query[:50],
-                exc,
+                "Retrieval failed or vector database unreachable (query_chars=%d): %s",
+                len(clean_query),
+                type(exc).__name__,
             )
             return [], EvidenceStatus.RETRIEVAL_UNAVAILABLE
 
