@@ -106,3 +106,25 @@ Still required before any real deployment (not done here, by design):
 - The `checks` workflow is the only required status check; `api-smoke` and the Docker job are advisory.
 - Admin bypass of branch protection is allowed so the owner can recover from mistakes.
 - Embedding model is downloaded from Hugging Face on first use; first start needs network access.
+
+## 9. Clean-start test record (2026-11-08)
+
+Method: `git clone` of the branch into a fresh directory, `docker-compose up -d --build chroma api app` with only `GROQ_API_KEY` set, Chroma published on a non-default host port because 8000 was already taken on the test machine. Tested by the author on one machine (macOS, Colima, 6 GB / 4 CPU); **not yet repeated by a teammate**.
+
+| Step | Result |
+|---|---|
+| Image build from a clean clone | succeeds (about 2 GB) |
+| Fresh clone, no `data/processed` (no DVC pull) | API `/health` returns **503** with a clear reason ("no questions loaded"); `chroma` and `app` healthy |
+| Fixture copied to `data/processed/jee_questions.jsonl` before `up` | API healthy with 25 questions; `scripts/smoke_test_api.py` 8/8; Streamlit `/_stcore/health` ok |
+| Full data (215 Chemistry questions) | API healthy; smoke 8/8 |
+| Chroma stopped while running | API stays up, `/health` 200, smoke 8/8; evidence is reported as unavailable |
+| `GROQ_API_KEY` empty | `app` exits 1 with a name-only message |
+| Oversized request (1.5 MB) | HTTP 413 |
+| Cross-origin request from an unlisted origin | no CORS headers returned |
+| Containers | run as the non-root `app` user |
+
+Setup notes found during the test:
+- Without DVC access, copy `tests/fixtures/jee_questions_sample.jsonl` to `data/processed/jee_questions.jsonl` before starting the stack. This is a demo-size dataset only.
+- With Colima, bind mounts only work for paths under your home directory.
+- Retrieval evidence needs the indexes (`docker-compose run --rm indexer`), which needs the processed data and a first-run model download; this was not exercised in the clean-start test.
+- The Docker image was never buildable from `dev` before this work (Python 3.11 vs `numpy==2.5.4`), and `docker compose up` could never start the API and app (the Chroma healthcheck used `curl`, which that image lacks).
