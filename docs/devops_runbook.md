@@ -133,7 +133,7 @@ Setup notes found during the test:
 
 ## 10. AWS deployment (EC2 + ECR + GitHub Actions)
 
-**Status:** the server, registry and credentials are set up. On 2026-11-09 the stack was run on the server by hand with real API keys and the Chemistry data, and a Chemistry question was answered in the browser with NCERT and JEE references. The automated deploy workflow has **not yet run end to end**.
+**Status:** the server, registry and credentials are set up. On 2026-11-09 the stack was run on the server by hand with real API keys and the Chemistry data, and a Chemistry question was answered in the browser with NCERT and JEE references. The deploy workflow was also run end to end the same day from a temporary branch (build, push to ECR, SSM deploy; the server came up healthy on the new image). Its first run from `main` has not happened yet.
 
 ### 10.1 Design
 
