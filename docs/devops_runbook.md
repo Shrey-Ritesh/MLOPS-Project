@@ -1,6 +1,6 @@
 # DevOps runbook and release checklist (Phase 2)
 
-Scope: a tested **release candidate** with documented production blockers. Nothing here deploys to a public environment, and no cloud credentials are used or required.
+Scope: sections 1-9 describe a tested **release candidate** with documented production blockers; running the stack locally uses no cloud credentials. Section 10 describes the AWS deployment (EC2, ECR, GitHub Actions) set up afterwards, which does use AWS credentials.
 
 ## 1. Services and ports
 
@@ -128,3 +128,56 @@ Setup notes found during the test:
 - With Colima, bind mounts only work for paths under your home directory.
 - Retrieval evidence needs the indexes (`docker-compose run --rm indexer`), which needs the processed data and a first-run model download; this was not exercised in the clean-start test.
 - The Docker image was never buildable from `dev` before this work (Python 3.11 vs `numpy==2.5.4`), and `docker compose up` could never start the API and app (the Chroma healthcheck used `curl`, which that image lacks).
+
+## 10. AWS deployment (EC2 + ECR + GitHub Actions)
+
+**Status:** the server, registry and credentials are set up and the server-side pieces were tested by hand. The automated deploy workflow has **not yet run end to end**, and the app has not yet been served from the server with real API keys and data.
+
+### 10.1 Design
+
+One EC2 server in the team AWS account (region `ap-southeast-2`) runs the same `docker-compose.yml` as local development. On every push to `main`, `.github/workflows/deploy.yml` builds the image, pushes it to ECR, and tells the server through AWS SSM Run Command (no SSH) to run `scripts/deploy.sh`, which pulls the image and restarts `chroma`, `api` and `app`. Compose uses the image named by `APP_IMAGE`; without it, compose builds locally as before.
+
+| Resource | Value |
+|---|---|
+| Server | EC2 `m7i-flex.large` (2 vCPU, 8 GiB), Ubuntu 24.04 amd64, 30 GiB gp3, name/tag `jee-tutor` / `project=jee-tutor` |
+| Server IAM role | `jee-tutor-ec2-role`: SSM core, ECR read-only, read-only access to the DVC bucket |
+| Registry | ECR private repo `jee-tutor` (lifecycle rule keeps the 5 newest images) |
+| CI credentials | IAM user `jee-tutor-github-deploy`, policy in `deploy/aws/github-deploy-user-policy.json` (push to one repo, run a command on one instance) |
+| GitHub config | secrets `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`; variable `DEPLOY_INSTANCE_ID` |
+| Budget | AWS Budgets `jee-tutor-monthly`, $50, alerts to the team |
+
+### 10.2 Constraints of this AWS account
+
+- It is on the AWS **Free Plan**: spending is covered by credits (about $100, expiring 2027-04-05), and **services stop when the credits run out** instead of billing a card.
+- Only "free tier eligible" instance types can be launched. `t3.medium` is not allowed; the smallest with at least 4 GiB is `c7i-flex.large`; `m7i-flex.large` (8 GiB) was chosen to leave headroom for the embedding model and Chroma.
+- An organization service control policy **denies creating an OIDC identity provider**, so GitHub OIDC could not be used. CI therefore uses access keys of a least-privilege IAM user stored as GitHub secrets. Rotate or delete that key when the project ends.
+- **Do not activate "advanced features"** in AWS Settings to work around this. It requires upgrading off the Free Plan, **cannot be reversed**, and removes spend limits.
+
+### 10.3 Server setup
+
+`deploy/server/bootstrap.sh` installs Docker, the AWS CLI, DVC and clones the repo. Then, on the server:
+
+```bash
+cd ~/MLOPS-Project
+cp .env.example .env        # fill in GROQ_API_KEY and OCR_SPACE_API_KEY; never commit it
+~/dvcenv/bin/dvc pull data/processed.dvc
+docker compose --profile tools run --rm indexer   # builds the Chroma indexes (first run downloads the embedding model)
+docker compose up -d --build chroma api app
+```
+
+DVC on EC2 reads its credentials from the instance role. Without `AWS_METADATA_SERVICE_TIMEOUT=5`, `AWS_METADATA_SERVICE_NUM_ATTEMPTS=3` and `AWS_DEFAULT_REGION=ap-southeast-2` (set by the bootstrap script) the first credential lookup can time out and DVC reports misleading "missing files" errors.
+
+**Data must be pushed before it can be pulled.** `dvc pull` fails with `Missing cache files` if the commit that updated `data/processed.dvc` was never followed by `dvc push`. This happened once: the Chemistry-only data (hash `27ad98...`) was committed on 2026-11-05 but not uploaded to the bucket. After changing a `.dvc` file, run `dvc push` before opening the PR.
+
+### 10.4 Deploying and rolling back
+
+- **Normal deploy:** merge a PR to `main`. The server must be running and registered with SSM, or the workflow fails at the deploy step.
+- **Manual deploy or rollback** (on the server): check out the wanted commit, then `bash scripts/deploy.sh <account>.dkr.ecr.ap-southeast-2.amazonaws.com/jee-tutor:<git-sha>`. ECR keeps the last 5 images.
+- **Failed deploy:** the workflow prints the script output and the last API log lines. The previous containers keep running until `docker compose up` replaces them.
+
+### 10.5 Cost and operations
+
+- The instance costs about $0.12 per hour while running (about $87 per month if left on); a stopped instance costs only its disk. **Stop it when it is not needed** (EC2 console: Instance state -> Stop). Never choose Terminate, which deletes the server and its disk.
+- A stopped-then-started instance gets a **new public IP address**. Update any SSH rule or bookmark, or attach an Elastic IP for the demo.
+- SSH (port 22) is allowed only from named IP addresses. To work from another network, add that IP to the security group, or use SSM Session Manager from the EC2 console (EC2 -> Connect -> Session Manager).
+- Web access is not yet configured: open ports 80/443 (or 8501 for a test) in the security group only when the app is ready, and see section 7 for the missing authentication and TLS.
