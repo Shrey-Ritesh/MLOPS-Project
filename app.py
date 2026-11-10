@@ -170,12 +170,13 @@ def generate_tutoring_response(
     return response.choices[0].message.content or "No response was returned."
 
 
-def retrieve_project_context(prompt: str, subject: str, difficulty: str) -> tuple[str, list[str]]:
+def retrieve_project_context(prompt: str, subject: str) -> tuple[str, list[str]]:
     """Fetch relevant NCERT excerpts and JEE questions from the local Chroma index."""
     from src.retrieval.retrieve import retrieve
 
-    # retrieve() no longer takes a difficulty; its second positional argument is a config path.
-    result = retrieve(prompt, subject=subject)
+    # retrieve() takes no difficulty (its second positional argument is a config path), and
+    # JEE questions are opt-in.
+    result = retrieve(prompt, subject=subject, include_jee=True)
     if result["status"] != "ok":
         return "", []
 
@@ -274,19 +275,21 @@ def main() -> None:
                         "handwriting OCR" if answer_input_mode == "Confirmed handwriting" else "typed"
                     ),
                 )
-                retrieval_query = question_or_topic.strip() or answer_text.strip()
+                # The retriever is question-focused: never search with the student's answer text.
+                retrieval_query = question_or_topic.strip()
                 retrieval_sources: list[str] = []
                 retrieval_error: str | None = None
                 retrieval_context = ""
                 try:
                     with st.spinner("Preparing your explanation…"):
-                        try:
-                            retrieval_context, retrieval_sources = retrieve_project_context(
-                                retrieval_query, subject, difficulty
-                            )
-                        except Exception as exc:
-                            # Retrieval is optional so a missing index never blocks tutoring.
-                            retrieval_error = str(exc)
+                        if retrieval_query:
+                            try:
+                                retrieval_context, retrieval_sources = retrieve_project_context(
+                                    retrieval_query, subject
+                                )
+                            except Exception as exc:
+                                # Retrieval is optional so a missing index never blocks tutoring.
+                                retrieval_error = str(exc)
                         answer = generate_tutoring_response(
                             tutor_prompt, subject, difficulty, api_key, retrieval_context
                         )
