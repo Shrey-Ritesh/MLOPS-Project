@@ -60,6 +60,8 @@ Dependency note: `requirements.txt` is the full development freeze. `requirement
 | `pip install` fails in Docker build with a numpy error | base image Python < 3.12 | keep `python:3.12-slim` |
 | Docker build is killed (exit 137) | not enough memory in the Docker VM | give Docker at least 4 GB (Colima: `colima start --memory 6`) |
 | `docker compose` is "unknown command" | Compose plugin not installed | use the standalone `docker-compose` binary |
+| Indexer ends with `PermissionError: ... 'reports/retrieval'` | the `index_reports` volume was created root-owned by an image that lacked `/app/reports` (fixed in the `Dockerfile`) | rebuild the image, `docker volume rm <project>_index_reports`, run the indexer again (it uses upsert, so re-runs are safe) |
+| Answer shows "generated without project references because the local retrieval index was unavailable" although the indexes are built | the `app` container could not read `data/processed/jee_questions.jsonl` (fixed: `app` now mounts `./data/processed`) | check `docker compose exec app ls /app/data/processed`; test with `docker compose exec app python -c "from src.retrieval.retrieve import retrieve; print(retrieve('isomerism','medium',subject='Chemistry')['status'])"` |
 
 ## 5. Logs
 
@@ -126,12 +128,12 @@ Method: `git clone` of the branch into a fresh directory, `docker-compose up -d 
 Setup notes found during the test:
 - Without DVC access, copy `tests/fixtures/jee_questions_sample.jsonl` to `data/processed/jee_questions.jsonl` before starting the stack. This is a demo-size dataset only.
 - With Colima, bind mounts only work for paths under your home directory.
-- Retrieval evidence needs the indexes (`docker-compose run --rm indexer`), which needs the processed data and a first-run model download; this was not exercised in the clean-start test.
+- Retrieval evidence needs the indexes (`docker-compose run --rm indexer`), which needs the processed data and a first-run model download; this was not exercised in the clean-start test. It was exercised later on the EC2 server (section 10), which exposed two bugs now listed in section 4.
 - The Docker image was never buildable from `dev` before this work (Python 3.11 vs `numpy==2.5.4`), and `docker compose up` could never start the API and app (the Chroma healthcheck used `curl`, which that image lacks).
 
 ## 10. AWS deployment (EC2 + ECR + GitHub Actions)
 
-**Status:** the server, registry and credentials are set up and the server-side pieces were tested by hand. The automated deploy workflow has **not yet run end to end**, and the app has not yet been served from the server with real API keys and data.
+**Status:** the server, registry and credentials are set up. On 2026-11-09 the stack was run on the server by hand with real API keys and the Chemistry data, and a Chemistry question was answered in the browser with NCERT and JEE references. The deploy workflow was also run end to end the same day from a temporary branch (build, push to ECR, SSM deploy; the server came up healthy on the new image). Its first run from `main` has not happened yet.
 
 ### 10.1 Design
 

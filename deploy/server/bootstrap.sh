@@ -6,8 +6,7 @@
 # or copy it over and run `bash bootstrap.sh`. Override the branch with BRANCH=... if needed.
 #
 # Installs: Docker Engine + compose plugin, git, AWS CLI v2, DVC (in ~/dvcenv), and clones the repo.
-# Status: the Docker, git, DVC and clone steps were run by hand on the real server. The AWS CLI
-# step has not been run there yet.
+# Status: tested on the real server (Ubuntu 24.04 EC2 instance), including the AWS CLI step.
 #
 # After it finishes you still need to (see docs/devops_runbook.md section 10.3):
 #   1. create ~/MLOPS-Project/.env with the real GROQ_API_KEY / OCR_SPACE_API_KEY

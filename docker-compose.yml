@@ -61,6 +61,7 @@ services:
       CHROMA_PORT: "8000"
       HF_HOME: /cache/huggingface
     volumes:
+      - ./data/processed:/app/data/processed:ro
       - hf_cache:/cache/huggingface
     depends_on:
       chroma:
