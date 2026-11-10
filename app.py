@@ -174,7 +174,8 @@ def retrieve_project_context(prompt: str, subject: str, difficulty: str) -> tupl
     """Fetch relevant NCERT excerpts and JEE questions from the local Chroma index."""
     from src.retrieval.retrieve import retrieve
 
-    result = retrieve(prompt, difficulty.casefold(), subject=subject)
+    # retrieve() no longer takes a difficulty; its second positional argument is a config path.
+    result = retrieve(prompt, subject=subject)
     if result["status"] != "ok":
         return "", []
 
