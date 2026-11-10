@@ -1,0 +1,45 @@
+# ChEmbed candidate index. Uses the same NCERT source, formatting template,
+# 256-token experiment limit, cosine metric and batch sizing as the MiniLM baseline.
+embedding:
+  provider: huggingface-transformers
+  model_name: BASF-AI/ChEmbed-full
+  # Verified exact snapshot; loads locally without a model download.
+  model_revision: 3b7415473eb13c0387b9748e000ad29e65ec4672
+  trust_remote_code: true
+  device: null
+  max_seq_length: 256
+  embedding_dimension: 768
+  pooling: mean
+  # Nomic-family retrieval task prefixes are configurable; verify against the
+  # gated model/repository's intended inference recipe before freezing results.
+  document_prefix: "search_document: "
+  query_prefix: "search_query: "
+  normalize_embeddings: true
+  batch_size: 32
+  show_progress_bar: true
+
+document:
+  input_path: data/processed/ncert_learning_units.jsonl
+  id_field: unit_id
+  text_template: |
+    Subject: {subject}
+    Class: {class_level}
+    Chapter: {chapter_title}
+    Topic: {unit_title}
+
+    {text}
+  skip_empty_text: true
+
+vector_store:
+  provider: chromadb
+  host: localhost
+  port: 8000
+  collection_name: chembed_index
+  distance_metric: cosine
+  upsert_batch_size: 32
+
+evaluation:
+  default_top_k: 10
+
+outputs:
+  manifest_dir: reports/retrieval/chembed

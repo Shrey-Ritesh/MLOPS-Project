@@ -92,7 +92,7 @@ def _subject_hints(query: str) -> str | None:
     return [
         subject
         for subject, terms in vocab.items()
-        if any(re.search(rf"\b{re.escape(term)}\b", q) for term in terms)
+        if any(re.search(rf"\b{re.escape(term)}(?:s|es)?\b", q) for term in terms)
     ]
 
 
@@ -141,6 +141,7 @@ def build_query_request(query: str, *, difficulty: str | None = None) -> dict[st
         "normalized_query": cleaned,
         "intent": intent,
         "secondary_intents": secondary,
+        "subject": (_subject_hints(cleaned)[0] if _subject_hints(cleaned) else None),
         "subjects": _subject_hints(cleaned),
         "topic": _topic_hint(cleaned),
         "constraints": constraints,

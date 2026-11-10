@@ -1,4 +1,3 @@
-
 services:
   chroma:
     image: chromadb/chroma:1.5.3
@@ -8,10 +7,94 @@ services:
       - chroma_data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v2/heartbeat"]
+      # The chroma image ships neither curl nor python; bash's /dev/tcp is available.
+      test:
+        - CMD
+        - bash
+        - -c
+        - exec 3<>/dev/tcp/127.0.0.1/8000 && printf 'GET /api/v2/heartbeat HTTP/1.0\r\n\r\n' >&3 && head -1 <&3 | grep -q ' 200 '
       interval: 15s
       timeout: 5s
       retries: 5
 
+  api:
+    build: .
+    image: ${APP_IMAGE:-jee-tutor:local}
+    command: ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8001:8000"
+    environment:
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      JEE_QUESTIONS_PATH: /app/data/processed/jee_questions.jsonl
+      HF_HOME: /cache/huggingface
+    volumes:
+      - ./data/processed:/app/data/processed:ro
+      - attempts_data:/app/data/attempts
+      - hf_cache:/cache/huggingface
+    depends_on:
+      chroma:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=5)"]
+      interval: 20s
+      timeout: 8s
+      retries: 5
+      start_period: 30s
+
+  app:
+    build: .
+    image: ${APP_IMAGE:-jee-tutor:local}
+    command:
+      - sh
+      - -c
+      # Fail fast with a clear message (variable names only) if required config is missing.
+      - python -m src.settings && exec streamlit run app.py --server.address=0.0.0.0 --server.port=8501 --server.headless=true
+    ports:
+      - "8501:8501"
+    environment:
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
+      OCR_SPACE_API_KEY: ${OCR_SPACE_API_KEY:-}
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      HF_HOME: /cache/huggingface
+    volumes:
+      - ./data/processed:/app/data/processed:ro
+      - hf_cache:/cache/huggingface
+    depends_on:
+      chroma:
+        condition: service_healthy
+      api:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health', timeout=5)"]
+      interval: 20s
+      timeout: 8s
+      retries: 5
+      start_period: 40s
+
+  indexer:
+    build: .
+    image: ${APP_IMAGE:-jee-tutor:local}
+    profiles: ["tools"]
+    command: ["sh", "-c", "python -m src.retrieval.index_builder && python -m src.retrieval.jee_index_builder_v1"]
+    environment:
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+      HF_HOME: /cache/huggingface
+    volumes:
+      - ./data/processed:/app/data/processed:ro
+      - index_reports:/app/reports
+      - hf_cache:/cache/huggingface
+    depends_on:
+      chroma:
+        condition: service_healthy
+
 volumes:
   chroma_data:
+  attempts_data:
+  hf_cache:
+  index_reports:

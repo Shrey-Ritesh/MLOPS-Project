@@ -1,0 +1,16 @@
+# Runtime dependencies for the Docker image (Streamlit app, FastAPI evaluator, indexer).
+# requirements.txt is the full development freeze (DVC, MLflow, notebooks, ...); the image
+# only needs this subset. Versions match the pins in requirements.txt.
+streamlit==1.66.0
+fastapi==0.143.1
+uvicorn==0.54.0
+python-multipart==0.0.32
+pydantic==2.13.5
+requests==2.34.2
+pillow==12.3.0
+groq==1.7.0
+python-dotenv==1.2.4
+chromadb==1.5.9
+sentence-transformers==5.7.0
+PyYAML==6.0.3
+numpy==2.5.4

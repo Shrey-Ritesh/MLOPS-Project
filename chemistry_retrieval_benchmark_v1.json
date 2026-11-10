@@ -1,0 +1,292 @@
+{
+  "benchmark_id": "chemistry_response_evaluation_retrieval_v1",
+  "version": "1.0.0",
+  "description": "Ten Chemistry JEE cases for retrieving evidence needed to evaluate a student's response. Relevance annotations must be completed against actual corpus chunks before ranking metrics are valid.",
+  "retrieval_protocol": {
+    "query_composition": "Use the question plus student_response as the retrieval query; keep it identical across baseline and candidate models.",
+    "corpora": [
+      "ncert",
+      "jee"
+    ],
+    "initial_top_k": 10,
+    "annotation_scale": {
+      "0": "Not relevant to evaluating the response",
+      "1": "Useful supporting context or prerequisite concept",
+      "2": "Direct evidence needed to judge or explain the response"
+    },
+    "metrics_after_annotation": [
+      "Hit@5",
+      "MRR@5",
+      "Recall@5",
+      "Recall@10",
+      "Precision@5",
+      "nDCG@5",
+      "p50_latency_ms",
+      "p95_latency_ms"
+    ]
+  },
+  "queries": [
+    {
+      "query_id": "Q01",
+      "subject": "Chemistry",
+      "chapter": "Chemical Bonding",
+      "exam": "JEE Main",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "Which set of molecules have non-zero dipole moment and different shapes?",
+      "options": "A) BF3 and NH3; B) CH4 and CF4; C) BF3 and NF3; D) NH3 and NF3",
+      "official_answer": "A",
+      "official_explanation": "BF3 is trigonal planar with zero net dipole moment; NH3 is trigonal pyramidal with a non-zero net dipole moment.",
+      "student_response": "Both BF3 and NH3 have non-zero dipole moments because their bonds are polar.",
+      "expected_answer": "BF3 is trigonal planar with zero net dipole moment; NH3 is trigonal pyramidal with a non-zero net dipole moment.",
+      "target_concepts": [
+        "molecular_geometry",
+        "VSEPR_theory",
+        "molecular_dipole_moment"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled",
+      "source_validation_note": "The supplied wording conflicts with answer A: BF3 has zero net dipole moment. Verify original paper wording before scoring."
+    },
+    {
+      "query_id": "Q02",
+      "subject": "Chemistry",
+      "chapter": "Thermodynamics",
+      "exam": "JEE Main / HTET TGT",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "Delta G for a spontaneous process at constant temperature and pressure is:",
+      "options": "A) Delta G = 0; B) Delta G < 0; C) Delta G > 0; D) Delta G = 1",
+      "official_answer": "B",
+      "official_explanation": "At constant temperature and pressure, spontaneity corresponds to Delta G < 0.",
+      "student_response": "A spontaneous process has Delta G greater than zero.",
+      "expected_answer": "At constant temperature and pressure, spontaneity corresponds to Delta G < 0.",
+      "target_concepts": [
+        "Gibbs_free_energy",
+        "spontaneity",
+        "constant_temperature_pressure"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q03",
+      "subject": "Chemistry",
+      "chapter": "Equilibrium",
+      "exam": "JEE Main",
+      "exam_year": 2019,
+      "question_type": "multiple_choice",
+      "question": "For N2(g) + 3H2(g) <=> 2NH3(g), what happens when total pressure increases?",
+      "options": "A) Shifts backward; B) Shifts forward; C) Kc increases; D) No change",
+      "official_answer": "B",
+      "official_explanation": "At constant temperature, increased pressure favours the side with fewer gaseous moles, so equilibrium shifts forward.",
+      "student_response": "Increasing pressure shifts equilibrium backward because the reactant side has more gas molecules.",
+      "expected_answer": "At constant temperature, increased pressure favours the side with fewer gaseous moles, so equilibrium shifts forward.",
+      "target_concepts": [
+        "Le_Chateliers_principle",
+        "gaseous_equilibrium",
+        "pressure_effect"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q04",
+      "subject": "Chemistry",
+      "chapter": "Ionic Equilibrium",
+      "exam": "JEE Main",
+      "exam_year": 2021,
+      "question_type": "multiple_choice",
+      "question": "When a small amount of HCl is added to a CH3COOH/CH3COONa acidic buffer, which species consumes H+?",
+      "options": "A) CH3COOH; B) CH3COO-; C) Na+; D) H2O",
+      "official_answer": "B",
+      "official_explanation": "CH3COO- reacts with added H+ to form CH3COOH, limiting the pH change.",
+      "student_response": "The added H+ is consumed by CH3COOH, the conjugate acid.",
+      "expected_answer": "CH3COO- reacts with added H+ to form CH3COOH, limiting the pH change.",
+      "target_concepts": [
+        "acidic_buffer",
+        "conjugate_acid_base_pair",
+        "buffer_action"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q05",
+      "subject": "Chemistry",
+      "chapter": "Electrochemistry",
+      "exam": "JEE Main",
+      "exam_year": 2022,
+      "question_type": "multiple_choice",
+      "question": "For a galvanic cell reaction to be spontaneous under standard conditions, which condition must hold?",
+      "options": "A) E°cell > 0 and Delta G° < 0; B) E°cell < 0 and Delta G° > 0; C) both zero; D) E°cell > 0 and Delta G° > 0",
+      "official_answer": "A",
+      "official_explanation": "Delta G° = -nFE°cell; spontaneity requires Delta G° < 0 and therefore E°cell > 0.",
+      "student_response": "The reaction is spontaneous when E°cell is negative and Delta G° is positive.",
+      "expected_answer": "Delta G° = -nFE°cell; spontaneity requires Delta G° < 0 and therefore E°cell > 0.",
+      "target_concepts": [
+        "standard_cell_potential",
+        "Gibbs_energy_electrochemistry",
+        "spontaneity"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q06",
+      "subject": "Chemistry",
+      "chapter": "Chemical Kinetics",
+      "exam": "JEE Main",
+      "exam_year": 2025,
+      "question_type": "multiple_choice",
+      "question": "For R = k[A]^n[B]^m, if [A] doubles and [B] halves, what is Rnew/Rinitial?",
+      "options": "A) 2^(n-m); B) 2^(n+m); C) 2^(m-n); D) 1/2^(m+n)",
+      "official_answer": "A",
+      "official_explanation": "Rnew/Rinitial = 2^n * 2^-m = 2^(n-m).",
+      "student_response": "The new rate is 2^(n+m) times the initial rate.",
+      "expected_answer": "Rnew/Rinitial = 2^n * 2^-m = 2^(n-m).",
+      "target_concepts": [
+        "rate_law",
+        "reaction_order",
+        "rate_concentration_relationship"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q07",
+      "subject": "Chemistry",
+      "chapter": "Coordination Compounds",
+      "exam": "JEE Main",
+      "exam_year": 2019,
+      "question_type": "multiple_choice",
+      "question": "Find the oxidation state and coordination number of cobalt in [Co(NH3)4Cl2]Cl.",
+      "options": "A) +3 and 6; B) +2 and 6; C) +3 and 4; D) +2 and 4",
+      "official_answer": "A",
+      "official_explanation": "The complex cation has charge +1: x + 4(0) + 2(-1) = +1, so Co is +3. Six monodentate ligands are coordinated, so coordination number is 6.",
+      "student_response": "Cobalt is +2 and coordination number is 4 because there are four NH3 ligands.",
+      "expected_answer": "The complex cation has charge +1: x + 4(0) + 2(-1) = +1, so Co is +3. Six monodentate ligands are coordinated, so coordination number is 6.",
+      "target_concepts": [
+        "coordination_number",
+        "oxidation_state",
+        "ligand_denticity",
+        "complex_ion_charge"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q08",
+      "subject": "Chemistry",
+      "chapter": "Aldehydes, Ketones and Carboxylic Acids",
+      "exam": "JEE Main",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "Order the acid strength of (1) HCOOH, (2) CH3COOH, (3) ClCH2COOH, (4) Cl2CHCOOH.",
+      "options": "A) 4 > 3 > 1 > 2; B) 1 > 2 > 3 > 4; C) 3 > 4 > 1 > 2; D) 4 > 3 > 2 > 1",
+      "official_answer": "A",
+      "official_explanation": "Cl2CHCOOH > ClCH2COOH > HCOOH > CH3COOH; chlorine's -I effect stabilizes the carboxylate anion, while methyl's +I effect decreases acidity.",
+      "student_response": "CH3COOH is more acidic than HCOOH because the methyl group stabilizes the conjugate base by its +I effect.",
+      "expected_answer": "Cl2CHCOOH > ClCH2COOH > HCOOH > CH3COOH; chlorine's -I effect stabilizes the carboxylate anion, while methyl's +I effect decreases acidity.",
+      "target_concepts": [
+        "carboxylic_acid_acidity",
+        "inductive_effect",
+        "conjugate_base_stability"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q09",
+      "subject": "Chemistry",
+      "chapter": "Aldehydes, Ketones and Carboxylic Acids",
+      "exam": "JEE Main",
+      "exam_year": 2021,
+      "question_type": "multiple_choice",
+      "question": "Which reagent distinguishes propanal (CH3CH2CHO) from propanone (CH3COCH3)?",
+      "options": "A) 2,4-DNP; B) Tollens' reagent; C) NaHSO3; D) Schiff's reagent",
+      "official_answer": "B",
+      "official_explanation": "Tollens' reagent gives a silver-mirror test with propanal, an aldehyde, but not with simple propanone.",
+      "student_response": "2,4-DNP distinguishes them because it reacts with aldehydes but not ketones.",
+      "expected_answer": "Tollens' reagent gives a silver-mirror test with propanal, an aldehyde, but not with simple propanone.",
+      "target_concepts": [
+        "aldehyde_chemical_tests",
+        "ketone_chemical_tests",
+        "Tollens_reagent"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    },
+    {
+      "query_id": "Q10",
+      "subject": "Chemistry",
+      "chapter": "Solutions",
+      "exam": "JEE Main",
+      "exam_year": 2020,
+      "question_type": "multiple_choice",
+      "question": "18 g glucose (molar mass 180 g/mol) is dissolved in 1 kg water. Given Kb = 0.52 K kg/mol and pure water boils at 373.15 K, find the solution boiling point.",
+      "options": "A) 373.202 K; B) 373.67 K; C) 372.63 K; D) 373.15 K",
+      "official_answer": "A",
+      "official_explanation": "Molality = (18/180)/1 = 0.1 mol/kg; Delta Tb = 0.52*0.1 = 0.052 K; boiling point = 373.202 K.",
+      "student_response": "The molality is 1 mol/kg, so the boiling point is 373.67 K.",
+      "expected_answer": "Molality = (18/180)/1 = 0.1 mol/kg; Delta Tb = 0.52*0.1 = 0.052 K; boiling point = 373.202 K.",
+      "target_concepts": [
+        "colligative_properties",
+        "boiling_point_elevation",
+        "molality"
+      ],
+      "retrieval_corpora": [
+        "ncert",
+        "jee"
+      ],
+      "relevant_unit_ids": [],
+      "relevance_grades": {},
+      "annotation_status": "unlabelled"
+    }
+  ]
+}

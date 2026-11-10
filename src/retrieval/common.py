@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Any
 
-import chromadb
 import yaml
 
 
@@ -18,6 +18,12 @@ def load_config(path: str | Path = "configs/retrieval.yaml") -> dict[str, Any]:
     for section in ("embedding", "document", "vector_store"):
         if not isinstance(config.get(section), dict):
             raise ValueError(f"Config must contain a '{section}' mapping")
+    # Allow container orchestration to route every service through the same
+    # Chroma endpoint without maintaining a separate in-container YAML config.
+    if os.environ.get("CHROMA_HOST"):
+        config["vector_store"]["host"] = os.environ["CHROMA_HOST"]
+    if os.environ.get("CHROMA_PORT"):
+        config["vector_store"]["port"] = int(os.environ["CHROMA_PORT"])
     return config
 
 
@@ -64,6 +70,11 @@ def document_text(record: dict[str, Any], template: str) -> str:
 
 
 def connect_chroma(config: dict[str, Any]):
+    try:
+        import chromadb
+    except ImportError as exc:
+        raise ImportError("chromadb is required to connect to Chroma vector store") from exc
+
     store = config["vector_store"]
     client = chromadb.HttpClient(
         host=str(store.get("host", "localhost")),

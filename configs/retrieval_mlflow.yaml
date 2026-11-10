@@ -1,0 +1,65 @@
+experiment:
+  name: chemistry_ncert_retrieval_comparison
+  description: Initial NCERT Chemistry retrieval comparison; no retrieval rerun during registration.
+tracking:
+  default_uri: sqlite:///mlflow.db
+model_artifacts:
+  source: huggingface_hub_snapshot
+  include_all_repository_files: true  # weights, tokenizer, config and custom code
+  checksum_algorithm: sha256
+  checksum_scope: per_file_and_snapshot_tree
+  download_directory: temporary  # do not persist snapshots in the Git worktree
+  mlflow_artifact_path: embedding_model_snapshot
+evaluation:
+  benchmark_id: chemistry_response_evaluation_retrieval_v1
+  benchmark_version: "1.0.0"
+  corpus: ncert
+  query_count: 10
+  query_composition: question_and_response
+  metric_cutoff: 5
+  retrieval_mode: raw_vector_search
+  reranking: false
+  distance_cutoff: null
+  recall_note: Pool-based recall over judged retrieval results; not exhaustive corpus recall.
+models:
+  minilm:
+    provider: sentence-transformers
+    model_name: sentence-transformers/all-MiniLM-L6-v2
+    model_revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41
+    tokenizer:
+      repository: same_as_model
+      revision: same_as_model
+      loader: sentence_transformers_native
+    dimension: 384
+    max_seq_length: 256
+    pooling: sentence-transformers-native
+    normalize_embeddings: true
+    config_path: configs/retrieval.yaml
+    index_manifest: reports/retrieval/index_build_manifest.json
+    retrieval_summary: artifacts/retrieval_benchmark/retrieval_summary_20261105T133319Z.json
+    retrieval_results: artifacts/retrieval_benchmark/retrieval_results_20261105T133319Z.json
+    judged_benchmark: artifacts/retrieval_benchmark/annotations/chemistry_retrieval_benchmark_v1_annotated_minilm_ncert_only.json
+    collection: ncert_learning_units_v1
+  chembed:
+    provider: huggingface-transformers
+    model_name: BASF-AI/ChEmbed-full
+    model_revision: 3b7415473eb13c0387b9748e000ad29e65ec4672
+    tokenizer:
+      repository: same_as_model
+      revision: same_as_model
+      loader: transformers_auto_tokenizer
+    trust_remote_code: true
+    use_safetensors: true
+    dimension: 768
+    max_seq_length: 256
+    pooling: mean
+    normalize_embeddings: true
+    document_prefix: "search_document: "
+    query_prefix: "search_query: "
+    query_task: query
+    config_path: configs/retrieval_chembed.yaml
+    index_manifest: reports/retrieval/chembed/index_manifest_20261107T115902Z.json
+    retrieval_summary: artifacts/retrieval_benchmark/chembed/chembed_retrieval_summary_20261108T051714Z.json
+    retrieval_results: artifacts/retrieval_benchmark/chembed/chembed_retrieval_results_20261108T051714Z.json
+    judged_benchmark: artifacts/retrieval_benchmark/annotations/chemistry_retrieval_benchmark_v1_annotated_chembed_ncert_only.json
+    collection: chembed_index

@@ -1,7 +1,7 @@
 # JEE question embedding/index configuration v1; separate from NCERT.
 embedding:
   model_name: sentence-transformers/all-MiniLM-L6-v2
-  model_revision: null
+  model_revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41
   normalize_embeddings: true
   max_input_tokens: 256
 
