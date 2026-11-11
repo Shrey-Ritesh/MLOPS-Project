@@ -35,12 +35,15 @@ from src.tutoring.prompt import build_tutor_user_message
 
 DEFAULT_MODEL = "qwen/qwen3.8-27b"
 DEFAULT_SUBJECT = "Chemistry"
-USERS_CSV_PATH = Path("data/users.csv")
+USERS_CSV_PATH = Path(os.getenv("USERS_CSV_PATH", "data/users.csv"))
+LEARNER_DB_PATH = os.getenv("LEARNER_DB_PATH", "data/learner_history.sqlite3")
+# Off by default so a deployed app has no known demo login.
+SEED_DEMO_ACCOUNT = os.getenv("SEED_DEMO_ACCOUNT", "").strip().lower() in {"1", "true", "yes"}
 
 # Shared singletons for practice and learner evaluation
 _question_repo = QuestionRepository()
 _evaluation_service = EvaluationService(repository=_question_repo)
-_attempt_store = SQLiteAttemptStore("data/learner_history.sqlite3")
+_attempt_store = SQLiteAttemptStore(LEARNER_DB_PATH)
 
 
 # --- Authentication & CSV Management ---
@@ -69,18 +72,19 @@ def _init_users_csv() -> None:
                 "registered_at",
                 "learner_id",
             ])
-            # Pre-seed a default demo account so testing is immediate
-            demo_hash, demo_salt = _hash_password("password123")
-            writer.writerow([
-                "student",
-                demo_hash,
-                demo_salt,
-                "Demo JEE Aspirant",
-                "17",
-                "Class 12 (JEE 2026)",
-                datetime.now(timezone.utc).isoformat(),
-                "lrn-demo-001",
-            ])
+            # Optional demo account for local testing (SEED_DEMO_ACCOUNT=1)
+            if SEED_DEMO_ACCOUNT:
+                demo_hash, demo_salt = _hash_password("password123")
+                writer.writerow([
+                    "student",
+                    demo_hash,
+                    demo_salt,
+                    "Demo JEE Aspirant",
+                    "17",
+                    "Class 12 (JEE 2026)",
+                    datetime.now(timezone.utc).isoformat(),
+                    "lrn-demo-001",
+                ])
 
 
 def _load_users() -> dict[str, dict[str, str]]:
@@ -267,6 +271,40 @@ def generate_tutoring_response(
         max_tokens=2048,
     )
     return response.choices[0].message.content or "No response was returned."
+
+
+def build_retrieval_candidates(question: str, answer: str) -> list[str]:
+    """Queries to try, best first: question + answer together, then a shorter fallback.
+
+    The embedder rejects inputs over its token limit instead of truncating them, so a
+    long question + answer needs a shorter query to fall back on.
+    """
+    question, answer = question.strip(), answer.strip()
+    combined = "\n\n".join(part for part in (question, answer) if part)
+    if not combined:
+        return []
+    candidates = [combined]
+    if question and answer:
+        candidates.append(question)
+    elif answer:
+        shortened = " ".join(answer.split()[:120])
+        if shortened != combined:
+            candidates.append(shortened)
+    return candidates
+
+
+def retrieve_with_fallback(candidates, retrieve_fn):
+    """Try each query until one fits the embedder; return (context, sources, query, error)."""
+    error = None
+    for candidate in candidates:
+        try:
+            context, sources = retrieve_fn(candidate)
+            return context, sources, candidate, None
+        except Exception as exc:  # retrieval is optional; never block tutoring
+            error = str(exc)
+            if "maximum sequence length" not in error:
+                break
+    return "", [], (candidates[0] if candidates else ""), error
 
 
 def retrieve_project_context(prompt: str, subject: str = DEFAULT_SUBJECT) -> tuple[str, list[str]]:
@@ -747,22 +785,19 @@ def main() -> None:
                             answer_text=extracted_text_clean,
                             answer_input_mode="handwriting OCR",
                         )
-                        retrieval_query = user_text_clean or extracted_text_clean
+                        # Search with the question and the answer together (answer alone if no
+                        # question was typed), as agreed with the retriever owner.
+                        candidates = build_retrieval_candidates(user_text_clean, extracted_text_clean)
                     else:
                         tutor_prompt = user_text_clean
-                        retrieval_query = user_text_clean
+                        candidates = build_retrieval_candidates(user_text_clean, "")
 
-                    retrieval_sources: list[str] = []
-                    retrieval_error: str | None = None
-                    retrieval_context = ""
-
-                    if retrieval_query:
-                        try:
-                            retrieval_context, retrieval_sources = retrieve_project_context(
-                                retrieval_query, subject=DEFAULT_SUBJECT
-                            )
-                        except Exception as exc:
-                            retrieval_error = str(exc)
+                    retrieval_context, retrieval_sources, retrieval_query, retrieval_error = (
+                        retrieve_with_fallback(
+                            candidates,
+                            lambda query: retrieve_project_context(query, subject=DEFAULT_SUBJECT),
+                        )
+                    )
 
                     delivery_status = "Failed"
                     answer = ""

@@ -28,6 +28,8 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and excluded from the image
 | `MAX_REQUEST_BYTES` | no | `1000000` | API request body limit; larger requests get HTTP 413 |
 | `MLFLOW_TRACKING_URI` | no | local sqlite | Track B only |
 | `HF_HOME` | no | `/cache/huggingface` in containers | embedding model cache (named volume) |
+| `USERS_CSV_PATH`, `LEARNER_DB_PATH` | no | `data/users.csv`, `data/learner_history.sqlite3`; compose sets `/app/data/state/...` | student accounts and progress; the `app_state` volume keeps them across deploys |
+| `SEED_DEMO_ACCOUNT` | no | off | `1` creates a demo login (`student` / `password123`) on first start; local testing only |
 
 Check configuration without starting anything: `python -m src.settings` (prints variable names only, never values).
 
