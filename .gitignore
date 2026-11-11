@@ -63,3 +63,8 @@ hf_cache/
 
 # Student attempt session records (local data; preserve directory via .gitkeep)
 data/attempts/*.jsonl
+
+# Local student credentials / accounts (created on demand at runtime)
+data/users.csv
+test_images/
+

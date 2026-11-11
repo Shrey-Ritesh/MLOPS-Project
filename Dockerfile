@@ -20,7 +20,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN groupadd --system app && useradd --system --gid app --create-home app \
-    && mkdir -p /app/data/attempts /app/reports/retrieval /cache/huggingface \
+    && mkdir -p /app/data/attempts /app/data/state /app/reports/retrieval /cache/huggingface \
     && chown -R app:app /app /cache
 
 COPY --from=builder /opt/venv /opt/venv
