@@ -57,11 +57,15 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       GROQ_MODEL: ${GROQ_MODEL:-openai/gpt-oss-120b}
       OCR_SPACE_API_KEY: ${OCR_SPACE_API_KEY:-}
+      # Student accounts and progress live on a named volume so deploys keep them.
+      USERS_CSV_PATH: /app/data/state/users.csv
+      LEARNER_DB_PATH: /app/data/state/learner_history.sqlite3
       CHROMA_HOST: chroma
       CHROMA_PORT: "8000"
       HF_HOME: /cache/huggingface
     volumes:
       - ./data/processed:/app/data/processed:ro
+      - app_state:/app/data/state
       - hf_cache:/cache/huggingface
     depends_on:
       chroma:
@@ -98,3 +102,4 @@ volumes:
   attempts_data:
   hf_cache:
   index_reports:
+  app_state:
