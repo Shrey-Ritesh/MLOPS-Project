@@ -8,7 +8,7 @@ Scope: sections 1-9 describe a tested **release candidate** with documented prod
 |---|---|---|---|
 | `chroma` | `chromadb/chroma:1.5.3` | 8000 | `/api/v2/heartbeat` |
 | `api` | this repo, `uvicorn src.api.app:app` | 8001 | `GET /health` (503 until questions are loaded) |
-| `app` | this repo, Streamlit | 8501 | `/_stcore/health` |
+| `app` | this repo, Streamlit | 80 and 8501 | `/_stcore/health` |
 | `indexer` | this repo, `profiles: [tools]`, run on demand | - | exits 0 when both indexes are built |
 
 Start: `docker compose up --build -d` (after the index steps in the README). Status: `docker compose ps` shows health for each service.
@@ -184,4 +184,6 @@ DVC on EC2 reads its credentials from the instance role. Without `AWS_METADATA_S
 - The instance costs about $0.12 per hour while running (about $87 per month if left on); a stopped instance costs only its disk. **Stop it when it is not needed** (EC2 console: Instance state -> Stop). Never choose Terminate, which deletes the server and its disk.
 - A stopped-then-started instance gets a **new public IP address**. Update any SSH rule or bookmark, or attach an Elastic IP for the demo.
 - SSH (port 22) is allowed only from named IP addresses. To work from another network, add that IP to the security group, or use SSM Session Manager from the EC2 console (EC2 -> Connect -> Session Manager).
-- Web access is not yet configured: open ports 80/443 (or 8501 for a test) in the security group only when the app is ready, and see section 7 for the missing authentication and TLS.
+- The app is published on port 80 as well as 8501, so it opens as `http://<public-ip>`. Use port 80: some networks block 8501 (the college Wi-Fi does). Allow port 80 in the security group for the networks that need it, or Anywhere-IPv4 only for a demo, and see section 7 for the missing authentication and TLS.
+- Some networks send traffic out through more than one public IP (the college uses at least two), so a rule for one IP may not cover every device there.
+- There is no HTTPS yet. Browsers that upgrade to `https://` automatically (Brave, for example) fail with "connection reset"; use Chrome or Edge, or turn the upgrade off for the site.
