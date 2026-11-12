@@ -52,6 +52,8 @@ services:
       # Fail fast with a clear message (variable names only) if required config is missing.
       - python -m src.settings && exec streamlit run app.py --server.address=0.0.0.0 --server.port=8501 --server.headless=true
     ports:
+      # Port 80 so the app opens as http://<server-ip>; some networks (e.g. college Wi-Fi) block 8501.
+      - "80:8501"
       - "8501:8501"
     environment:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
