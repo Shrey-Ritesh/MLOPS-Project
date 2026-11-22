@@ -2,8 +2,8 @@
 Benchmark semantic retrieval against the project's existing NCERT and JEE Chroma
 collections. Run from the repository root:
 
-    python -m src.retrieval.test_retrieval \
-      --benchmark chemistry_retrieval_benchmark_v1.json
+    python -m src.retrieval.benchmark_minilm \
+      --benchmark data/benchmarks/chemistry_retrieval_benchmark_v1.json
 
 By default, this evaluates raw vector-search rankings (before retrieve.py's
 heuristic reranking) and writes per-query hits plus a summary. It does not
@@ -236,8 +236,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--benchmark",
-        default="chemistry_retrieval_benchmark_v1.json",
-        help="Path to the benchmark JSON file (default: ./chemistry_retrieval_benchmark_v1.json)",
+        default="data/benchmarks/chemistry_retrieval_benchmark_v1.json",
+        help="Path to the benchmark JSON file (default: data/benchmarks/chemistry_retrieval_benchmark_v1.json)",
     )
     parser.add_argument("--ncert-config", default="configs/retrieval.yaml")
     parser.add_argument("--jee-config", default="configs/jee_retrieval_v1.yaml")
@@ -250,7 +250,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--output-dir",
-        default="artifacts/retrieval_benchmark",
+        default="reports/retrieval/benchmark",
         help="Directory for raw per-query results and summary JSON.",
     )
     parser.add_argument(

@@ -36,9 +36,9 @@ models:
     normalize_embeddings: true
     config_path: configs/retrieval.yaml
     index_manifest: reports/retrieval/index_build_manifest.json
-    retrieval_summary: artifacts/retrieval_benchmark/retrieval_summary_20261105T133319Z.json
-    retrieval_results: artifacts/retrieval_benchmark/retrieval_results_20261105T133319Z.json
-    judged_benchmark: artifacts/retrieval_benchmark/annotations/chemistry_retrieval_benchmark_v1_annotated_minilm_ncert_only.json
+    retrieval_summary: reports/retrieval/benchmark/retrieval_summary_20261105T133319Z.json
+    retrieval_results: reports/retrieval/benchmark/retrieval_results_20261105T133319Z.json
+    judged_benchmark: reports/retrieval/benchmark/annotations/chemistry_retrieval_benchmark_v1_annotated_minilm_ncert_only.json
     collection: ncert_learning_units_v1
   chembed:
     provider: huggingface-transformers
@@ -59,7 +59,7 @@ models:
     query_task: query
     config_path: configs/retrieval_chembed.yaml
     index_manifest: reports/retrieval/chembed/index_manifest_20261107T115902Z.json
-    retrieval_summary: artifacts/retrieval_benchmark/chembed/chembed_retrieval_summary_20261108T051714Z.json
-    retrieval_results: artifacts/retrieval_benchmark/chembed/chembed_retrieval_results_20261108T051714Z.json
-    judged_benchmark: artifacts/retrieval_benchmark/annotations/chemistry_retrieval_benchmark_v1_annotated_chembed_ncert_only.json
+    retrieval_summary: reports/retrieval/benchmark/chembed/chembed_retrieval_summary_20261108T051714Z.json
+    retrieval_results: reports/retrieval/benchmark/chembed/chembed_retrieval_results_20261108T051714Z.json
+    judged_benchmark: reports/retrieval/benchmark/annotations/chemistry_retrieval_benchmark_v1_annotated_chembed_ncert_only.json
     collection: chembed_index

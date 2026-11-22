@@ -8,7 +8,7 @@ Assumptions:
 - Source references use a top-level "source_id" field.
 - Assets are intentionally left untouched.
 
-Run `python remove_physics_records_with_learning_units.py --dry-run` first.
+Run `python scripts/remove_physics_records.py --dry-run` first (from the repository root).
 """
 
 from __future__ import annotations
