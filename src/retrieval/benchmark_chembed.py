@@ -2,10 +2,10 @@
 
 Run from the repository root:
     python -m src.retrieval.benchmark_chembed \
-        --benchmark chemistry_retrieval_benchmark_v1.json
+        --benchmark data/benchmarks/chemistry_retrieval_benchmark_v1.json
 
 This is deliberately separate from retrieve.py (production heuristic reranking)
-and from test_retrieval.py (the original MiniLM two-corpus benchmark).
+and from benchmark_minilm.py (the original MiniLM two-corpus benchmark).
 It performs raw Chroma vector search only. It does not modify any collection
 or calculate relevance metrics before ChEmbed-only hits are annotated.
 """
@@ -156,7 +156,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--benchmark",
-        default="chemistry_retrieval_benchmark_v1.json",
+        default="data/benchmarks/chemistry_retrieval_benchmark_v1.json",
     )
     parser.add_argument(
         "--config",
@@ -166,7 +166,7 @@ def main() -> int:
     parser.add_argument("--top-k", type=int, default=10)
     parser.add_argument(
         "--output-dir",
-        default="artifacts/retrieval_benchmark/chembed",
+        default="reports/retrieval/benchmark/chembed",
     )
     parser.add_argument(
         "--query-task",

@@ -1,6 +1,6 @@
 """Integration tests for Person 3 (Backend Evaluator) and Person 4 (Handwriting & Personalization).
 
-Verifies the complete vertical integration agreed in phase2_weekly_work_split_roles_milestones.md:
+Verifies the complete vertical integration agreed in docs/planning/phase2_weekly_work_split_roles_milestones.md:
 1. Handwritten OCR confirmed input -> Person 3 Evaluator -> Person 4 SQLite Attempt Store -> Person 4 Practice Recommendation
 2. Typed answer input -> Person 3 Evaluator -> Person 4 SQLite Attempt Store -> Person 4 Practice Recommendation
 3. Discursive narrative essay -> Person 3 UNSUPPORTED_TYPE safeguard -> Person 4 history as 'uncertain'

@@ -107,7 +107,7 @@ def mean_metric(rows: list[dict[str, Any]], metric: str) -> float | None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--input", default="annotated_chunks.json", help="Existing retrieval results with manual grades")
-    ap.add_argument("--output-dir", default="artifacts/retrieval_evaluation", help="Where evaluation JSON files are written")
+    ap.add_argument("--output-dir", default="reports/retrieval/offline_evaluation", help="Where evaluation JSON files are written")
     ap.add_argument("--cutoff", type=int, default=5, help="Ranking metric cutoff (default: 5)")
     ap.add_argument("--corpora", nargs="+", choices=["ncert", "jee"], default=["ncert", "jee"])
     args = ap.parse_args()

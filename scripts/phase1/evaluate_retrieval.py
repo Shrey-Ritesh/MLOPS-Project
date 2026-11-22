@@ -15,7 +15,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 import argparse
@@ -25,12 +25,12 @@ from typing import Any
 
 from src.retrieval.retrieve import retrieve
 
-ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_EVAL_FILE = Path(__file__).with_name("retrieval_eval.jsonl")
+ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_EVAL_FILE = ROOT / "data" / "benchmarks" / "phase1" / "retrieval_eval.jsonl"
 DEFAULT_NCERT_CONFIG = ROOT / "configs" / "retrieval.yaml"
 DEFAULT_JEE_CONFIG = ROOT / "configs" / "jee_retrieval_v1.yaml"
-DEFAULT_RESULTS_FILE = Path(__file__).with_name("retrieval_eval_results.jsonl")
-DEFAULT_REPORT_FILE = Path(__file__).with_name("retrieval_metrics_report.json")
+DEFAULT_RESULTS_FILE = ROOT / "reports" / "retrieval" / "phase1_evaluation" / "retrieval_eval_results.jsonl"
+DEFAULT_REPORT_FILE = ROOT / "reports" / "retrieval" / "phase1_evaluation" / "retrieval_metrics_report.json"
 K = 4
 VALID_STATUSES = {"pending", "complete", "not_applicable"}
 

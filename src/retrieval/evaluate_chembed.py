@@ -24,7 +24,7 @@ Unknown labels are never silently treated as irrelevant.
 
 Important:
 - Metrics use the same Hit, MRR, Precision, Recall and graded nDCG definitions
-  as src/retrieval/test_retrieval.py.
+  as src/retrieval/benchmark_minilm.py.
 - Recall is pool-based: its denominator is the number of positively labelled
   records in THIS run's retrieved/annotated pool. It is not exhaustive corpus
   recall. For a fair MiniLM-vs-ChEmbed comparison, annotate the UNION of both
@@ -144,7 +144,7 @@ def calculate_metrics(hits: list[dict[str, Any]], k: int) -> dict[str, Any]:
         sum(ranked_relevant) / len(relevant_ids) if relevant_ids else None
     )
 
-    # Match test_retrieval.py: graded gain = 2^grade - 1.
+    # Match benchmark_minilm.py: graded gain = 2^grade - 1.
     dcg = sum(
         (2 ** int(hit["relevance_score"]) - 1) / math.log2(hit["rank"] + 1)
         for hit in top_hits
@@ -192,11 +192,11 @@ def main() -> None:
         "--top-k",
         type=int,
         default=5,
-        help="Cutoff for ranking metrics (default: 5, matching test_retrieval.py).",
+        help="Cutoff for ranking metrics (default: 5, matching benchmark_minilm.py).",
     )
     parser.add_argument(
         "--output-dir",
-        default="artifacts/retrieval_benchmark/chembed/evaluation",
+        default="reports/retrieval/benchmark/chembed/evaluation",
         help="Directory for timestamped evaluation JSON files.",
     )
     args = parser.parse_args()
