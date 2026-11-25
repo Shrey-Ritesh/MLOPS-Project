@@ -57,4 +57,39 @@ CREATE TABLE IF NOT EXISTS predictions (
 CREATE INDEX IF NOT EXISTS idx_pred_time ON predictions (occurred_at);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_pred_learner_seq ON predictions (learner_key, learner_seq, source);
 CREATE INDEX IF NOT EXISTS idx_pred_label ON predictions (label_status, occurred_at);
+
+-- One row per evaluated monitoring window; `report` is the full window report JSON (§4.2).
+CREATE TABLE IF NOT EXISTS monitoring_windows (
+  window_id      TEXT PRIMARY KEY,
+  window_start   TEXT NOT NULL,
+  window_end     TEXT NOT NULL,
+  evaluated_at   TEXT NOT NULL,
+  n_predictions  INTEGER NOT NULL,
+  n_labelled     INTEGER NOT NULL,
+  status         TEXT NOT NULL CHECK (status IN ('ok','alert','insufficient_data')),
+  report         TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_windows_end ON monitoring_windows (window_end);
+
+-- Alerts raised by monitoring (and, later, by the retraining trigger).
+CREATE TABLE IF NOT EXISTS alerts (
+  alert_id     TEXT PRIMARY KEY,
+  created_at   TEXT NOT NULL,
+  window_id    TEXT,
+  severity     TEXT NOT NULL CHECK (severity IN ('warning','critical')),
+  category     TEXT NOT NULL,
+  metric       TEXT NOT NULL,
+  value        REAL,
+  threshold    REAL,
+  message      TEXT NOT NULL,
+  acknowledged INTEGER NOT NULL DEFAULT 0 CHECK (acknowledged IN (0,1))
+);
+CREATE INDEX IF NOT EXISTS idx_alerts_time ON alerts (created_at);
+
+-- Small key/value store for the scheduler (last backup date, heartbeat).
+CREATE TABLE IF NOT EXISTS monitor_state (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 """

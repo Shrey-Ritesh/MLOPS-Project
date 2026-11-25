@@ -23,6 +23,7 @@ ALLOWED_FIELDS = frozenset({
     "request_id", "prediction_id", "window_id", "trigger_id",
     "model_name", "model_version", "registry_alias", "status", "error_type",
     "latency_ms", "source", "fallback", "count", "path", "reason",
+    "severity", "category", "metric", "value", "threshold", "window_status",
 })
 
 

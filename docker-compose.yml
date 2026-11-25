@@ -98,6 +98,35 @@ services:
       retries: 5
       start_period: 40s
 
+  # Phase 3 monitoring (Person 1): joins labels, evaluates monitoring windows, raises alerts,
+  # and backs up the monitoring database nightly. Same image as the app; small resource caps
+  # so it can never starve the tutor.
+  monitor:
+    image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
+    command: ["python", "-m", "src.monitoring.scheduler"]
+    environment:
+      MONITORING_DB_PATH: /app/data/state/monitoring.sqlite3
+      MONITORING_OUTPUT_DIR: /app/data/state/monitoring
+      MONITORING_BACKUP_DIR: /app/data/backups
+      # 15 by default; set e.g. MONITORING_WINDOW_MINUTES=2 in .env during the drift experiment.
+      MONITORING_WINDOW_MINUTES: ${MONITORING_WINDOW_MINUTES:-15}
+      MONITORING_TICK_SECONDS: ${MONITORING_TICK_SECONDS:-60}
+      MONITORING_BACKUP_HOUR_UTC: "2"
+    volumes:
+      - app_state:/app/data/state
+      - monitoring_backups:/app/data/backups
+    cpus: 0.5
+    mem_limit: 512m
+    restart: unless-stopped
+    healthcheck:
+      # Healthy while the scheduler has completed a tick in the last 5 minutes.
+      test: ["CMD", "python", "-m", "src.monitoring.scheduler", "--check-heartbeat", "300"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 120s
+
   indexer:
     build: .
     image: ${APP_IMAGE:-jee-tutor:local}
@@ -122,3 +151,4 @@ volumes:
   hf_cache:
   index_reports:
   app_state:
+  monitoring_backups:
