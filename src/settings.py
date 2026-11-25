@@ -34,6 +34,9 @@ def optional_warnings(env: Mapping[str, str] | None = None) -> list[str]:
     warnings: list[str] = []
     if env.get("OCR_SPACE_API_KEY", "").strip().lower() in PLACEHOLDER_VALUES | {"your_ocr_space_api_key_here"}:
         warnings.append("OCR_SPACE_API_KEY is not set: handwritten-answer transcription is disabled")
+    key = env.get("LOG_PSEUDONYM_KEY", "").strip()
+    if key.lower() in PLACEHOLDER_VALUES | {"your_log_pseudonym_key_here"} or len(key) < 16:
+        warnings.append("LOG_PSEUDONYM_KEY is not set (or under 16 characters): prediction logging is disabled")
     return warnings
 
 

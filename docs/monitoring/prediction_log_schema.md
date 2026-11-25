@@ -1,6 +1,6 @@
-# Prediction log schema: DRAFT v0.1 (Person 1)
+# Prediction log schema: DRAFT v0.2, implemented (Person 1)
 
-**Status:** draft for review by Person 2 (drift and performance inputs) and Person 3 (inference hook). It is frozen at the end of Day 2 as `schema_version = "1.0.0"`.
+**Status:** implemented in `src/monitoring/` (tests: `tests/test_monitoring_logging.py`), still waiting for review by Person 2 (drift and performance inputs) and Person 3 (inference hook). Once they agree, it is frozen as `schema_version = "1.0.0"`. Any change after that needs a new schema version.
 **Implements:** §4.1 of `docs/planning/phase3_weekly_work_split_roles_milestones.md`.
 **Assumes:** model gate outcome B or C (the Track B feature contract). If the outcome is A, `features` changes to the XGBoost feature list. Nothing else in the schema changes.
 
@@ -10,10 +10,10 @@
 |---|---|---|
 | Store | SQLite file `/app/data/state/monitoring.sqlite3` on the existing `app_state` volume, in WAL mode | The volume is already shown to survive deploys. SQLite costs nothing and needs no new service. WAL lets the monitoring job read while the app writes. |
 | Separate file, not the `learner_history` DB | Yes | This file has its own retention and backup rules. A monitoring query can never lock the app's progress table. |
-| Who writes | Only the Streamlit `app` process, where inference runs | There is exactly one writer, so there are no write conflicts. |
+| Who writes | The Streamlit `app` process inserts rows (`PredictionLogger`). The label joiner only updates the three label columns. | SQLite WAL mode plus a 5 s busy timeout handles these two writers. No other column is ever updated. |
 | Who reads | The monitoring job (sidecar), the dashboard, and the retraining trigger, all read-only | |
 | Window export | The monitoring job writes `windows/<window_id>/predictions.parquet` plus `report.json` | The drift code and the dashboard read fixed snapshots. Reports can be reproduced later. |
-| Backup | Nightly `sqlite3 .backup` to a dated file. Keep 7 copies (Day 2) | `.backup` takes a consistent copy while the app keeps writing. |
+| Backup | `python -m src.monitoring.backup` uses SQLite's online backup API, runs an integrity check, and keeps 7 copies. It is scheduled nightly by the Day 3 monitoring sidecar. | A consistent copy is taken while the app keeps writing. `--restore` will never overwrite an existing file. |
 
 ## 2. Table `predictions`: one row per prediction
 
@@ -107,7 +107,33 @@ One line per request, collected by Docker:
 
 No learner identifiers and no feature values appear here. The `predictions` table is the record of what the model saw. This line is only for operations.
 
-## 5. Questions for reviewers
+## 5. How to use it (for Person 3's inference hook)
+
+```python
+from src.monitoring.prediction_log import PredictionLogger, PredictionRecord
+from src.monitoring.app_logging import new_request_id
+
+prediction_logger = PredictionLogger.from_env()   # once per process; raises if LOG_PSEUDONYM_KEY is missing
+prediction_logger.log(PredictionRecord(
+    request_id=new_request_id(), source="live",
+    learner_id=current_user["learner_id"], learner_seq=prior_interaction_count,
+    question_id=qid, features=features,           # dict with exactly the 8 contract features
+    score=score, label=label, threshold=0.7,
+    model_name="learner-difficulty", model_version="2", model_id="candidate_hgb_shifted_v2",
+    registry_alias="production", fallback=False, latency_ms=latency_ms, status="ok",
+))  # returns prediction_id, or None if the write failed; it never raises
+```
+
+Rules the logger enforces:
+
+- Features must be exactly the 8 contract keys. They are reordered to contract order.
+- `status="ok"` needs a score and a label. `status="fallback"` needs `fallback=True`.
+- A record that breaks the contract is rejected and reported as a `prediction_log_write_failed` event. It is never partly written.
+- A repeated `(learner, learner_seq, source)`, for example from a double submit, is rejected the same way.
+
+Label joining: `python -m src.monitoring.label_joiner` (Day 3: run at the start of every monitoring window).
+
+## 6. Questions for reviewers
 
 - **Person 3:** can the hook provide `learner_seq`, `selected_difficulty`, `hint_count` and `response_time_seconds` on every submission? Is `predict()` called before or after the answer is evaluated? The features must use only information from before the prediction.
 - **Person 2:** is the JSON `features` column enough for you, or do you want one column per feature in the Parquet export? (I plan to flatten it in the export.)

@@ -1,6 +1,16 @@
+# Cap container logs (Docker's default json-file driver keeps them forever, unbounded).
+# These logs are for operations only; the persistent prediction record is the
+# predictions table in /app/data/state/monitoring.sqlite3.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   chroma:
     image: chromadb/chroma:1.5.3
+    logging: *default-logging
     ports:
       - "8000:8000"
     volumes:
@@ -20,6 +30,7 @@ services:
   api:
     build: .
     image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
     command: ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "8001:8000"
@@ -46,6 +57,7 @@ services:
   app:
     build: .
     image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
     command:
       - sh
       - -c
@@ -62,6 +74,10 @@ services:
       # Student accounts and progress live on a named volume so deploys keep them.
       USERS_CSV_PATH: /app/data/state/users.csv
       LEARNER_DB_PATH: /app/data/state/learner_history.sqlite3
+      # Phase 3 prediction log (same persisted volume). The pseudonym key turns learner IDs into
+      # irreversible keys before they are stored; keep it constant for the whole project.
+      MONITORING_DB_PATH: /app/data/state/monitoring.sqlite3
+      LOG_PSEUDONYM_KEY: ${LOG_PSEUDONYM_KEY:-}
       CHROMA_HOST: chroma
       CHROMA_PORT: "8000"
       HF_HOME: /cache/huggingface
@@ -85,6 +101,7 @@ services:
   indexer:
     build: .
     image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
     profiles: ["tools"]
     command: ["sh", "-c", "python -m src.retrieval.index_builder && python -m src.retrieval.jee_index_builder_v1"]
     environment:
