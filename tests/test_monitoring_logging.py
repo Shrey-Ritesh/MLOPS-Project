@@ -135,6 +135,7 @@ def test_feature_order_is_normalised(logger, db_path):
     {"source": "prod"},
     {"score": 1.5},
     {"latency_ms": float("nan")},
+    {"request_id": "req-lrn-alice-1a2b3c4d-7"},                                 # learner id leaks via request id
 ])
 def test_contract_violations_are_rejected_not_written(logger, db_path, bad, capsys):
     assert logger.log(_record(0, **bad)) is None

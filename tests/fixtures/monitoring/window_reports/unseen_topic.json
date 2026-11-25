@@ -1,0 +1,141 @@
+{
+  "report_version": "1.0.0",
+  "window_id": "w-20261120T0430Z-15m",
+  "start": "2026-11-20T04:30:00.000Z",
+  "end": "2026-11-20T04:45:00.000Z",
+  "evaluated_at": "2026-11-20T04:50:00.000Z",
+  "status": "alert",
+  "n_predictions": 102,
+  "n_labelled": 86,
+  "n_label_pending": 16,
+  "n_label_expired": 0,
+  "health": {
+    "p50": 4.136,
+    "p95": 7.942,
+    "error_rate": 0.0,
+    "timeout_rate": 0.0,
+    "fallback_rate": 0.0,
+    "by_source": {
+      "simulated": 102
+    },
+    "by_model_version": {
+      "fixture-1": 102
+    }
+  },
+  "validity": {
+    "schema_failures": 0,
+    "out_of_range": 0,
+    "unseen_topics": 29,
+    "schema_failure_rate": 0.0,
+    "out_of_range_rate": 0.0,
+    "unseen_topic_rate": 0.2843,
+    "unseen_topic_names": {
+      "Organic Name Reactions": 29
+    }
+  },
+  "prediction_distribution": {
+    "n_scored": 102,
+    "mean_score": 0.1203,
+    "positive_rate": 0.0686,
+    "score_bins": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "score_counts": [
+      70,
+      19,
+      2,
+      4,
+      0,
+      0,
+      0,
+      1,
+      2,
+      4
+    ]
+  },
+  "drift": {
+    "recent_accuracy": {
+      "psi": 0.108,
+      "ks_stat": 0.1005,
+      "ks_p": 0.2476460876195668,
+      "status": "stable"
+    },
+    "mistake_count": {
+      "psi": 0.0715,
+      "ks_stat": 0.1171,
+      "ks_p": 0.11887204072671641,
+      "status": "stable"
+    },
+    "hint_count": {
+      "psi": 0.0156,
+      "ks_stat": 0.0556,
+      "ks_p": 0.8995271279525767,
+      "status": "stable"
+    },
+    "response_time_seconds": {
+      "psi": 2.9595,
+      "ks_stat": 0.6255,
+      "ks_p": 3.197456984893711e-38,
+      "status": "drift"
+    },
+    "prior_interaction_count": {
+      "psi": 0.0504,
+      "ks_stat": 0.0345,
+      "ks_p": 0.9994774788568496,
+      "status": "stable"
+    },
+    "selected_difficulty": {
+      "psi": 0.0159,
+      "ks_stat": null,
+      "ks_p": null,
+      "status": "stable"
+    },
+    "previous_difficulty": {
+      "psi": 0.0074,
+      "ks_stat": null,
+      "ks_p": null,
+      "status": "stable"
+    }
+  },
+  "prediction_psi": 0.2123,
+  "performance": {
+    "f1": 0.7692,
+    "roc_auc": 0.9819,
+    "brier": 0.03,
+    "n": 86
+  },
+  "alerts": [
+    {
+      "severity": "critical",
+      "category": "validity",
+      "metric": "unseen_topic_rate",
+      "value": 0.2843,
+      "threshold": 0.25,
+      "message": "unseen_topic_rate=0.2843 breached critical threshold 0.25"
+    },
+    {
+      "severity": "warning",
+      "category": "drift",
+      "metric": "psi.response_time_seconds",
+      "value": 2.9595,
+      "threshold": 0.2,
+      "message": "response_time_seconds PSI 2.960 >= 0.2"
+    }
+  ],
+  "reference_dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "champion_version": "fixture-1",
+  "thresholds": {
+    "min_predictions_for_rates": 10,
+    "config_version": 1
+  }
+}

@@ -130,6 +130,7 @@ Rules the logger enforces:
 - `status="ok"` needs a score and a label. `status="fallback"` needs `fallback=True`.
 - A record that breaks the contract is rejected and reported as a `prediction_log_write_failed` event. It is never partly written.
 - A repeated `(learner, learner_seq, source)`, for example from a double submit, is rejected the same way.
+- `request_id` and `question_id` are stored exactly as given, so they **must not contain the learner ID**. Records that do are rejected. Use `new_request_id()`, which returns a random hex string.
 
 Label joining: `python -m src.monitoring.label_joiner` (Day 3: run at the start of every monitoring window).
 

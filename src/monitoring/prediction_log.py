@@ -97,6 +97,9 @@ class PredictionRecord:
             raise PredictionRecordError("learner_seq must be a non-negative int")
         if not self.request_id or not self.question_id:
             raise PredictionRecordError("request_id and question_id are required")
+        if self.learner_id and (self.learner_id in self.request_id or self.learner_id in self.question_id):
+            # request_id/question_id are stored as-is; a learner id inside them would undo the pseudonym
+            raise PredictionRecordError("request_id/question_id must not contain the learner id")
         if not self.model_name or not self.model_version:
             raise PredictionRecordError("model_name and model_version are required")
         if self.latency_ms is None or not math.isfinite(self.latency_ms) or self.latency_ms < 0:

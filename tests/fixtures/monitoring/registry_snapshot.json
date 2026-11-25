@@ -1,0 +1,33 @@
+{
+  "_fixture": "SYNTHETIC FIXTURE for dashboard panels 7-8 and governance tests. Not a real registry export; versions, run IDs, metrics and approvers are made up. The real registry is built in Phase 3 (Persons 2, 3, 4).",
+  "registered_model": "learner-difficulty",
+  "versions": [
+    {"version": "1", "model_id": "baseline_logreg_v1", "run_id": "fixture-run-0001",
+     "created_at": "2026-10-15T09:34:00Z", "dataset_sha256": "490506a45cee7bc46ebed63840b55bc6d281ac24d4c0b3edc5b3b67c1b5376c3",
+     "metrics": {"f1_original_test": 0.5908, "f1_shifted_test": 0.5427}, "aliases": ["archived"]},
+    {"version": "2", "model_id": "candidate_hgb_shifted_v2", "run_id": "fixture-run-0002",
+     "created_at": "2026-10-15T09:35:00Z", "dataset_sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
+     "metrics": {"f1_original_test": 0.6828, "f1_shifted_test": 0.6828}, "aliases": ["production"]},
+    {"version": "3", "model_id": "challenger_hgb_retrain_fixture", "run_id": "fixture-run-0003",
+     "created_at": "2026-11-20T06:20:00Z", "dataset_sha256": "fixture-snapshot-sha256",
+     "trigger_id": "fixture-trigger-0001", "metrics": {"f1_original_test": 0.67, "f1_shifted_test": 0.70, "f1_live_window": 0.66},
+     "aliases": ["challenger"]}
+  ],
+  "alias_history": [
+    {"at": "2026-10-15T09:40:00Z", "alias": "production", "from_version": "1", "to_version": "2",
+     "gate": "promotion_gate_v1", "gate_decision": "PROMOTE_CANDIDATE", "approved_by": "fixture-approver", "approval_id": "fixture-approval-0001"},
+    {"at": "2026-11-20T06:20:00Z", "alias": "challenger", "from_version": null, "to_version": "3",
+     "gate": null, "gate_decision": null, "approved_by": null, "approval_id": null,
+     "note": "registered automatically by the retraining trigger; not promoted"}
+  ],
+  "comparison": {
+    "champion_version": "2", "challenger_version": "3", "gate": "promotion_gate_v2",
+    "datasets": {
+      "original_test": {"champion": {"f1": 0.6828, "roc_auc": 0.79, "brier": 0.19}, "challenger": {"f1": 0.67, "roc_auc": 0.78, "brier": 0.19}},
+      "shifted_test":  {"champion": {"f1": 0.6828, "roc_auc": 0.80, "brier": 0.18}, "challenger": {"f1": 0.70, "roc_auc": 0.81, "brier": 0.18}},
+      "live_window":   {"champion": {"f1": 0.62,   "roc_auc": 0.74, "brier": 0.21}, "challenger": {"f1": 0.66, "roc_auc": 0.76, "brier": 0.20}}
+    },
+    "decision": "INCONCLUSIVE",
+    "decided_at": "2026-11-20T06:30:00Z"
+  }
+}

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 import sqlite3
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
@@ -32,7 +33,7 @@ def _features(**overrides):
 def _log_many(logger, n, *, start=W0, learner="lrn-a", seq0=0, step=timedelta(seconds=30), **overrides):
     for i in range(n):
         fields = dict(
-            request_id=f"r-{learner}-{seq0 + i}", source="live", learner_id=learner, learner_seq=seq0 + i,
+            request_id=uuid.uuid4().hex, source="live", learner_id=learner, learner_seq=seq0 + i,
             question_id="q", features=_features(prior_interaction_count=seq0 + i), model_name="learner-difficulty",
             model_version="2", latency_ms=5.0, status="ok", score=0.75, label=1, threshold=0.7,
             occurred_at=_iso(start + i * step),

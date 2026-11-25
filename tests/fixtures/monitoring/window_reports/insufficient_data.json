@@ -1,0 +1,76 @@
+{
+  "report_version": "1.0.0",
+  "window_id": "w-20261120T0215Z-15m",
+  "start": "2026-11-20T02:15:00.000Z",
+  "end": "2026-11-20T02:30:00.000Z",
+  "evaluated_at": "2026-11-20T02:35:00.000Z",
+  "status": "insufficient_data",
+  "n_predictions": 4,
+  "n_labelled": 3,
+  "n_label_pending": 1,
+  "n_label_expired": 0,
+  "health": {
+    "p50": 4.05,
+    "p95": 6.264,
+    "error_rate": 0.0,
+    "timeout_rate": 0.0,
+    "fallback_rate": 0.0,
+    "by_source": {
+      "simulated": 4
+    },
+    "by_model_version": {
+      "fixture-1": 4
+    },
+    "status": "insufficient_data"
+  },
+  "validity": {
+    "schema_failures": 0,
+    "out_of_range": 0,
+    "unseen_topics": 0,
+    "schema_failure_rate": 0.0,
+    "out_of_range_rate": 0.0,
+    "unseen_topic_rate": 0.0,
+    "unseen_topic_names": {},
+    "status": "insufficient_data"
+  },
+  "prediction_distribution": {
+    "n_scored": 4,
+    "mean_score": 0.5135,
+    "positive_rate": 0.5,
+    "score_bins": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "score_counts": [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "drift": "insufficient_data",
+  "prediction_psi": "insufficient_data",
+  "performance": "insufficient_data",
+  "alerts": [],
+  "reference_dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "champion_version": "fixture-1",
+  "thresholds": {
+    "min_predictions_for_rates": 10,
+    "config_version": 1
+  }
+}
