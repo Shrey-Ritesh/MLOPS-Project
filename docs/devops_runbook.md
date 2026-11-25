@@ -1,6 +1,6 @@
-# DevOps runbook and release checklist (Phase 2)
+# DevOps runbook and release checklist (Phase 2 + Phase 3 monitoring)
 
-Scope: sections 1-9 describe a tested **release candidate** with documented production blockers; running the stack locally uses no cloud credentials. Section 10 describes the AWS deployment (EC2, ECR, GitHub Actions) set up afterwards, which does use AWS credentials.
+Scope: sections 1-9 describe a tested **release candidate** with documented production blockers; running the stack locally uses no cloud credentials. Section 10 describes the AWS deployment (EC2, ECR, GitHub Actions) set up afterwards, which does use AWS credentials. Section 11 covers Phase 3 prediction logging and monitoring. It is a **draft**: it is tested locally, but has not yet been run on the server. Each step there says whether it has been verified.
 
 ## 1. Services and ports
 
@@ -9,6 +9,7 @@ Scope: sections 1-9 describe a tested **release candidate** with documented prod
 | `chroma` | `chromadb/chroma:1.5.3` | 8000 | `/api/v2/heartbeat` |
 | `api` | this repo, `uvicorn src.api.app:app` | 8001 | `GET /health` (503 until questions are loaded) |
 | `app` | this repo, Streamlit | 80 and 8501 | `/_stcore/health` |
+| `monitor` | this repo, `python -m src.monitoring.scheduler` (0.5 CPU, 512 MB) | - | heartbeat no older than 5 min (`--check-heartbeat 300`) |
 | `indexer` | this repo, `profiles: [tools]`, run on demand | - | exits 0 when both indexes are built |
 
 Start: `docker compose up --build -d` (after the index steps in the README). Status: `docker compose ps` shows health for each service.
@@ -30,6 +31,10 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and excluded from the image
 | `HF_HOME` | no | `/cache/huggingface` in containers | embedding model cache (named volume) |
 | `USERS_CSV_PATH`, `LEARNER_DB_PATH` | no | `data/users.csv`, `data/learner_history.sqlite3`; compose sets `/app/data/state/...` | student accounts and progress; the `app_state` volume keeps them across deploys |
 | `SEED_DEMO_ACCOUNT` | no | off | `1` creates a demo login (`student` / `password123`) on first start; local testing only |
+| `LOG_PSEUDONYM_KEY` | yes for prediction logging | - | Secret (at least 16 characters) used to pseudonymise learner IDs in the prediction log. If it is missing, the app starts with a warning and prediction logging is off. **Never change it once set** (§11.6). |
+| `MONITORING_DB_PATH` | no | `data/state/monitoring.sqlite3`; compose sets `/app/data/state/monitoring.sqlite3` | prediction log, window reports and alerts, on the `app_state` volume |
+| `MONITORING_WINDOW_MINUTES` | no | `15` | monitoring window length; set to `2` during the drift experiment (§11.4) |
+| `MONITORING_TICK_SECONDS` | no | `60` | how often the monitor wakes up |
 
 Check configuration without starting anything: `python -m src.settings` (prints variable names only, never values).
 
@@ -70,6 +75,8 @@ Dependency note: `requirements.txt` is the full development freeze. `requirement
 - All services log to stdout/stderr: `docker compose logs -f api app`.
 - The API logs warnings for skipped invalid records, retrieval outages and write failures. Learner content is never logged: the retrieval warning logs only the query length and exception type, and invalid-attempt warnings log only the exception type (covered by `tests/test_api_hardening.py`).
 - Attempt records (which contain learner answers) live in the `attempts_data` volume at `/app/data/attempts/attempts.jsonl`, not in logs.
+- Phase 3 events are **one JSON line each** (`"event": "prediction"`, `window_evaluated`, `alert_raised`, `backup_completed`, and so on). Only fields on an allowlist are written (`src/monitoring/app_logging.py`), so learner IDs, features and answer text can never appear in them. Filter them with `docker compose logs monitor | grep '"event":"alert_raised"'`.
+- Container logs are capped at 10 MB × 5 files per service (`x-logging` in `docker-compose.yml`), and they are lost when a container is recreated. The lasting record is the `predictions` table, not the container logs.
 
 ## 6. Rollback / revert
 
@@ -100,7 +107,7 @@ Still required before any real deployment (not done here, by design):
 - [ ] A secrets manager and short-lived credentials instead of `.env` files.
 - [ ] Vulnerability scanning of the image and dependencies (e.g. `pip-audit`, Trivy) and a patch cadence.
 - [ ] Retention, backup and deletion policy for `attempts.jsonl` (learner answers are personal data); consent and privacy review, since uploaded handwriting images are sent to OCR.space.
-- [ ] Monitoring/alerting (metrics, uptime checks) and log shipping.
+- [ ] Monitoring/alerting (metrics, uptime checks) and log shipping. *Phase 3 adds model monitoring and an alerts table (§11). There are still no uptime checks from outside the server and no external alert channel.*
 - [ ] Hosted CD with protected-environment approval.
 
 ## 8. Known limitations
@@ -139,7 +146,7 @@ Setup notes found during the test:
 
 ### 10.1 Design
 
-One EC2 server in the team AWS account (region `ap-southeast-2`) runs the same `docker-compose.yml` as local development. On every push to `main`, `.github/workflows/deploy.yml` builds the image, pushes it to ECR, and tells the server through AWS SSM Run Command (no SSH) to run `scripts/deploy.sh`, which pulls the image and restarts `chroma`, `api` and `app`. Compose uses the image named by `APP_IMAGE`; without it, compose builds locally as before.
+One EC2 server in the team AWS account (region `ap-southeast-2`) runs the same `docker-compose.yml` as local development. On every push to `main`, `.github/workflows/deploy.yml` builds the image, pushes it to ECR, and tells the server through AWS SSM Run Command (no SSH) to run `scripts/deploy.sh`, which pulls the image and restarts `chroma`, `api`, `app` and (from Phase 3) `monitor`. Compose uses the image named by `APP_IMAGE`; without it, compose builds locally as before.
 
 | Resource | Value |
 |---|---|
@@ -187,3 +194,131 @@ DVC on EC2 reads its credentials from the instance role. Without `AWS_METADATA_S
 - The app is published on port 80 as well as 8501, so it opens as `http://<public-ip>`. Use port 80: some networks block 8501 (the college Wi-Fi does). Allow port 80 in the security group for the networks that need it, or Anywhere-IPv4 only for a demo, and see section 7 for the missing authentication and TLS.
 - Some networks send traffic out through more than one public IP (the college uses at least two), so a rule for one IP may not cover every device there.
 - There is no HTTPS yet. Browsers that upgrade to `https://` automatically (Brave, for example) fail with "connection reset"; use Chrome or Edge, or turn the upgrade off for the site.
+
+## 11. Monitoring and prediction logging (Phase 3, owner: Person 1)
+
+**Status: draft.** Code and tests are on `feat/prediction-logging` (PR #25) and `feat/monitoring-fixtures`. Every command below works locally. None of it has been run on the server yet. When a step is first done on the server, record it in §11.9.
+
+Background docs: `docs/monitoring/prediction_log_schema.md` (what is logged), `docs/monitoring/monitoring_job.md` (window report format), `configs/monitoring/health.yaml` (thresholds and the reason for each).
+
+### 11.1 How it fits together
+
+```
+practice answer -> app: model predicts -> PredictionLogger -> predictions table ──┐
+                                                                                  │  monitoring.sqlite3
+monitor (every 60 s): join labels -> evaluate due windows -> alerts ─────────────┤  (app_state volume)
+                      nightly 02:00 UTC: backup -> monitoring_backups volume      │
+dashboard (Person 4), retraining trigger (Person 2): read only ──────────────────┘
+```
+
+| Data | Where | Survives redeploy | Backed up |
+|---|---|---|---|
+| Predictions, window reports, alerts, scheduler state | `/app/data/state/monitoring.sqlite3` (`app_state` volume) | yes | nightly, 7 copies |
+| Per-window snapshots (`report.json`, `predictions.csv`) | `/app/data/state/monitoring/windows/<window_id>/` | yes | no (can be rebuilt from the database) |
+| Backups | `/app/data/backups/monitoring-<UTC timestamp>.sqlite3` (`monitoring_backups` volume) | yes | — |
+
+### 11.2 First-time setup on the server (once, before the first Phase 3 deploy)
+
+1. Generate the pseudonym key **once**: `python3 -c "import secrets; print(secrets.token_hex(32))"`.
+2. Add it to `~/MLOPS-Project/.env` as `LOG_PSEUDONYM_KEY=<value>`. Never commit it, paste it into chat, or rotate it.
+3. Merge the release into `main`. `deploy.sh` pulls and starts `monitor` together with the other services.
+4. Check (§11.3) that `monitor` is healthy and that the app log contains **no** `LOG_PSEUDONYM_KEY is not set` warning:
+   `docker compose logs app | grep -c LOG_PSEUDONYM_KEY` should print `0`.
+
+### 11.3 Daily checks
+
+```bash
+cd ~/MLOPS-Project
+docker compose ps monitor                                  # expect "healthy"
+docker compose logs --since 1h monitor | grep -E 'monitor_tick_failed|alert_raised|backup_failed'
+docker compose exec -T monitor python - <<'PY'
+import sqlite3, json
+c = sqlite3.connect("/app/data/state/monitoring.sqlite3")
+print("predictions:", c.execute("select count(*) from predictions").fetchone()[0])
+print("last windows:")
+for row in c.execute("select window_id, status, n_predictions, n_labelled from monitoring_windows order by window_end desc limit 5"):
+    print("  ", row)
+print("open alerts (24h):")
+for row in c.execute("select created_at, severity, metric, value, threshold from alerts where created_at > strftime('%Y-%m-%dT%H:%M:%SZ','now','-1 day') order by created_at desc limit 20"):
+    print("  ", row)
+print("state:", dict(c.execute("select key, value from monitor_state")))
+PY
+```
+
+How to read the result:
+
+- `insufficient_data` windows are normal when there is little traffic (fewer than 10 predictions). They are **not** a fault.
+- `last_window_end` should be within about 20 minutes of now (window length plus a 5-minute label lag).
+- `last_backup_date` should be today, or yesterday if it is before 02:00 UTC.
+
+### 11.4 Changing the window length (drift experiment)
+
+```bash
+echo "MONITORING_WINDOW_MINUTES=2" >> .env        # remove the line again after the experiment
+docker compose up -d monitor                       # recreates only the monitor container
+docker compose logs monitor | grep monitor_started # expect "window=2m"
+```
+
+Changing the length is safe. Already-evaluated windows are kept, and a short "bridge" window covers the time up to the first boundary of the new length, so there is no gap and no overlap. Put the line back to 15 minutes, or delete it, after the experiment.
+
+### 11.5 Alerts: what they mean and what to do
+
+| Metric | Category | Likely cause | First action |
+|---|---|---|---|
+| `error_rate`, `timeout_rate` | health | The model fails or is too slow | `docker compose logs app \| grep prediction_log_write_failed`; check the model loaded (Person 3) |
+| `fallback_rate` | health | The model could not load, so the rule-based fallback is serving | Check the app's startup logs for model loading; check the `production` alias / model file |
+| `latency_p95_ms` | health | CPU starvation (retraining running?) or a cold model load | `docker stats`; retraining is capped, so check the caps were not removed |
+| `schema_failure_rate` | validity | Code and contract disagree (feature names, schema version) | A bug: compare the inference hook with `src/monitoring/schema.py` |
+| `out_of_range_rate` | validity | Impossible values captured (negative counts, accuracy above 1) | A capture bug in the practice flow (Person 3) |
+| `unseen_topic_rate` | validity | Questions tagged with topics the model never saw | Fix the topic tags, or accept and note it (it also means retraining should be considered) |
+| `psi.*`, performance metrics | drift / performance | Input or accuracy drift (Person 2's evaluator) | Look at the dashboard trend. The retraining trigger acts on these, not people. |
+| `monitoring_gap` | monitoring | The monitor was down longer than the catch-up limit (96 windows) | Find out why it was down (`docker compose ps`, instance stopped?). The skipped windows are named in the alert message. |
+
+### 11.6 Backup and restore
+
+- **Automatic:** nightly after 02:00 UTC. Each backup is checked for integrity, and the last 7 are kept. A failed backup logs `backup_failed` and is retried on the next tick the same day.
+- **Manual backup:** `docker compose exec monitor python -m src.monitoring.backup --dest /app/data/backups`
+- **Restore** (the restore command never overwrites an existing file):
+
+  ```bash
+  docker compose exec monitor ls /app/data/backups
+  docker compose stop app monitor                       # nothing may write while the live file is replaced
+  docker compose run --rm --no-deps monitor python -m src.monitoring.backup \
+      --restore /app/data/backups/monitoring-<timestamp>.sqlite3 --to /app/data/state/monitoring.restored.sqlite3
+  docker compose run --rm --no-deps monitor sh -c 'cd /app/data/state && \
+      mv monitoring.sqlite3 monitoring.broken-$(date -u +%Y%m%dT%H%M%SZ).sqlite3 && \
+      rm -f monitoring.sqlite3-wal monitoring.sqlite3-shm && mv monitoring.restored.sqlite3 monitoring.sqlite3'
+  docker compose up -d app monitor
+  ```
+
+  Predictions made between the backup and the restore are lost. The monitor re-evaluates any windows after its saved `last_window_end`.
+- **Never rotate `LOG_PSEUDONYM_KEY`.** Old and new rows for the same learner would stop matching, which breaks label joining for every learner who is active at that moment. If the key leaks, treat it as an incident: decide as a team, and record it in the governance record (Person 4).
+
+### 11.7 Rollback
+
+- **Bad monitoring code or thresholds:** roll back like any other release (§6, §10.4). The database schema only ever gains tables with `CREATE ... IF NOT EXISTS`, so older code still runs against a newer database.
+- **Stop monitoring without touching the app:** `docker compose stop monitor`. The app keeps logging predictions. When `monitor` starts again, it catches up on missed windows (up to 96) and raises `monitoring_gap` for the rest.
+- **Model rollback** (alias change) is Person 3's procedure. This section only makes sure it shows up in the log: every prediction row records `model_version` and `registry_alias`, so the switch is visible in `health.by_model_version` in the next window report.
+
+### 11.8 Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `monitor` unhealthy | No tick has finished in 5 minutes | `docker compose logs --tail 50 monitor`; look for `monitor_tick_failed` and its `error_type` |
+| `PermissionError` on `/app/data/backups` | The `monitoring_backups` volume was created by an image without that folder (the same problem as `index_reports` in §4) | Use an image that has the folder (current `Dockerfile`), `docker volume rm mlops-project_monitoring_backups`, `docker compose up -d monitor` |
+| Every window is `insufficient_data` | No predictions are being logged | Check `LOG_PSEUDONYM_KEY` is set (§11.2), check the inference hook is deployed, look for `prediction_log_write_failed` in the app logs |
+| `prediction_log_write_failed` with `PredictionRecordError` | The hook sends a record that breaks the contract (wrong features, request ID containing the learner ID, and so on) | Fix the hook. The log's rules are in the schema doc, §5 |
+| Many `pending` labels never join | Learners stop after one answer, or `learner_seq` has gaps | Expected for the last answer of a session; they expire after 72 h. Gaps mean a prediction was not logged, so check the write failures. |
+| `drift` shows `"error"` in reports | Person 2's evaluator raised an exception | The report has `drift_error_type`. Monitoring keeps running; tell Person 2. |
+
+### 11.9 Verification record
+
+| Step | Locally | On the server |
+|---|---|---|
+| Logger, label joiner, backups, window evaluation, scheduler (unit tests) | yes (`tests/test_monitoring_*.py`) | — |
+| Scheduler end-to-end as a process (labels joined, window evaluated, backup, heartbeat) | yes, 2026-11-25 | not yet |
+| `monitor` container built and healthy | no (no Docker on the dev machine) | not yet |
+| Backup restored into a working database | yes (test) | not yet (Day 5) |
+| Window length change during the experiment | yes (test) | not yet (Day 4) |
+| Alert recorded from real traffic | — | not yet (Day 4) |
+
