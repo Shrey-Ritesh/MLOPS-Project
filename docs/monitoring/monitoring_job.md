@@ -78,7 +78,24 @@ docker compose exec monitor python -m src.monitoring.label_joiner           # la
 docker compose logs monitor --since 1h | grep alert_raised                   # alerts in the logs
 ```
 
-## 6. Known limits (to revisit on Day 5)
+## 6. Detection-delay report (for the Day 4 experiment)
+
+```bash
+docker compose exec monitor python -m src.monitoring.detection_report \
+    --shift-at 2026-11-28T10:00:00Z --format md        # or --format json
+```
+
+Given the time the shift was injected, it reads the evaluated windows and reports:
+
+- **Control phase:** windows that end at or before the shift. Drift and performance alerts here are **false alarms**. Health and validity alerts are listed separately, because they are usually real incidents.
+- **Detection:** windows that start at or after the shift. For each metric it gives the first alerting window and the delay from the shift to when that window was **evaluated**, which is the earliest moment anyone could react. It also gives the share of shifted windows that alerted.
+- **Data drift and performance degradation, kept separate:** first input-drift detection, first performance detection, and mean F1 / ROC-AUC / Brier before and after the shift.
+
+A window that straddles the shift is excluded and listed.
+
+On the fixture data (shift at 03:00), data drift is detected after 20 minutes, with 3 false alarms in 11 usable control windows. **No performance alert fires, even though mean F1 falls from 0.68 to 0.59.** Person 2's evaluator should raise performance alerts, or the retraining trigger never sees degradation.
+
+## 7. Known limits (to revisit on Day 5)
 
 - Window snapshot folders grow by about 96 per day at 15 minutes. Their retention (proposed: 30 days) belongs in the governance retention rules (Person 4).
 - Alerts go to the `alerts` table, the JSON logs, and (Day 3, Person 4) a dashboard banner. An external channel, email or a GitHub issue, is P2.
