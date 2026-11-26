@@ -50,10 +50,13 @@
 
 **Never stored:** username, email, raw `learner_id`, question text, answer text, OCR output, image data, exception messages.
 
+The authoritative definition is `DDL` in `src/monitoring/schema.py`, which also defines `attempt_outcomes`, `monitoring_windows`, `alerts` and `monitor_state`.
+
 ```sql
 CREATE TABLE IF NOT EXISTS predictions (
   prediction_id    TEXT PRIMARY KEY,
   schema_version   TEXT NOT NULL,
+  contract_id      TEXT NOT NULL,
   occurred_at      TEXT NOT NULL,
   request_id       TEXT NOT NULL,
   source           TEXT NOT NULL CHECK (source IN ('live','simulated')),
@@ -75,7 +78,7 @@ CREATE TABLE IF NOT EXISTS predictions (
   status           TEXT NOT NULL CHECK (status IN ('ok','timeout','error','fallback')),
   error_type       TEXT,
   label_observed   INTEGER CHECK (label_observed IN (0,1)),
-  label_status     TEXT NOT NULL DEFAULT 'pending' CHECK (label_status IN ('pending','joined','expired')),
+  label_status     TEXT NOT NULL DEFAULT 'pending' CHECK (label_status IN ('pending','joined','expired','excluded')),
   label_joined_at  TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_pred_time ON predictions (occurred_at);
