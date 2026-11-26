@@ -1,0 +1,32 @@
+# Statistical thresholds for sliding-window monitoring in Phase 3.
+# Every threshold includes an explicit one-line rationale as required by Day 2 contract.
+schema_version: "1.0.0"
+
+window:
+  min_predictions: 50           # Minimum sample size required for stable quantile-based PSI computation
+  min_labeled: 20               # Minimum ground truth samples to compute reliable F1 and ROC-AUC metrics
+
+feature_drift:
+  psi_warn: 0.10                # Conventional threshold indicating moderate feature distribution change
+  psi_alert: 0.20               # Conventional threshold indicating significant feature drift requiring action
+  ks_alpha: 0.01                # 99% confidence level test rejecting null hypothesis of identical distributions
+  features:
+    numeric:
+      - recent_accuracy
+      - mistake_count
+      - hint_count
+      - response_time_seconds
+      - prior_interaction_count
+    categorical:
+      - topic
+      - selected_difficulty
+      - previous_difficulty
+
+prediction_drift:
+  psi_warn: 0.10                # Early warning threshold for output probability distribution shift
+  psi_alert: 0.15               # Severe shift in prediction probabilities indicating model disorientation
+
+performance_degradation:
+  baseline_f1: 0.6828           # Champion model baseline F1 score on validation set
+  max_f1_drop: 0.05             # Maximum allowable F1 degradation before raising performance alert
+  min_roc_auc: 0.60             # Absolute lower bound on ROC-AUC for acceptable operational ranking
