@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from src.monitoring import app_logging, schema
+from src.monitoring.contract import load_contract
 from src.monitoring.backup import BackupError, backup, restore
 from src.monitoring.label_joiner import join_labels
 from src.monitoring.prediction_log import (
@@ -78,8 +79,10 @@ def _rows(db_path) -> list[dict]:
 def test_feature_contract_matches_track_b():
     from src.track_b import schema as track_b
 
-    assert list(schema.FEATURE_COLUMNS) == track_b.FEATURE_COLUMNS
-    assert list(schema.DIFFICULTY_LEVELS) == track_b.DIFFICULTY_LEVELS
+    contract = load_contract()
+    assert contract.contract_id == "track_b_difficulty_v1"
+    assert list(contract.feature_names) == track_b.FEATURE_COLUMNS
+    assert contract.label_params["levels"] == track_b.DIFFICULTY_LEVELS
 
 
 def test_ddl_matches_documented_schema():
@@ -99,7 +102,7 @@ def test_exactly_one_row_per_prediction(logger, db_path):
     assert row["schema_version"] == schema.SCHEMA_VERSION
     assert row["model_version"] == "2" and row["registry_alias"] == "production"
     assert row["label_status"] == "pending" and row["label_observed"] is None
-    assert list(json.loads(row["features"])) == list(schema.FEATURE_COLUMNS)
+    assert list(json.loads(row["features"])) == list(load_contract().feature_names)
     assert row["feature_hash"] == feature_hash(json.loads(row["features"]))
 
 
@@ -125,7 +128,7 @@ def test_logger_refuses_missing_or_weak_key(db_path, key):
 def test_feature_order_is_normalised(logger, db_path):
     shuffled = dict(reversed(list(_features().items())))
     logger.log(_record(0, features=shuffled))
-    assert list(json.loads(_rows(db_path)[0]["features"])) == list(schema.FEATURE_COLUMNS)
+    assert list(json.loads(_rows(db_path)[0]["features"])) == list(load_contract().feature_names)
 
 
 @pytest.mark.parametrize("bad", [

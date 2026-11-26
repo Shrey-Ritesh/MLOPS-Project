@@ -35,16 +35,8 @@ validity:
   out_of_range_rate:    {warning: 0.01, critical: 0.10}
   # Reason: topics the model never saw get arbitrary scores; a few are tolerable (new question tags).
   unseen_topic_rate:    {warning: 0.05, critical: 0.25}
-  known_topics_file: configs/track_b/topic_difficulty_priors.csv   # the champion's training topics
-  # Hard bounds = impossible values only. Values outside the TRAINING range but physically possible
-  # are a drift question (Person 2), not a validity failure.
-  bounds:
-    recent_accuracy:         {min: 0.0, max: 1.0}
-    mistake_count:           {min: 0,   max: 50}
-    hint_count:              {min: 0,   max: 50}
-    response_time_seconds:   {min: 0.0, max: 3600.0}
-    prior_interaction_count: {min: 0,   max: 100000}
-  difficulty_levels: [Easy, Medium, Hard]
+  # Feature types, limits and vocabularies live in the model contract
+  # (configs/monitoring/contracts/*.yaml, chosen with MONITORING_CONTRACT).
 
 prediction_distribution:
   score_bins: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]

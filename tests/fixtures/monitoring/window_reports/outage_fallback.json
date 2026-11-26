@@ -1,6 +1,7 @@
 {
-  "report_version": "1.0.0",
+  "report_version": "1.1.0",
   "window_id": "w-20261120T0100Z-15m",
+  "contract_id": "track_b_difficulty_v1",
   "start": "2026-11-20T01:00:00.000Z",
   "end": "2026-11-20T01:15:00.000Z",
   "evaluated_at": "2026-11-20T01:20:00.000Z",
@@ -9,6 +10,7 @@
   "n_labelled": 90,
   "n_label_pending": 16,
   "n_label_expired": 0,
+  "n_label_excluded": 0,
   "health": {
     "p50": 0.495,
     "p95": 5.941,
@@ -24,6 +26,7 @@
     }
   },
   "validity": {
+    "contract_mismatch": 0,
     "schema_failures": 0,
     "out_of_range": 0,
     "unseen_topics": 0,

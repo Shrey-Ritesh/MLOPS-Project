@@ -33,14 +33,12 @@ import yaml
 
 from src.monitoring import db, drift_hook
 from src.monitoring.app_logging import log_event
-from src.monitoring.schema import FEATURE_COLUMNS, SCHEMA_VERSION
+from src.monitoring.contract import Contract, load_contract
+from src.monitoring.schema import SCHEMA_VERSION
 
 DEFAULT_CONFIG = "configs/monitoring/health.yaml"
-REPORT_VERSION = "1.0.0"
+REPORT_VERSION = "1.1.0"  # 1.1.0: contract_id, n_label_excluded, validity.contract_mismatch
 INSUFFICIENT = "insufficient_data"
-NUMERIC_FEATURES = ("recent_accuracy", "mistake_count", "hint_count", "response_time_seconds",
-                    "prior_interaction_count")
-DIFFICULTY_FEATURES = ("selected_difficulty", "previous_difficulty")
 
 
 # ---- helpers ---------------------------------------------------------------------------------
@@ -61,11 +59,6 @@ def window_id_for(start: datetime, end: datetime) -> str:
 def load_config(path: str | Path = DEFAULT_CONFIG) -> dict[str, Any]:
     with open(path, encoding="utf-8") as fh:
         return yaml.safe_load(fh)
-
-
-def load_known_topics(path: str | Path) -> set[str]:
-    with open(path, encoding="utf-8", newline="") as fh:
-        return {row["topic"].strip() for row in csv.DictReader(fh) if row.get("topic")}
 
 
 @dataclass(frozen=True)
@@ -133,33 +126,36 @@ def compute_health(rows: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def compute_validity(rows: list[dict[str, Any]], cfg: dict[str, Any], known_topics: set[str]) -> dict[str, Any]:
-    bounds = cfg["bounds"]
-    levels = set(cfg["difficulty_levels"])
-    schema_failures = out_of_range = unseen = 0
+def compute_validity(rows: list[dict[str, Any]], contract: Contract) -> dict[str, Any]:
+    """Check every row against the contract's feature types and limits.
+
+    A row made under another contract (e.g. during a model switch) counts as a schema failure and
+    is reported separately as ``contract_mismatch``. "Unseen" = a value outside a feature's
+    vocabulary (today only ``topic`` has one).
+    """
+    names = set(contract.feature_names)
+    schema_failures = out_of_range = unseen = mismatch = 0
     unseen_names: dict[str, int] = {}
     for r in rows:
         feats = r["features"]
-        if not isinstance(feats, dict) or set(feats) != set(FEATURE_COLUMNS) \
-                or r.get("schema_version") != SCHEMA_VERSION:
+        if r.get("contract_id") != contract.contract_id:
+            mismatch += 1
             schema_failures += 1
             continue
-        bad = False
-        for name in NUMERIC_FEATURES:
-            value, b = feats.get(name), bounds[name]
-            if not isinstance(value, (int, float)) or isinstance(value, bool) \
-                    or not (b["min"] <= value <= b["max"]):
-                bad = True
-        if any(feats.get(name) not in levels for name in DIFFICULTY_FEATURES):
-            bad = True
-        out_of_range += bad
-        topic = str(feats.get("topic") or "unknown")
-        if topic not in known_topics:
+        if not isinstance(feats, dict) or set(feats) != names or r.get("schema_version") != SCHEMA_VERSION:
+            schema_failures += 1
+            continue
+        problems = {f.name: f.check(feats.get(f.name)) for f in contract.features}
+        out_of_range += any(p == "out_of_range" for p in problems.values())
+        unseen_values = [str(feats.get(name) or "unknown") for name, p in problems.items() if p == "unseen"]
+        if unseen_values:
             unseen += 1
-            unseen_names[topic] = unseen_names.get(topic, 0) + 1
+            for value in unseen_values:
+                unseen_names[value] = unseen_names.get(value, 0) + 1
     n = len(rows)
     rate = lambda k: round(k / n, 4) if n else None  # noqa: E731
     return {
+        "contract_mismatch": mismatch,
         "schema_failures": schema_failures,
         "out_of_range": out_of_range,
         "unseen_topics": unseen,
@@ -194,11 +190,12 @@ def evaluate_window(
     evaluator: drift_hook.Evaluator | None | str = "auto",
     output_dir: str | Path | None = None,
     now: datetime | None = None,
+    contract: Contract | None = None,
 ) -> dict[str, Any]:
     cfg = config or load_config()
+    contract = contract or load_contract()
     now = now or datetime.now(timezone.utc)
     wid = window_id_for(start, end)
-    known_topics = load_known_topics(cfg["validity"]["known_topics_file"])
     if evaluator == "auto":
         evaluator = drift_hook.load_evaluator()
 
@@ -211,7 +208,7 @@ def evaluate_window(
     enough = n >= cfg["min_predictions_for_rates"]
 
     health = compute_health(rows)
-    validity = compute_validity(rows, cfg["validity"], known_topics)
+    validity = compute_validity(rows, contract)
     distribution = compute_prediction_distribution(rows, cfg["prediction_distribution"]["score_bins"])
     model_part = drift_hook.evaluate(rows, evaluator)
 
@@ -240,6 +237,7 @@ def evaluate_window(
     report = {
         "report_version": REPORT_VERSION,
         "window_id": wid,
+        "contract_id": contract.contract_id,
         "start": iso(start),
         "end": iso(end),
         "evaluated_at": iso(now),
@@ -248,6 +246,7 @@ def evaluate_window(
         "n_labelled": n_labelled,
         "n_label_pending": sum(1 for r in rows if r["label_status"] == "pending"),
         "n_label_expired": sum(1 for r in rows if r["label_status"] == "expired"),
+        "n_label_excluded": sum(1 for r in rows if r["label_status"] == "excluded"),
         "health": health if enough else {**health, "status": INSUFFICIENT},
         "validity": validity if enough else {**validity, "status": INSUFFICIENT},
         "prediction_distribution": distribution,
@@ -265,7 +264,7 @@ def evaluate_window(
 
     _persist(db_path, report, alerts, now)
     if output_dir:
-        _write_snapshot(Path(output_dir), report, rows)
+        _write_snapshot(Path(output_dir), report, rows, contract)
     log_event("window_evaluated", service="monitoring", window_id=wid, window_status=status,
               count=n, reason=f"labelled={n_labelled} alerts={len(alerts)}")
     for a in alerts:
@@ -307,17 +306,19 @@ def _persist(db_path, report: dict[str, Any], alerts: list[dict[str, Any]], now:
         )
 
 
-SNAPSHOT_COLUMNS = ("prediction_id", "occurred_at", "source", "learner_key", "learner_seq", "question_id",
-                    *FEATURE_COLUMNS, "score", "label", "threshold", "model_name", "model_version",
-                    "fallback", "latency_ms", "status", "label_observed", "label_status")
+BASE_COLUMNS = ("prediction_id", "occurred_at", "source", "contract_id", "learner_key", "learner_seq", "question_id")
+TAIL_COLUMNS = ("score", "label", "threshold", "model_name", "model_version", "fallback", "latency_ms", "status",
+                "label_observed", "label_status")
 
 
-def _write_snapshot(output_dir: Path, report: dict[str, Any], rows: list[dict[str, Any]]) -> None:
+def _write_snapshot(output_dir: Path, report: dict[str, Any], rows: list[dict[str, Any]],
+                    contract: Contract) -> None:
     folder = output_dir / "windows" / report["window_id"]
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "report.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+    columns = (*BASE_COLUMNS, *contract.feature_names, *TAIL_COLUMNS)
     with open(folder / "predictions.csv", "w", encoding="utf-8", newline="") as fh:
-        writer = csv.DictWriter(fh, fieldnames=SNAPSHOT_COLUMNS, extrasaction="ignore")
+        writer = csv.DictWriter(fh, fieldnames=columns, extrasaction="ignore")
         writer.writeheader()
         for r in rows:
             flat = {**r, **(r["features"] if isinstance(r["features"], dict) else {})}

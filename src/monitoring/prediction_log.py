@@ -9,9 +9,13 @@ Usage from the inference hook (Person 3)::
         model_name="learner-difficulty", model_version="3", model_id="candidate_hgb_shifted_v2",
         registry_alias="production", fallback=False, latency_ms=12.4, status="ok",
     ))
+    # after the answer is evaluated (needed by outcome-based label rules, harmless otherwise):
+    logger.log_outcome(OutcomeRecord(source="live", learner_id=user_learner_id, topic=chapter,
+                                     question_id=qid, outcome="correct"))
 
-``log`` never raises into the app: a failed write is reported as a structured
-``prediction_log_write_failed`` event (counted by monitoring) and returns ``None``.
+The feature list comes from the active model contract (``MONITORING_CONTRACT``). ``log`` and
+``log_outcome`` never raise into the app: a failed write is reported as a structured
+``*_write_failed`` event (counted by monitoring) and returns ``None``.
 """
 from __future__ import annotations
 
@@ -28,7 +32,8 @@ from typing import Any, Mapping
 
 from src.monitoring import db
 from src.monitoring.app_logging import log_event, utc_now_iso
-from src.monitoring.schema import FEATURE_COLUMNS, SCHEMA_VERSION, SOURCES, STATUSES
+from src.monitoring.contract import OUTCOMES, Contract, load_contract
+from src.monitoring.schema import SCHEMA_VERSION, SOURCES, STATUSES
 
 PSEUDONYM_ENV = "LOG_PSEUDONYM_KEY"
 _PLACEHOLDERS = {"", "changeme", "your_log_pseudonym_key_here"}
@@ -50,15 +55,15 @@ def pseudonymize(learner_id: str, key: str) -> str:
     return hmac.new(key.encode("utf-8"), learner_id.encode("utf-8"), hashlib.sha256).hexdigest()[:16]
 
 
-def canonical_features(features: Mapping[str, Any]) -> dict[str, Any]:
+def canonical_features(features: Mapping[str, Any], contract: Contract | None = None) -> dict[str, Any]:
     """Return features in contract order; extra or missing keys are a contract violation."""
-    keys = set(features)
-    expected = set(FEATURE_COLUMNS)
+    names = (contract or load_contract()).feature_names
+    keys, expected = set(features), set(names)
     if keys != expected:
         missing = sorted(expected - keys)
         extra = sorted(keys - expected)
         raise PredictionRecordError(f"feature mismatch: missing={missing} extra={extra}")
-    return {name: features[name] for name in FEATURE_COLUMNS}
+    return {name: features[name] for name in names}
 
 
 def feature_hash(features: Mapping[str, Any]) -> str:
@@ -115,14 +120,38 @@ class PredictionRecord:
             raise PredictionRecordError("status 'fallback' requires fallback=True")
 
 
+@dataclass(frozen=True)
+class OutcomeRecord:
+    source: str
+    learner_id: str  # raw id from the app; only its pseudonym is stored
+    topic: str
+    question_id: str
+    outcome: str     # correct | incorrect | partial | uncertain (the evaluator's verdict)
+    request_id: str | None = None
+    outcome_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    occurred_at: str = field(default_factory=utc_now_iso)
+
+    def validate(self) -> None:
+        if self.source not in SOURCES:
+            raise PredictionRecordError(f"source must be one of {SOURCES}")
+        if self.outcome not in OUTCOMES:
+            raise PredictionRecordError(f"outcome must be one of {OUTCOMES}")
+        if not self.question_id or not self.topic:
+            raise PredictionRecordError("topic and question_id are required")
+        for value in (self.request_id or "", self.question_id):
+            if self.learner_id and self.learner_id in value:
+                raise PredictionRecordError("request_id/question_id must not contain the learner id")
+
+
 class PredictionLogger:
-    def __init__(self, db_path: str | Path, pseudonym_key: str) -> None:
+    def __init__(self, db_path: str | Path, pseudonym_key: str, contract: Contract | None = None) -> None:
         if (pseudonym_key or "").strip().lower() in _PLACEHOLDERS or len(pseudonym_key) < MIN_KEY_LENGTH:
             raise PredictionLogConfigError(
                 f"{PSEUDONYM_ENV} must be set to a secret of at least {MIN_KEY_LENGTH} characters"
             )
         self.db_path = str(db_path)
         self._key = pseudonym_key
+        self.contract = contract or load_contract()
         with db.session(self.db_path) as conn:
             db.ensure_schema(conn)
 
@@ -132,10 +161,11 @@ class PredictionLogger:
 
     def build_row(self, record: PredictionRecord) -> dict[str, Any]:
         record.validate()
-        features = canonical_features(record.features)
+        features = canonical_features(record.features, self.contract)
         return {
             "prediction_id": record.prediction_id,
             "schema_version": SCHEMA_VERSION,
+            "contract_id": self.contract.contract_id,
             "occurred_at": record.occurred_at,
             "request_id": record.request_id,
             "source": record.source,
@@ -187,3 +217,28 @@ class PredictionLogger:
             source=row["source"],
         )
         return row["prediction_id"]
+
+    def log_outcome(self, record: OutcomeRecord) -> str | None:
+        """Record an evaluated answer; return its outcome_id, or None if it could not be written."""
+        try:
+            record.validate()
+            row = {
+                "outcome_id": record.outcome_id,
+                "occurred_at": record.occurred_at,
+                "source": record.source,
+                "learner_key": pseudonymize(record.learner_id, self._key),
+                "topic": record.topic,
+                "question_id": record.question_id,
+                "request_id": record.request_id,
+                "outcome": record.outcome,
+            }
+            with db.session(self.db_path) as conn:
+                conn.execute(
+                    "INSERT INTO attempt_outcomes (outcome_id, occurred_at, source, learner_key, topic, question_id,"
+                    " request_id, outcome) VALUES (:outcome_id, :occurred_at, :source, :learner_key, :topic,"
+                    " :question_id, :request_id, :outcome)", row)
+        except Exception as exc:  # never break the practice flow because logging failed
+            log_event("outcome_log_write_failed", level=logging.ERROR, request_id=getattr(record, "request_id", None),
+                      source=getattr(record, "source", None), error_type=type(exc).__name__)
+            return None
+        return record.outcome_id

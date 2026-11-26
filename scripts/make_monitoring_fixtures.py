@@ -46,10 +46,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.monitoring.label_joiner import join_labels  # noqa: E402
 from src.monitoring.prediction_log import PredictionLogger, PredictionRecord  # noqa: E402
 from src.monitoring.run_window import evaluate_window, iso, load_config  # noqa: E402
-from src.monitoring.schema import FEATURE_COLUMNS as _FEATURES  # noqa: E402
+from src.monitoring.contract import load_contract  # noqa: E402
 from src.track_b import drift  # noqa: E402
 
-FEATURE_COLUMNS = list(_FEATURES)
+CONTRACT = load_contract("configs/monitoring/contracts/track_b_difficulty_v1.yaml")
+FEATURE_COLUMNS = list(CONTRACT.feature_names)
 OUT = Path("tests/fixtures/monitoring")
 DB = OUT / "monitoring_sample.sqlite3"
 KEY = "fixture-pseudonym-key-not-a-secret"
@@ -190,7 +191,7 @@ def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     for stale in (DB, DB.with_name(DB.name + "-wal"), DB.with_name(DB.name + "-shm")):
         stale.unlink(missing_ok=True)
-    logger = PredictionLogger(DB, KEY)
+    logger = PredictionLogger(DB, KEY, contract=CONTRACT)
 
     for t, learner, row in events:
         window = int((t - T0) / WINDOW)
@@ -225,13 +226,13 @@ def main() -> int:
         assert logger.log(record), "fixture row rejected by the logger"
 
     end = win_start(N_WINDOWS)
-    join_labels(DB, now=end + timedelta(hours=1))
+    join_labels(DB, now=end + timedelta(hours=1), contract=CONTRACT)
     cfg = load_config()
     evaluator = fixture_evaluator(reference)
     reports = []
     for i in range(N_WINDOWS):
         reports.append(evaluate_window(DB, win_start(i), win_start(i + 1), config=cfg, evaluator=evaluator,
-                                       now=win_start(i + 1) + timedelta(minutes=5)))
+                                       now=win_start(i + 1) + timedelta(minutes=5), contract=CONTRACT))
 
     conn = sqlite3.connect(DB)
     conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")

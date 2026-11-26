@@ -11,7 +11,8 @@ import pytest
 
 from src.monitoring import db
 from src.monitoring.run_window import evaluate_window, load_config, parse_iso
-from src.monitoring.schema import FEATURE_COLUMNS, SCHEMA_VERSION
+from src.monitoring.contract import load_contract
+from src.monitoring.schema import SCHEMA_VERSION
 
 FIXTURES = Path("tests/fixtures/monitoring")
 DB = FIXTURES / "monitoring_sample.sqlite3"
@@ -46,7 +47,9 @@ def test_fixture_predictions_are_synthetic_and_pseudonymous(conn):
     raw = DB.read_bytes()
     assert b"lrn-" not in raw and b"base-L0" not in raw  # only HMAC learner keys are stored
     features = json.loads(conn.execute("SELECT features FROM predictions LIMIT 1").fetchone()[0])
-    assert list(features) == list(FEATURE_COLUMNS)
+    assert list(features) == list(load_contract().feature_names)
+    contracts = {c for (c,) in conn.execute("SELECT DISTINCT contract_id FROM predictions")}
+    assert contracts == {"track_b_difficulty_v1"}
 
 
 def test_fixture_reports_have_the_contract_shape(conn):

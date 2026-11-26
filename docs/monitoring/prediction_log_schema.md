@@ -20,7 +20,8 @@
 | Column | Type | Null | Notes |
 |---|---|---|---|
 | `prediction_id` | TEXT PK | no | UUID4, created by the logger |
-| `schema_version` | TEXT | no | `"1.0.0"` once frozen |
+| `schema_version` | TEXT | no | `"1.1.0"` (see §7) |
+| `contract_id` | TEXT | no | The model contract the row was made under, e.g. `track_b_difficulty_v1` (§7) |
 | `occurred_at` | TEXT | no | UTC ISO-8601, e.g. `2026-11-26T09:14:03.120Z` |
 | `request_id` | TEXT | no | One per practice submission. It is also written into the JSON app log, so the two can be matched. |
 | `source` | TEXT | no | `live` or `simulated`. Generator traffic is always `simulated`. |
@@ -42,7 +43,7 @@
 | `status` | TEXT | no | `ok`, `timeout`, `error`, or `fallback` |
 | `error_type` | TEXT | yes | Exception class name only. No message text, because messages can contain input values. |
 | `label_observed` | INTEGER | yes | Filled in by the label joiner (§3) |
-| `label_status` | TEXT | no | `pending`, `joined`, or `expired`. Starts as `pending`. |
+| `label_status` | TEXT | no | `pending`, `joined`, `expired`, or `excluded` (§7). Starts as `pending`. |
 | `label_joined_at` | TEXT | yes | UTC ISO-8601 |
 
 **Indexes:** `(occurred_at)`, `(learner_key, learner_seq, source)` unique, and `(label_status, occurred_at)`.
@@ -140,3 +141,34 @@ Label joining: `python -m src.monitoring.label_joiner` (Day 3: run at the start 
 - **Person 2:** is the JSON `features` column enough for you, or do you want one column per feature in the Parquet export? (I plan to flatten it in the export.)
 - **All:** `LOG_PSEUDONYM_KEY` becomes one new secret in the server's `.env`. If it rotates, the link between old and new rows for the same learner breaks, so it stays the same for the whole project.
 - **Retention (input to Person 4):** draft rule is to keep raw rows for 30 days, then keep only window aggregates.
+
+## 7. Model contracts: features and labels are configuration (added 26 Nov 2026)
+
+The app no longer captures a chosen difficulty, and the team is deciding whether to reframe the model as *"probability the learner solves their next question in this chapter"*. To keep logging and monitoring independent of that decision, **the feature list, the feature limits and the labelling rule now come from a contract file** instead of the code.
+
+| File | Status | Label rule |
+|---|---|---|
+| `configs/monitoring/contracts/track_b_difficulty_v1.yaml` | active (default) | `next_interaction_lower_difficulty`: §3 above |
+| `configs/monitoring/contracts/chapter_mastery_draft.yaml` | **draft**: the feature list is a proposal | `next_outcome_same_topic`: the first answer in the same chapter at or after the prediction. `correct` gives 1, `incorrect` gives 0, and `partial`/`uncertain` set `label_status = 'excluded'`. |
+
+**Switching models** is a three-step change:
+
+1. Agree the feature list and edit the draft (rename it, e.g. `chapter_mastery_v1`, and set `status: active`).
+2. Set `MONITORING_CONTRACT=configs/monitoring/contracts/<file>.yaml` for `app` and `monitor`.
+3. Deploy.
+
+Each prediction row stores its `contract_id`. Rows made under a different contract are never labelled by the new rule. In window reports they appear as `validity.contract_mismatch`, and they count towards `schema_failures`. So a window that spans the switch shows it openly instead of mixing two models' inputs.
+
+**Answer outcomes.** The outcome-based rule needs the evaluator's verdict, so the app makes one more call after each evaluated answer:
+
+```python
+from src.monitoring.prediction_log import OutcomeRecord
+prediction_logger.log_outcome(OutcomeRecord(
+    source="live", learner_id=current_user["learner_id"], topic=chapter,
+    question_id=qid, outcome=evaluation.outcome,     # correct | incorrect | partial | uncertain
+))  # never raises; returns None on failure ("outcome_log_write_failed" event)
+```
+
+Outcomes go to the `attempt_outcomes` table, with a pseudonymous learner key and no answer text. The call does no harm under the Track B contract, so Person 3 can add it now and nothing needs to change at switch time.
+
+**Schema version 1.1.0** adds the `contract_id` column, the `attempt_outcomes` table and the `excluded` label status. **Report version 1.1.0** adds `contract_id`, `n_label_excluded` and `validity.contract_mismatch`.
