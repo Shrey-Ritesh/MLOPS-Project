@@ -34,4 +34,12 @@ def test_missing_ocr_key_is_only_a_warning():
     env = {"GROQ_API_KEY": "k"}
     assert validate_environment(env) == []
     assert any("OCR_SPACE_API_KEY" in w for w in optional_warnings(env))
-    assert optional_warnings({**env, "OCR_SPACE_API_KEY": "real"}) == []
+    assert not any("OCR_SPACE_API_KEY" in w for w in optional_warnings({**env, "OCR_SPACE_API_KEY": "real"}))
+
+
+def test_missing_pseudonym_key_is_only_a_warning():
+    env = {"GROQ_API_KEY": "k", "OCR_SPACE_API_KEY": "real"}
+    assert validate_environment(env) == []
+    assert any("LOG_PSEUDONYM_KEY" in w for w in optional_warnings(env))
+    assert any("LOG_PSEUDONYM_KEY" in w for w in optional_warnings({**env, "LOG_PSEUDONYM_KEY": "short"}))
+    assert optional_warnings({**env, "LOG_PSEUDONYM_KEY": "x" * 32}) == []

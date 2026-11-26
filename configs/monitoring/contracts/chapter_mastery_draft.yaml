@@ -1,0 +1,34 @@
+# DRAFT model contract for the reframed task (team decision pending, 26 Nov 2026):
+#   "probability that the learner solves their next question in this chapter".
+# The app no longer captures a chosen difficulty, so the difficulty features are gone. The
+# feature list below is a PROPOSAL: edit it once the team agrees, then rename the file / id
+# (e.g. chapter_mastery_v1), set status: active and point MONITORING_CONTRACT at it.
+#
+# The label needs answer outcomes: the app calls PredictionLogger.log_outcome(...) after each
+# evaluated answer (see docs/monitoring/prediction_log_schema.md).
+
+contract_id: chapter_mastery_draft
+status: draft
+description: >
+  Predicts whether the learner answers their next question in the given chapter correctly
+  (a per-chapter strength estimate). Feature list not final.
+
+features:
+  topic:                   {type: categorical, vocabulary_file: configs/track_b/topic_difficulty_priors.csv}
+  recent_accuracy:         {type: numeric, min: 0.0, max: 1.0}     # across all chapters
+  mistake_count:           {type: integer, min: 0, max: 50}
+  hint_count:              {type: integer, min: 0, max: 50}
+  response_time_seconds:   {type: numeric, min: 0.0, max: 3600.0}
+  prior_interaction_count: {type: integer, min: 0, max: 100000}
+  topic_attempts:          {type: integer, min: 0, max: 100000}   # earlier attempts in this chapter
+  topic_accuracy:          {type: numeric, min: 0.0, max: 1.0}     # accuracy so far in this chapter
+
+label:
+  name: next_attempt_correct_same_topic
+  # 1/0 from the outcome of the learner's first answer in the same chapter at or after the prediction.
+  rule: next_outcome_same_topic
+  params:
+    positive: [correct]
+    negative: [incorrect]
+    excluded: [partial, uncertain]        # not counted either way; reported as label_status 'excluded'
+  expiry_hours: 72

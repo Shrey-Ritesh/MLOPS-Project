@@ -1,0 +1,230 @@
+[
+  {
+    "window": "w-20261120T0000Z-15m",
+    "status": "alert",
+    "n": 94,
+    "labelled": 78,
+    "f1": 0.75,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0015Z-15m",
+    "status": "ok",
+    "n": 145,
+    "labelled": 122,
+    "f1": 0.7429,
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0030Z-15m",
+    "status": "ok",
+    "n": 111,
+    "labelled": 94,
+    "f1": 0.7,
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0045Z-15m",
+    "status": "ok",
+    "n": 96,
+    "labelled": 77,
+    "f1": 0.6667,
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0100Z-15m",
+    "status": "alert",
+    "n": 106,
+    "labelled": 90,
+    "f1": "insufficient_data",
+    "alerts": [
+      "fallback_rate",
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0115Z-15m",
+    "status": "alert",
+    "n": 82,
+    "labelled": 66,
+    "f1": 0.7143,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0130Z-15m",
+    "status": "ok",
+    "n": 86,
+    "labelled": 71,
+    "f1": 0.5882,
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0145Z-15m",
+    "status": "alert",
+    "n": 127,
+    "labelled": 108,
+    "f1": 0.6364,
+    "alerts": [
+      "latency_p95_ms"
+    ]
+  },
+  {
+    "window": "w-20261120T0200Z-15m",
+    "status": "ok",
+    "n": 157,
+    "labelled": 128,
+    "f1": 0.6207,
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0215Z-15m",
+    "status": "insufficient_data",
+    "n": 4,
+    "labelled": 3,
+    "f1": "insufficient_data",
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0230Z-15m",
+    "status": "ok",
+    "n": 115,
+    "labelled": 97,
+    "f1": 0.6452,
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0245Z-15m",
+    "status": "ok",
+    "n": 83,
+    "labelled": 62,
+    "f1": 0.7,
+    "alerts": []
+  },
+  {
+    "window": "w-20261120T0300Z-15m",
+    "status": "alert",
+    "n": 79,
+    "labelled": 65,
+    "f1": 0.6316,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0315Z-15m",
+    "status": "alert",
+    "n": 103,
+    "labelled": 85,
+    "f1": 0.7586,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0330Z-15m",
+    "status": "alert",
+    "n": 116,
+    "labelled": 95,
+    "f1": 0.4211,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0345Z-15m",
+    "status": "alert",
+    "n": 75,
+    "labelled": 60,
+    "f1": 0.6,
+    "alerts": [
+      "psi.recent_accuracy",
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0400Z-15m",
+    "status": "alert",
+    "n": 96,
+    "labelled": 83,
+    "f1": 0.3077,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0415Z-15m",
+    "status": "alert",
+    "n": 104,
+    "labelled": 87,
+    "f1": 0.4211,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0430Z-15m",
+    "status": "alert",
+    "n": 102,
+    "labelled": 86,
+    "f1": 0.7692,
+    "alerts": [
+      "unseen_topic_rate",
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0445Z-15m",
+    "status": "alert",
+    "n": 123,
+    "labelled": 101,
+    "f1": 0.4615,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0500Z-15m",
+    "status": "alert",
+    "n": 85,
+    "labelled": 70,
+    "f1": 0.625,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0515Z-15m",
+    "status": "alert",
+    "n": 83,
+    "labelled": 70,
+    "f1": 0.7742,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0530Z-15m",
+    "status": "alert",
+    "n": 147,
+    "labelled": 125,
+    "f1": 0.7222,
+    "alerts": [
+      "psi.response_time_seconds"
+    ]
+  },
+  {
+    "window": "w-20261120T0545Z-15m",
+    "status": "alert",
+    "n": 87,
+    "labelled": 63,
+    "f1": 0.5333,
+    "alerts": [
+      "psi.recent_accuracy",
+      "psi.response_time_seconds"
+    ]
+  }
+]

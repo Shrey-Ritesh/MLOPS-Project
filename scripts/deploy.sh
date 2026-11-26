@@ -26,8 +26,8 @@ echo "Deploying $IMAGE"
 aws ecr get-login-password --region "$REGION" | docker login --username AWS --password-stdin "$REGISTRY"
 
 export APP_IMAGE="$IMAGE"
-docker compose pull api app
-docker compose up -d --no-build chroma api app
+docker compose pull api app monitor mlflow
+docker compose up -d --no-build chroma mlflow api app monitor
 
 echo "Waiting for the API to become healthy at $HEALTH_URL"
 for _ in $(seq 1 30); do

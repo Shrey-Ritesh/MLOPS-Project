@@ -1,0 +1,42 @@
+# Monitoring thresholds for service health and input validity (owner: Person 1).
+#
+# Drift and performance thresholds are Person 2's: configs/monitoring/thresholds.yaml.
+# Committed BEFORE the Day 4 drift experiment; git history is the evidence. Changing a value
+# after seeing experiment results needs a new commit with a reason, never a silent edit.
+#
+# Every rate alert needs at least `min_predictions_for_rates` predictions in the window, so
+# one failed request in a quiet window does not page anyone. Smaller windows are reported
+# as insufficient_data for the rate checks; the raw counts are still in the report.
+
+version: 1
+
+window:
+  minutes: 15                 # default; MONITORING_WINDOW_MINUTES overrides (e.g. 2 during the experiment)
+  label_lag_minutes: 5        # evaluate a window this long after it closes, so next-interaction labels can arrive
+  max_catch_up_windows: 96    # after downtime, re-run at most this many missed windows (one day at 15 min)
+
+min_predictions_for_rates: 10
+
+health:
+  # Reason: the model is a small tree ensemble; predict() should take a few ms. 250 ms p95 means
+  # something is wrong (cold load, CPU starvation); 1 s is user-visible in the practice flow.
+  latency_p95_ms:  {warning: 250,  critical: 1000}
+  # Reason: any sustained error rate means predictions are missing for learners; 20% is an outage.
+  error_rate:      {warning: 0.02, critical: 0.20}
+  # Reason: fallback keeps the app working but the model is not being used; 30% = model effectively down.
+  fallback_rate:   {warning: 0.10, critical: 0.30}
+  # Reason: timeouts are errors the learner waited for.
+  timeout_rate:    {warning: 0.02, critical: 0.10}
+
+validity:
+  # Reason: a schema failure is a code/contract bug, never expected in normal traffic.
+  schema_failure_rate:  {warning: 0.0,  critical: 0.05}
+  # Reason: physically impossible values (negative counts, accuracy > 1) indicate a capture bug.
+  out_of_range_rate:    {warning: 0.01, critical: 0.10}
+  # Reason: topics the model never saw get arbitrary scores; a few are tolerable (new question tags).
+  unseen_topic_rate:    {warning: 0.05, critical: 0.25}
+  # Feature types, limits and vocabularies live in the model contract
+  # (configs/monitoring/contracts/*.yaml, chosen with MONITORING_CONTRACT).
+
+prediction_distribution:
+  score_bins: [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
