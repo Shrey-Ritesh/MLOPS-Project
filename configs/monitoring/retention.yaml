@@ -1,0 +1,18 @@
+# Data retention for the monitoring database (owner: Person 1; referenced by the governance
+# record, Person 4). Applied once a day by the monitor, right after the nightly backup.
+#
+# What is personal-ish here: pseudonymous learner keys plus feature values per interaction.
+# Raw rows are therefore kept only as long as monitoring, retraining and the audit need them;
+# aggregates (window reports, alerts) contain no learner keys and are kept.
+
+version: 1
+
+raw_predictions_days: 30     # predictions rows (features, learner_key). Reason: retraining uses the
+                             # recent labelled window; 30 days covers it, and labels expire after 72 h.
+attempt_outcomes_days: 30    # attempt_outcomes rows. Reason: only needed for label joining.
+window_snapshot_days: 30     # windows/<id>/report.json + predictions.csv files. Reason: the same
+                             # report is kept in monitoring_windows; the CSV holds raw rows.
+window_reports: keep         # monitoring_windows rows: aggregates only, small, needed for trends.
+alerts: keep                 # audit trail of what monitoring saw.
+backups_keep: 7              # nightly backups kept (src/monitoring/backup.py). A deleted raw row
+                             # therefore survives at most 7 more days inside a backup.

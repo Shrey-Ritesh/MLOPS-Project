@@ -78,6 +78,8 @@ services:
       # irreversible keys before they are stored; keep it constant for the whole project.
       MONITORING_DB_PATH: /app/data/state/monitoring.sqlite3
       LOG_PSEUDONYM_KEY: ${LOG_PSEUDONYM_KEY:-}
+      # Which model contract (features + label rule) predictions are logged under; must match monitor.
+      MONITORING_CONTRACT: ${MONITORING_CONTRACT:-configs/monitoring/contracts/track_b_difficulty_v1.yaml}
       CHROMA_HOST: chroma
       CHROMA_PORT: "8000"
       HF_HOME: /cache/huggingface
@@ -107,6 +109,7 @@ services:
     command: ["python", "-m", "src.monitoring.scheduler"]
     environment:
       MONITORING_DB_PATH: /app/data/state/monitoring.sqlite3
+      MONITORING_CONTRACT: ${MONITORING_CONTRACT:-configs/monitoring/contracts/track_b_difficulty_v1.yaml}
       MONITORING_OUTPUT_DIR: /app/data/state/monitoring
       MONITORING_BACKUP_DIR: /app/data/backups
       # 15 by default; set e.g. MONITORING_WINDOW_MINUTES=2 in .env during the drift experiment.

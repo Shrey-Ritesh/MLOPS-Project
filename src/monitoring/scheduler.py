@@ -32,6 +32,7 @@ from src.monitoring import db
 from src.monitoring.app_logging import log_event
 from src.monitoring.backup import backup
 from src.monitoring.label_joiner import join_labels
+from src.monitoring.retention import apply_retention, load_retention
 from src.monitoring.run_window import DEFAULT_CONFIG, evaluate_window, iso, load_config, parse_iso
 
 HEARTBEAT_FILE = "monitor.heartbeat"
@@ -49,6 +50,7 @@ class Settings:
     tick_seconds: int
     backup_hour_utc: int
     config: dict[str, Any]
+    retention: dict[str, Any] | None = None  # configs/monitoring/retention.yaml; loaded when None
 
     @classmethod
     def from_env(cls, config_path: str = DEFAULT_CONFIG) -> "Settings":
@@ -67,6 +69,7 @@ class Settings:
             tick_seconds=int(os.environ.get("MONITORING_TICK_SECONDS", 60)),
             backup_hour_utc=int(os.environ.get("MONITORING_BACKUP_HOUR_UTC", 2)),
             config=cfg,
+            retention=load_retention(),
         )
 
 
@@ -132,6 +135,7 @@ def tick(s: Settings, now: datetime | None = None) -> dict[str, Any]:
             _set_state(conn, "last_window_end", iso(end), now)
 
     summary["backup"] = _maybe_backup(s, now)
+    summary["retention"] = _maybe_retention(s, now)
 
     with db.session(s.db_path) as conn:
         _set_state(conn, "heartbeat", iso(now), now)
@@ -161,13 +165,30 @@ def _maybe_backup(s: Settings, now: datetime) -> str | None:
         if _get_state(conn, "last_backup_date") == today:
             return None
     try:
-        path = backup(s.db_path, s.backup_dir, now=now)
+        keep = int((s.retention or load_retention()).get("backups_keep", 7))
+        path = backup(s.db_path, s.backup_dir, keep=keep, now=now)
     except Exception as exc:
         log_event("backup_failed", level=logging.ERROR, service="monitoring", error_type=type(exc).__name__)
         return None
     with db.session(s.db_path) as conn:
         _set_state(conn, "last_backup_date", today, now)
     return path.name
+
+
+def _maybe_retention(s: Settings, now: datetime) -> dict[str, int] | None:
+    """Once a day, and only after today's backup succeeded, so nothing is deleted un-backed-up."""
+    today = now.strftime("%Y-%m-%d")
+    with db.session(s.db_path) as conn:
+        if _get_state(conn, "last_backup_date") != today or _get_state(conn, "last_retention_date") == today:
+            return None
+    try:
+        result = apply_retention(s.db_path, s.output_dir, s.retention or load_retention(), now=now)
+    except Exception as exc:
+        log_event("retention_failed", level=logging.ERROR, service="monitoring", error_type=type(exc).__name__)
+        return None
+    with db.session(s.db_path) as conn:
+        _set_state(conn, "last_retention_date", today, now)
+    return result
 
 
 def heartbeat_is_fresh(output_dir: str, max_age_seconds: int) -> bool:

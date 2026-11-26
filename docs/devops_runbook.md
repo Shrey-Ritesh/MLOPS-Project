@@ -35,6 +35,7 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and excluded from the image
 | `MONITORING_DB_PATH` | no | `data/state/monitoring.sqlite3`; compose sets `/app/data/state/monitoring.sqlite3` | prediction log, window reports and alerts, on the `app_state` volume |
 | `MONITORING_WINDOW_MINUTES` | no | `15` | monitoring window length; set to `2` during the drift experiment (§11.4) |
 | `MONITORING_TICK_SECONDS` | no | `60` | how often the monitor wakes up |
+| `MONITORING_CONTRACT` | no | `configs/monitoring/contracts/track_b_difficulty_v1.yaml` | Model contract (features and label rule). Must be the same for `app` and `monitor`; switching models is described in the schema doc, §7. |
 
 Check configuration without starting anything: `python -m src.settings` (prints variable names only, never values).
 
@@ -292,6 +293,7 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
   ```
 
   Predictions made between the backup and the restore are lost. The monitor re-evaluates any windows after its saved `last_window_end`.
+- **Retention** (`configs/monitoring/retention.yaml`): once a day, and **only after that day's backup succeeded**, the monitor deletes raw `predictions` and `attempt_outcomes` rows and window snapshot folders older than 30 days. Window reports and alerts are kept. Rows still waiting for a label are never deleted. To preview what would be deleted: `docker compose exec monitor python -m src.monitoring.retention --dry-run`. A deleted row can survive up to 7 more days inside a backup.
 - **Never rotate `LOG_PSEUDONYM_KEY`.** Old and new rows for the same learner would stop matching, which breaks label joining for every learner who is active at that moment. If the key leaks, treat it as an incident: decide as a team, and record it in the governance record (Person 4).
 
 ### 11.7 Rollback
