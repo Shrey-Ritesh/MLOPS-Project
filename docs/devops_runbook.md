@@ -324,3 +324,32 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
 | Window length change during the experiment | yes (test) | not yet (Day 4) |
 | Alert recorded from real traffic | — | not yet (Day 4) |
 
+## 12. MLflow registry on the server (Phase 3, draft, team decision pending)
+
+**Why:** the plan has the app load the model by registry alias, the retraining trigger register challengers, and governance show alias history. Before this, MLflow existed only as `mlflow.db` on laptops (git-ignored, not in the image), so none of that could work on AWS.
+
+**What:** the `mlflow` Compose service, using the official image `ghcr.io/mlflow/mlflow:v3.17.1`, the same version as the pinned client.
+
+| Item | Value |
+|---|---|
+| Storage | SQLite `/mlflow/mlflow.db` and artifacts in `/mlflow/artifacts`, on the `mlflow_data` volume (survives deploys) |
+| Reached from containers | `http://mlflow:5000` (`MLFLOW_TRACKING_URI` is set for `app` and `monitor`) |
+| Reached from the server | `http://127.0.0.1:5001` only. It is not published to the internet, so no security-group change is needed. |
+| Reached from a laptop | an SSH tunnel: `ssh -i <key> -L 5001:127.0.0.1:5001 ubuntu@<ip>`, then open `http://localhost:5001` |
+| Resources | 1 worker (SQLite needs a single writer), 0.5 CPU, 768 MB |
+| Host check | `--allowed-hosts` includes `mlflow:5000`. Without it, MLflow 3.x answers **403** to the other containers. This was verified locally on 2026-11-26: refused by default, accepted with the flag, and `evil.com` still refused. |
+
+**Seed the registry once** (Person 3, after the first deploy): with the tunnel open, run the registration script against the server. Use an environment with `scikit-learn==1.7.2` (`requirements.txt`). The champion does not load under 1.9.1.
+
+```bash
+MLFLOW_TRACKING_URI=http://localhost:5001 python -m src.track_b.register_mlflow
+```
+
+**Backups:** the registry is not covered by the nightly monitoring backup yet. Until it is, copy it by hand after any registry change:
+
+```bash
+docker compose exec mlflow python -c "import sqlite3; s=sqlite3.connect('/mlflow/mlflow.db'); d=sqlite3.connect('/mlflow/mlflow-backup.db'); s.backup(d)"
+```
+
+**Verification record:** verified locally (2026-11-26) with the real `mlflow server` 3.17.1 process: a model was logged, registered, given an alias and loaded back by alias over HTTP. **Not yet run as a container or on the server.**
+
