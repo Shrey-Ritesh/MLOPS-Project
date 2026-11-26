@@ -1,0 +1,145 @@
+{
+  "experiment_id": "exp_live_drift_20261126_164148",
+  "conducted_at": "2026-11-26T16:41:48.840493+00:00",
+  "shift_injected_at": "2026-11-26T10:30:00+00:00",
+  "window_sample_size": 450,
+  "phases": {
+    "control": {
+      "windows_evaluated": 2,
+      "false_alarm_drift_windows": 0,
+      "trigger_fired": false
+    },
+    "shifted": {
+      "windows_evaluated": 2,
+      "data_drift_detected": true,
+      "first_data_drift_metric": "FEATURE_DRIFT:hint_count",
+      "data_drift_delay_minutes": 16.0,
+      "performance_degradation_detected": true,
+      "first_performance_metric": "PERFORMANCE_DEGRADATION:f1_drop",
+      "performance_delay_minutes": 16.0,
+      "trigger_fired": true,
+      "cooldown_blocked_count": 1
+    }
+  },
+  "trigger_results": [
+    {
+      "trigger_id": "trig_20261126_164133_d3453a",
+      "fired_at": "2026-11-26T16:41:33.843Z",
+      "condition_met": "feature_drift_exceeded_threshold (FEATURE_DRIFT:hint_count, FEATURE_DRIFT:response_time_seconds)",
+      "evidence_window_ids": [
+        "w-20261126T1030Z-15m"
+      ],
+      "data_snapshot_sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
+      "cooldown_until": "2026-11-26T16:42:33.843Z",
+      "pipeline_run_id": "run_6b58bc69a4e8",
+      "challenger_model_version": "candidate_hgb_shifted_v2",
+      "status": "success"
+    },
+    {
+      "status": "cooldown_blocked",
+      "reason": "Cooldown active until 2026-11-26T16:42:33.843Z (45s remaining)"
+    }
+  ],
+  "detection_report_raw": {
+    "shift_at": "2026-11-26T10:30:00.000Z",
+    "windows": {
+      "total": 4,
+      "control": 2,
+      "shifted": 2,
+      "straddling_excluded": [],
+      "insufficient_data": {
+        "control": 0,
+        "shifted": 0
+      }
+    },
+    "control_phase": {
+      "windows_alerting_by_category": {},
+      "alerting_windows_by_category": {},
+      "false_alarm_windows_drift_or_performance": [],
+      "false_alarm_rate_drift_or_performance": 0.0,
+      "note": "health/validity alerts before the shift are listed but are not counted as drift false alarms"
+    },
+    "detection_by_metric": {
+      "FEATURE_DRIFT:hint_count": {
+        "category": "drift",
+        "first_window": "w-20261126T1030Z-15m",
+        "first_window_end": "2026-11-26T10:45:00.000Z",
+        "first_evaluated_at": "2026-11-26T10:46:00.000Z",
+        "delay_minutes": 16.0,
+        "windows_alerting": 2,
+        "share_of_shifted_windows": 1.0,
+        "control_windows_alerting": 0
+      },
+      "FEATURE_DRIFT:response_time_seconds": {
+        "category": "drift",
+        "first_window": "w-20261126T1030Z-15m",
+        "first_window_end": "2026-11-26T10:45:00.000Z",
+        "first_evaluated_at": "2026-11-26T10:46:00.000Z",
+        "delay_minutes": 16.0,
+        "windows_alerting": 2,
+        "share_of_shifted_windows": 1.0,
+        "control_windows_alerting": 0
+      },
+      "CATEGORICAL_DRIFT:topic": {
+        "category": "drift",
+        "first_window": "w-20261126T1030Z-15m",
+        "first_window_end": "2026-11-26T10:45:00.000Z",
+        "first_evaluated_at": "2026-11-26T10:46:00.000Z",
+        "delay_minutes": 16.0,
+        "windows_alerting": 1,
+        "share_of_shifted_windows": 0.5,
+        "control_windows_alerting": 0
+      },
+      "PERFORMANCE_DEGRADATION:f1_drop": {
+        "category": "performance",
+        "first_window": "w-20261126T1030Z-15m",
+        "first_window_end": "2026-11-26T10:45:00.000Z",
+        "first_evaluated_at": "2026-11-26T10:46:00.000Z",
+        "delay_minutes": 16.0,
+        "windows_alerting": 2,
+        "share_of_shifted_windows": 1.0,
+        "control_windows_alerting": 0
+      }
+    },
+    "data_drift_detection": {
+      "metric": "FEATURE_DRIFT:hint_count",
+      "category": "drift",
+      "first_window": "w-20261126T1030Z-15m",
+      "first_window_end": "2026-11-26T10:45:00.000Z",
+      "first_evaluated_at": "2026-11-26T10:46:00.000Z",
+      "delay_minutes": 16.0,
+      "windows_alerting": 2,
+      "share_of_shifted_windows": 1.0,
+      "control_windows_alerting": 0
+    },
+    "performance_detection": {
+      "metric": "PERFORMANCE_DEGRADATION:f1_drop",
+      "category": "performance",
+      "first_window": "w-20261126T1030Z-15m",
+      "first_window_end": "2026-11-26T10:45:00.000Z",
+      "first_evaluated_at": "2026-11-26T10:46:00.000Z",
+      "delay_minutes": 16.0,
+      "windows_alerting": 2,
+      "share_of_shifted_windows": 1.0,
+      "control_windows_alerting": 0
+    },
+    "performance_trend": {
+      "before_shift": {
+        "windows_with_performance": 2,
+        "mean_f1": 0.7535,
+        "mean_roc_auc": 0.954,
+        "mean_brier": 0.0903
+      },
+      "after_shift": {
+        "windows_with_performance": 2,
+        "mean_f1": 0.3906,
+        "mean_roc_auc": 0.6357,
+        "mean_brier": 0.2993
+      }
+    },
+    "contract_ids": [
+      "track_b_difficulty_v1"
+    ]
+  },
+  "limitations": "Conducted on SYNTHETIC learner data only; findings not validated for real students."
+}

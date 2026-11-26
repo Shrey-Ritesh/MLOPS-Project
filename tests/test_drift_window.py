@@ -107,3 +107,43 @@ def test_simulate_traffic_payload_contract():
     assert "prediction_id" in payload
     assert "features" in payload
     assert "selected_difficulty" in payload
+
+
+def test_partial_ground_truth_labels_handled_safely(reference_profile, thresholds):
+    """Ensure rows with None/NaN delayed labels do not crash performance computation."""
+    baseline_df = pd.read_csv("tests/fixtures/monitoring/sample_window_baseline.csv")
+    scores = pd.Series([0.8 if i % 2 == 0 else 0.2 for i in range(len(baseline_df))])
+    # Mix valid labels and None (simulating pending delayed labels)
+    labels = pd.Series([i % 2 if i < 30 else None for i in range(len(baseline_df))], dtype=object)
+
+    rep = evaluate_window_drift(
+        window_df=baseline_df,
+        reference_profile=reference_profile,
+        thresholds=thresholds,
+        prediction_scores=scores,
+        ground_truth_labels=labels,
+        window_id="win_partial_labels",
+    )
+    assert rep["n_labelled"] == 30
+    assert isinstance(rep["performance"], dict)
+    assert "f1" in rep["performance"]
+
+
+def test_drift_windows_bridge_edge_cases(monkeypatch):
+    """Verify drift_windows bridge handles empty rows, corrupted features, and missing pandas cleanly."""
+    from src.monitoring import drift_windows
+
+    empty_res = drift_windows.evaluate_window([])
+    assert empty_res["drift"] == "insufficient_data"
+    assert empty_res["alerts"] == []
+
+    # Insufficient predictions with malformed features string should still not crash
+    small_rows = [{"features": "{bad-json", "score": 0.5, "label_status": "pending"} for _ in range(5)]
+    small_res = drift_windows.evaluate_window(small_rows)
+    assert small_res["drift"] == "insufficient_data"
+
+    # Simulate missing optional config / dependency -> graceful not_configured fallback
+    monkeypatch.setattr(drift_windows, "load_reference_profile", lambda *a, **kw: (_ for _ in ()).throw(ModuleNotFoundError("pandas")))
+    fallback_res = drift_windows.evaluate_window(small_rows)
+    assert fallback_res["drift"] == "not_configured"
+    assert fallback_res["prediction_psi"] is None

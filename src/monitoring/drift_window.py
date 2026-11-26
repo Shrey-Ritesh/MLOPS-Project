@@ -68,18 +68,21 @@ def compute_window_performance(
     threshold: float = 0.5,
 ) -> dict[str, float] | None:
     """Compute F1, ROC-AUC, and Brier score when delayed ground truth labels exist."""
-    y_t = np.asarray(y_true, dtype=int)
-    y_s = np.asarray(y_score, dtype=float)
+    y_t = pd.to_numeric(pd.Series(y_true), errors="coerce").to_numpy(dtype=float)
+    y_s = pd.to_numeric(pd.Series(y_score), errors="coerce").to_numpy(dtype=float)
+    if len(y_t) != len(y_s):
+        raise ValueError(f"Length mismatch between y_true ({len(y_t)}) and y_score ({len(y_s)})")
     valid = ~np.isnan(y_t) & ~np.isnan(y_s)
-    y_t, y_s = y_t[valid], y_s[valid]
+    y_t_clean = y_t[valid].astype(int)
+    y_s_clean = y_s[valid]
 
-    if len(y_t) < 5 or len(np.unique(y_t)) < 2:
+    if len(y_t_clean) < 5 or len(np.unique(y_t_clean)) < 2:
         return None
 
-    y_pred = (y_s >= threshold).astype(int)
-    f1 = float(f1_score(y_t, y_pred, zero_division=0))
-    roc_auc = float(roc_auc_score(y_t, y_s))
-    brier = float(brier_score_loss(y_t, y_s))
+    y_pred = (y_s_clean >= threshold).astype(int)
+    f1 = float(f1_score(y_t_clean, y_pred, zero_division=0))
+    roc_auc = float(roc_auc_score(y_t_clean, y_s_clean))
+    brier = float(brier_score_loss(y_t_clean, y_s_clean))
 
     return {
         "f1": round(f1, 4),
@@ -206,8 +209,8 @@ def evaluate_window_drift(
     n_labelled = 0
     performance_metrics = None
     if ground_truth_labels is not None:
-        labels_series = pd.Series(ground_truth_labels).dropna()
-        n_labelled = len(labels_series)
+        labels_series = pd.Series(ground_truth_labels)
+        n_labelled = int(labels_series.notna().sum())
         if n_labelled >= min_labeled and prediction_scores is not None:
             thr = reference_profile.get("decision_threshold", 0.7)
             performance_metrics = compute_window_performance(labels_series, prediction_scores, threshold=thr)

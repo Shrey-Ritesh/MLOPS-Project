@@ -30,6 +30,7 @@ htmlcov/
 data/raw/
 /data/raw/
 data/quarantine/
+data/snapshots/
 
 # Temporary & Log Files
 *.log
