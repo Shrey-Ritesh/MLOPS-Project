@@ -1,0 +1,88 @@
+# Predefined Promotion Gate v2 for Phase 3 Champion vs Challenger comparison.
+#
+# Governance rule: this file is committed BEFORE any Phase 3 challenger is trained or
+# evaluated. Git history of this file is the grading evidence that thresholds were
+# declared in advance and not loosened after seeing results.
+#
+# Extends configs/track_b/promotion_gate.yaml (v1) without loosening any v1 threshold:
+#   - keeps minimum F1 (0.55), minimum F1 gain (0.01), and original_test regression
+#     tolerances (max_f1_drop: 0.05, max_roc_auc_drop: 0.03)
+#   - adds calibration (Brier score), operational budgets (latency, model size),
+#     identical-row evaluation check, recent labelled live-window evaluation
+#     (with explicit INCONCLUSIVE handling when labels are sparse), and mandatory
+#     human approval before moving the production alias.
+#
+# Synthetic-data notice: Track B models are trained and evaluated on SYNTHETIC learner
+# data only; gate results are not evidence of efficacy on real students.
+
+gate_id: promotion_gate_v2
+extends: promotion_gate_v1
+synthetic_data_notice: "Evaluated on SYNTHETIC learner data only; not validated for real students."
+
+evaluation_datasets:
+  - original_test
+  - shifted_test
+  - live_window
+
+criteria:
+  minimum_predictive_quality:
+    metric: f1
+    dataset: shifted_test
+    minimum: 0.55
+    reason: "Matches v1 floor; challenger must beat trivial baselines on shifted learners."
+
+  improvement_over_champion:
+    metric: f1
+    dataset: shifted_test
+    minimum_gain: 0.01
+    reason: "Matches v1 gain bar; challenger must beat current champion on shifted_test by >= 0.01 F1."
+
+  regression_tolerance:
+    dataset: original_test
+    max_f1_drop: 0.05
+    max_roc_auc_drop: 0.03
+    reason: "Matches v1 regression limits; challenger must not forget the original population."
+
+  calibration_tolerance:
+    metric: brier
+    dataset: shifted_test
+    max_brier_increase: 0.02
+    reason: "Probability calibration (Brier score, lower is better) must not degrade materially."
+
+  live_window_quality:
+    metric: f1
+    dataset: live_window
+    min_labelled_rows: 50
+    max_f1_drop: 0.02
+    on_insufficient_data: inconclusive
+    reason: "Challenger must be non-inferior on the recent labelled live window; sparse labels yield INCONCLUSIVE."
+
+  operational_constraints:
+    max_p95_latency_ms: 50.0
+    max_model_size_mb: 25.0
+    reason: "Interactive practice inference budget and EC2 Free Plan memory/disk footprint."
+
+  data_validity:
+    schema_validation: required
+    leakage_check: required
+    learner_level_split: required
+    identical_evaluation_rows: required
+    reason: "Both champion and challenger must be scored on identical, leakage-free rows."
+
+  reproducibility:
+    required_fields: [dataset_sha256, config_sha256, git_commit, seed]
+    reason: "Every challenger must carry full lineage back to data, config, code, and seed."
+
+governance:
+  human_approval_required: true
+  allowed_decisions:
+    - PROMOTE_CHALLENGER_PENDING_APPROVAL
+    - INCONCLUSIVE
+    - REJECT_CHALLENGER_RETAIN_CHAMPION
+
+decision_rule: >
+  If any mandatory criterion fails, return REJECT_CHALLENGER_RETAIN_CHAMPION.
+  Else if live_window_quality is inconclusive (fewer than min_labelled_rows or single-class labels),
+  return INCONCLUSIVE.
+  Else return PROMOTE_CHALLENGER_PENDING_APPROVAL; moving the MLflow production alias still
+  requires a recorded human approval artifact.
