@@ -198,7 +198,7 @@ DVC on EC2 reads its credentials from the instance role. Without `AWS_METADATA_S
 
 ## 11. Monitoring and prediction logging (Phase 3, owner: Person 1)
 
-**Status: draft.** Code and tests are on `feat/prediction-logging` (PR #25) and `feat/monitoring-fixtures`. Every command below works locally. None of it has been run on the server yet. When a step is first done on the server, record it in §11.9.
+**Status: draft.** Code and tests are on `dev` (PR #25, merged 27 Nov 2026). Every command below works locally. On the server, only the pseudonym key has been set so far. When a step is first done on the server, record it in §11.9.
 
 Background docs: `docs/monitoring/prediction_log_schema.md` (what is logged), `docs/monitoring/monitoring_job.md` (window report format), `configs/monitoring/health.yaml` (thresholds and the reason for each).
 
@@ -220,8 +220,8 @@ dashboard (Person 4), retraining trigger (Person 2): read only ─────�
 
 ### 11.2 First-time setup on the server (once, before the first Phase 3 deploy)
 
-1. Generate the pseudonym key **once**: `python3 -c "import secrets; print(secrets.token_hex(32))"`.
-2. Add it to `~/MLOPS-Project/.env` as `LOG_PSEUDONYM_KEY=<value>`. Never commit it, paste it into chat, or rotate it.
+1. **Done 2026-11-27.** Generate the pseudonym key **once** on the server (`openssl rand -hex 32`).
+2. **Done 2026-11-27.** Add it to `~/MLOPS-Project/.env` as `LOG_PSEUDONYM_KEY=<value>`. Never commit it, paste it into chat, or rotate it. If the instance is ever rebuilt, copy the old `.env` across instead of generating a new key, or old and new rows stop linking up.
 3. Merge the release into `main`. `deploy.sh` pulls and starts `monitor` together with the other services.
 4. Check (§11.3) that `monitor` is healthy and that the app log contains **no** `LOG_PSEUDONYM_KEY is not set` warning:
    `docker compose logs app | grep -c LOG_PSEUDONYM_KEY` should print `0`.
@@ -317,14 +317,18 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
 
 | Step | Locally | On the server |
 |---|---|---|
+| `LOG_PSEUDONYM_KEY` added to `~/MLOPS-Project/.env` (64 hex chars, generated on the server, `.env` mode 600, old file kept as `.env.bak-20261127`) | — | yes, 2026-11-27 |
 | Logger, label joiner, backups, window evaluation, scheduler (unit tests) | yes (`tests/test_monitoring_*.py`) | — |
+| App inference path (Person 3's `InferenceService`, PR #26) → log → labels → window (`tests/test_monitoring_integration.py`) | yes, 2026-11-27, against PR #26 head `c2e6191` | — |
 | Scheduler end-to-end as a process (labels joined, window evaluated, backup, heartbeat) | yes, 2026-11-25 | not yet |
 | `monitor` container built and healthy | no (no Docker on the dev machine) | not yet |
 | Backup restored into a working database | yes (test) | not yet (Day 5) |
 | Window length change during the experiment | yes (test) | not yet (Day 4) |
 | Alert recorded from real traffic | — | not yet (Day 4) |
 
-## 12. MLflow registry on the server (Phase 3, draft, team decision pending)
+## 12. MLflow registry on the server (Phase 3, draft)
+
+**Decision (27 Nov 2026): yes.** Person 3's app loads the champion by alias (`learner-difficulty@production`), the retraining trigger registers challengers, and the gate and rollback commands move aliases. All of that needs a registry the server can reach. Until the registry is seeded, the app falls back to the committed local model, so nothing breaks in the meantime.
 
 **Why:** the plan has the app load the model by registry alias, the retraining trigger register challengers, and governance show alias history. Before this, MLflow existed only as `mlflow.db` on laptops (git-ignored, not in the image), so none of that could work on AWS.
 

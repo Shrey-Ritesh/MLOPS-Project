@@ -71,6 +71,7 @@ Add `src/monitoring/drift_windows.py` with `evaluate_window(rows: list[dict]) ->
 ## 5. Running it by hand
 
 ```bash
+docker compose exec monitor python -m src.monitoring.status                 # read-only summary: counts, windows, alerts, heartbeat, backups
 docker compose exec monitor python -m src.monitoring.scheduler --once        # one tick now
 docker compose exec monitor python -m src.monitoring.run_window \
     --start 2026-11-26T09:00:00Z --end 2026-11-26T09:15:00Z                  # one specific window

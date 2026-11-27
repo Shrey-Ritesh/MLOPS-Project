@@ -147,7 +147,9 @@ Label joining: `python -m src.monitoring.label_joiner` (Day 3: run at the start 
 
 ## 7. Model contracts: features and labels are configuration (added 26 Nov 2026)
 
-The app no longer captures a chosen difficulty, and the team is deciding whether to reframe the model as *"probability the learner solves their next question in this chapter"*. To keep logging and monitoring independent of that decision, **the feature list, the feature limits and the labelling rule now come from a contract file** instead of the code.
+**The feature list, the feature limits and the labelling rule come from a contract file** instead of the code, so changing the model's task is a configuration change.
+
+**Decision (27 Nov 2026): the Track B difficulty contract stays active.** Person 3's live inference (PR #26) brings back a difficulty selector in the practice tab and serves the registered Track B model with its 8 features, which is the model that the registry, Gate v2 and the drift experiment all use. Switching to the chapter-mastery task would mean a new model, a new registry entry and a rerun of the experiment in the last week, for no graded gain. The chapter-mastery contract stays as a tested **draft** (future work). The outcomes the app logs with `log_outcome` already give it the labels it would need.
 
 | File | Status | Label rule |
 |---|---|---|
