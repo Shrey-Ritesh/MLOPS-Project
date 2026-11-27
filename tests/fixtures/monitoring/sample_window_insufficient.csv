@@ -1,0 +1,16 @@
+learner_id,interaction_id,topic,selected_difficulty,recent_accuracy,mistake_count,hint_count,response_time_seconds,prior_interaction_count,previous_difficulty,next_selected_difficulty,switch_to_lower_difficulty
+L00000,L00000-000,Rotational Motion,Hard,0.5,2,0,840.6,0,Hard,Medium,1
+L00000,L00000-001,Rotational Motion,Medium,0.0,0,0,127.0,1,Hard,Medium,0
+L00000,L00000-002,Rotational Motion,Medium,0.5,1,1,239.5,2,Medium,Medium,0
+L00000,L00000-003,Rotational Motion,Medium,0.3333,5,2,772.8,3,Medium,Easy,1
+L00000,L00000-004,Rotational Motion,Easy,0.25,1,0,290.1,4,Medium,Easy,0
+L00000,L00000-005,Rotational Motion,Easy,0.2,1,0,384.5,5,Easy,Easy,0
+L00000,L00000-006,Rotational Motion,Easy,0.2,1,0,299.4,6,Easy,Easy,0
+L00000,L00000-007,Rotational Motion,Easy,0.0,0,1,344.7,7,Easy,Easy,0
+L00000,L00000-008,Hydrogen,Easy,0.2,0,0,73.0,8,Easy,Medium,0
+L00000,L00000-009,Hydrogen,Medium,0.4,0,0,169.8,9,Easy,Medium,0
+L00000,L00000-010,Hydrogen,Medium,0.6,1,0,197.4,10,Medium,Hard,0
+L00000,L00000-011,Hydrogen,Hard,0.6,0,0,114.0,11,Medium,Hard,0
+L00000,L00000-012,Thermodynamics,Hard,0.8,0,0,201.2,12,Hard,Hard,0
+L00000,L00000-013,Thermodynamics,Hard,0.8,0,0,297.1,13,Hard,Hard,0
+L00000,L00000-014,Thermodynamics,Hard,0.8,0,1,454.1,14,Hard,Hard,0

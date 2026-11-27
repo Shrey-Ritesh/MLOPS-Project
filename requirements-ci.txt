@@ -7,10 +7,11 @@ pydantic==2.13.5
 PyYAML==6.0.3
 numpy==2.5.4
 pandas==3.0.6
-scikit-learn==1.9.1
+scikit-learn==1.7.2
 scipy==1.18.1
 joblib==1.6.0
 mlflow==3.17.1
+skops==0.16.0
 PyMuPDF==1.28.2
 fastapi==0.143.1
 starlette==1.8.0

@@ -5,9 +5,11 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import logging
 import os
 import random
 import secrets
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -30,7 +32,10 @@ from src.learner.history import (
     SQLiteAttemptStore,
     recommend_practice,
 )
+from src.learner.inference_hook import InferenceService, build_learner_features
+from src.learner.topic_tagger import QuestionTopicTagger
 from src.models.jee import JEEQuestionRecord
+from src.monitoring.app_logging import log_event
 from src.tutoring.prompt import build_tutor_user_message
 
 DEFAULT_MODEL = "qwen/qwen3.8-27b"
@@ -44,6 +49,16 @@ SEED_DEMO_ACCOUNT = os.getenv("SEED_DEMO_ACCOUNT", "").strip().lower() in {"1", 
 _question_repo = QuestionRepository()
 _evaluation_service = EvaluationService(repository=_question_repo)
 _attempt_store = SQLiteAttemptStore(LEARNER_DB_PATH)
+_topic_tagger = QuestionTopicTagger.from_file()
+_inference_service: InferenceService | None = None
+
+
+def _get_inference_service() -> InferenceService:
+    """Lazily initialize the versioned ProgressModel + PredictionLogger service."""
+    global _inference_service
+    if _inference_service is None:
+        _inference_service = InferenceService.from_env()
+    return _inference_service
 
 
 # --- Authentication & CSV Management ---
@@ -476,6 +491,8 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
         if st.button("Random Problem", key="random_problem_btn"):
             rand_q = random.choice(chem_questions)
             st.session_state["selected_question_id"] = rand_q.question_id
+            st.session_state["practice_question_started_at"] = time.monotonic()
+            st.session_state["practice_hint_count"] = 0
             st.session_state.pop("practice_evaluation_result", None)
             st.rerun()
 
@@ -489,17 +506,27 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
         )
         if chosen_qid != st.session_state.get("selected_question_id"):
             st.session_state["selected_question_id"] = chosen_qid
+            st.session_state["practice_question_started_at"] = time.monotonic()
+            st.session_state["practice_hint_count"] = 0
             st.session_state.pop("practice_evaluation_result", None)
+
+    if "practice_question_started_at" not in st.session_state:
+        st.session_state["practice_question_started_at"] = time.monotonic()
+    if "practice_hint_count" not in st.session_state:
+        st.session_state["practice_hint_count"] = 0
 
     question = _question_repo.get_question(chosen_qid)
     if not question:
         st.error(f"Could not load question {chosen_qid}.")
         return
 
+    topic = _topic_tagger.get_topic(question)
+
     # Question Display Box
     st.markdown("---")
     st.markdown(
         f"**Question ID:** `{question.question_id}` | "
+        f"**Topic:** `{topic}` | "
         f"**Year:** {question.year or 'N/A'} | "
         f"**Session:** {question.session or 'N/A'} | "
         f"**Shift:** {question.shift or 'N/A'}"
@@ -510,6 +537,30 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
         st.markdown("**Options:**")
         for opt in question.options:
             st.markdown(f"- **({opt.label})** {opt.text}")
+
+    col_diff, col_hint = st.columns([2, 1])
+    with col_diff:
+        selected_difficulty = st.selectbox(
+            "Practice Difficulty Level",
+            ["Easy", "Medium", "Hard"],
+            index=["Easy", "Medium", "Hard"].index(st.session_state.get("practice_selected_difficulty", "Medium")),
+            key="practice_difficulty_select",
+            help="Choose the difficulty tier you want to practice at for this attempt.",
+        )
+        st.session_state["practice_selected_difficulty"] = selected_difficulty
+    with col_hint:
+        st.write("")
+        if st.button("Show Hint", key="practice_show_hint_btn"):
+            st.session_state["practice_hint_count"] = int(st.session_state.get("practice_hint_count", 0)) + 1
+
+    hint_count = int(st.session_state.get("practice_hint_count", 0))
+    if hint_count > 0:
+        hint_messages = [
+            f"Focus on core concepts from **{topic}** before substituting values.",
+            "Double-check units, stoichiometry/sign conventions, and boundary cases.",
+            "Eliminate options that violate conservation laws or periodic trends.",
+        ]
+        st.info(f"Hint #{hint_count}: {hint_messages[min(hint_count - 1, len(hint_messages) - 1)]}")
 
     st.write("---")
     st.markdown("##### Submit Your Answer")
@@ -575,28 +626,77 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
             )
 
             with st.spinner("Evaluating against canonical answer key and NCERT..."):
+                # Snapshot pre-submission learner state (unbounded count so learner_seq never caps at 500).
+                prior_attempts = _attempt_store.list_for_learner(learner_id, limit=5)
+                prior_count = _attempt_store.count_for_learner(learner_id)
+                elapsed_seconds = time.monotonic() - float(
+                    st.session_state.get("practice_question_started_at", time.monotonic())
+                )
+                features = build_learner_features(
+                    topic=topic,
+                    selected_difficulty=selected_difficulty,
+                    prior_attempts=prior_attempts,
+                    prior_interaction_count=prior_count,
+                    hint_count=hint_count,
+                    response_time_seconds=elapsed_seconds,
+                    previous_difficulty=st.session_state.get("last_selected_difficulty"),
+                )
+
                 eval_res = _evaluation_service.evaluate_answer(submission_req)
                 st.session_state["practice_evaluation_result"] = eval_res
 
-                # Record attempt to SQLite attempt store
+                # Record attempt to SQLite attempt store FIRST; only log prediction if save succeeds
+                # so a failed save never consumes a learner_seq and causes a duplicate on retry.
                 outcome_str = (
                     "correct"
                     if eval_res.is_correct is True
                     else ("incorrect" if eval_res.is_correct is False else "uncertain")
                 )
+                attempt_saved = False
                 try:
                     _attempt_store.save(
                         AttemptRecord(
                             learner_id=learner_id,
                             question_id=question.question_id,
-                            concept_ids=("chemistry",),
+                            concept_ids=(topic,),
                             outcome=outcome_str,
                             answer_mode="handwritten" if is_handwritten else "typed",
                             attempted_at=datetime.now(timezone.utc),
                         )
                     )
-                except Exception:
-                    pass
+                    attempt_saved = True
+                except Exception as exc:
+                    log_event("attempt_save_failed", level=logging.ERROR, error_type=type(exc).__name__)
+
+                if attempt_saved:
+                    inference_event = None
+                    try:
+                        inference_event = _get_inference_service().predict_and_log(
+                            learner_id=learner_id,
+                            learner_seq=prior_count,
+                            question_id=question.question_id,
+                            features=features,
+                            source="live",
+                        )
+                        st.session_state["last_prediction_event"] = inference_event
+                    except Exception as exc:
+                        log_event("inference_hook_failed", level=logging.ERROR, error_type=type(exc).__name__)
+
+                    try:
+                        _get_inference_service().log_outcome(
+                            learner_id=learner_id,
+                            topic=topic,
+                            question_id=question.question_id,
+                            outcome=outcome_str,
+                            source="live",
+                            request_id=inference_event.request_id if inference_event else None,
+                        )
+                    except Exception as exc:
+                        log_event("outcome_hook_failed", level=logging.ERROR, error_type=type(exc).__name__)
+
+                    st.session_state["last_selected_difficulty"] = selected_difficulty
+                    st.session_state["practice_question_started_at"] = time.monotonic()
+                    st.session_state["practice_hint_count"] = 0
 
     # Display Evaluation Result
     eval_res = st.session_state.get("practice_evaluation_result")
@@ -647,12 +747,40 @@ def render_progress_tab(current_user: dict[str, str]) -> None:
 
     st.write("---")
 
+    # Show latest ML difficulty-adjustment estimate (Track B synthetic model)
+    last_event = st.session_state.get("last_prediction_event")
+    st.markdown("### Difficulty Adjustment Estimate (Experimental)")
+    if last_event is not None:
+        pred = last_event.result
+        action_text = (
+            "Consider stepping down to an easier difficulty next"
+            if pred.label == 1
+            else "Current difficulty level looks appropriate"
+        )
+        col_m1, col_m2, col_m3 = st.columns(3)
+        col_m1.metric("Step-Down Estimate", f"{pred.score:.0%}")
+        col_m2.metric("Model Version", f"{pred.model_name} v{pred.model_version}")
+        col_m3.metric("Inference Status", "Fallback" if pred.fallback else pred.status.upper())
+        st.info(f"**Estimated guidance:** {action_text}. {pred.reason}")
+        st.caption(
+            f"{pred.synthetic_notice} "
+            f"(model_id=`{pred.model_id or 'rule_fallback'}`, threshold={pred.threshold:.2f}, "
+            f"latency={pred.latency_ms:.1f} ms)"
+        )
+    else:
+        st.info(
+            "Submit a practice answer in the 'Practice Problems' tab to see a versioned "
+            "difficulty-adjustment estimate (trained on synthetic data only)."
+        )
+
+    st.write("---")
+
     # Generate transparent Next-Practice Recommendation
     chem_questions = _safe_get_chemistry_questions()
     candidates = [
         PracticeCandidate(
             question_id=q.question_id,
-            concept_ids=("chemistry",),
+            concept_ids=(_topic_tagger.get_topic(q),),
             title=f"JEE {q.year or 'Past Question'} - {q.question_id}",
         )
         for q in chem_questions
