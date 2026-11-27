@@ -1,0 +1,61 @@
+learner_id,interaction_id,topic,selected_difficulty,recent_accuracy,mistake_count,hint_count,response_time_seconds,prior_interaction_count,previous_difficulty,next_selected_difficulty,switch_to_lower_difficulty
+L00000,L00000-000,Rotational Motion,Hard,0.5,2,0,840.6,0,Hard,Medium,1
+L00000,L00000-001,Rotational Motion,Medium,0.0,0,0,127.0,1,Hard,Medium,0
+L00000,L00000-002,Rotational Motion,Medium,0.5,1,1,239.5,2,Medium,Medium,0
+L00000,L00000-003,Rotational Motion,Medium,0.3333,5,2,772.8,3,Medium,Easy,1
+L00000,L00000-004,Rotational Motion,Easy,0.25,1,0,290.1,4,Medium,Easy,0
+L00000,L00000-005,Rotational Motion,Easy,0.2,1,0,384.5,5,Easy,Easy,0
+L00000,L00000-006,Rotational Motion,Easy,0.2,1,0,299.4,6,Easy,Easy,0
+L00000,L00000-007,Rotational Motion,Easy,0.0,0,1,344.7,7,Easy,Easy,0
+L00000,L00000-008,Hydrogen,Easy,0.2,0,0,73.0,8,Easy,Medium,0
+L00000,L00000-009,Hydrogen,Medium,0.4,0,0,169.8,9,Easy,Medium,0
+L00000,L00000-010,Hydrogen,Medium,0.6,1,0,197.4,10,Medium,Hard,0
+L00000,L00000-011,Hydrogen,Hard,0.6,0,0,114.0,11,Medium,Hard,0
+L00000,L00000-012,Thermodynamics,Hard,0.8,0,0,201.2,12,Hard,Hard,0
+L00000,L00000-013,Thermodynamics,Hard,0.8,0,0,297.1,13,Hard,Hard,0
+L00000,L00000-014,Thermodynamics,Hard,0.8,0,1,454.1,14,Hard,Hard,0
+L00000,L00000-015,Thermodynamics,Hard,0.8,0,0,516.6,15,Hard,Hard,0
+L00000,L00000-016,Thermodynamics,Hard,1.0,5,0,476.4,16,Hard,Hard,0
+L00000,L00000-017,Thermodynamics,Hard,0.8,1,0,365.0,17,Hard,Medium,1
+L00000,L00000-018,Thermodynamics,Medium,0.6,1,0,212.8,18,Hard,Medium,0
+L00000,L00000-019,Chemical Kinetics,Medium,0.4,0,0,205.8,19,Medium,Medium,0
+L00000,L00000-020,Chemical Kinetics,Medium,0.4,1,0,526.5,20,Medium,Medium,0
+L00000,L00000-021,Chemical Kinetics,Medium,0.2,2,0,250.4,21,Medium,Easy,1
+L00000,L00000-022,Chemical Kinetics,Easy,0.2,0,0,162.8,22,Medium,Medium,0
+L00000,L00000-023,p-Block Elements,Medium,0.4,0,0,180.0,23,Easy,Hard,0
+L00000,L00000-024,p-Block Elements,Hard,0.6,2,0,430.1,24,Medium,Medium,1
+L00001,L00001-000,"Work, Energy and Power",Medium,0.5,1,2,615.2,0,Medium,Medium,0
+L00001,L00001-001,"Work, Energy and Power",Medium,0.0,1,0,582.8,1,Medium,Easy,1
+L00001,L00001-002,"Work, Energy and Power",Easy,0.0,0,0,277.7,2,Medium,Easy,0
+L00001,L00001-003,"Work, Energy and Power",Easy,0.3333,0,1,351.1,3,Easy,Easy,0
+L00001,L00001-004,"Work, Energy and Power",Easy,0.5,0,0,446.9,4,Easy,Easy,0
+L00001,L00001-005,"Work, Energy and Power",Easy,0.6,0,0,285.5,5,Easy,Easy,0
+L00001,L00001-006,Magnetic Effects of Current,Easy,0.8,1,0,483.3,6,Easy,Easy,0
+L00001,L00001-007,Magnetic Effects of Current,Easy,0.8,0,0,283.1,7,Easy,Easy,0
+L00001,L00001-008,Magnetic Effects of Current,Easy,0.8,1,0,372.9,8,Easy,Medium,0
+L00001,L00001-009,Magnetic Effects of Current,Medium,0.6,3,3,642.2,9,Easy,Easy,1
+L00001,L00001-010,Magnetic Effects of Current,Easy,0.4,0,0,293.0,10,Medium,Easy,0
+L00001,L00001-011,Magnetic Effects of Current,Easy,0.4,1,3,712.5,11,Easy,Easy,0
+L00001,L00001-012,Magnetic Effects of Current,Easy,0.4,2,4,1022.2,12,Easy,Easy,0
+L00001,L00001-013,Magnetic Effects of Current,Easy,0.2,0,1,508.7,13,Easy,Easy,0
+L00001,L00001-014,Properties of Solids and Liquids,Easy,0.4,0,0,227.6,14,Easy,Easy,0
+L00001,L00001-015,Properties of Solids and Liquids,Easy,0.6,0,1,323.2,15,Easy,Medium,0
+L00001,L00001-016,Properties of Solids and Liquids,Medium,0.6,2,1,1000.1,16,Easy,Medium,0
+L00001,L00001-017,Properties of Solids and Liquids,Medium,0.6,0,1,530.6,17,Medium,Medium,0
+L00001,L00001-018,Properties of Solids and Liquids,Medium,0.8,2,2,868.6,18,Medium,Easy,1
+L00001,L00001-019,Properties of Solids and Liquids,Easy,0.6,0,0,367.3,19,Medium,Easy,0
+L00001,L00001-020,Solutions,Easy,0.6,0,1,510.9,20,Easy,Easy,0
+L00001,L00001-021,Solutions,Easy,0.6,0,1,410.1,21,Easy,Easy,0
+L00001,L00001-022,Solutions,Easy,0.8,0,1,367.4,22,Easy,Easy,0
+L00001,L00001-023,Solutions,Easy,0.8,1,2,985.3,23,Easy,Easy,0
+L00001,L00001-024,Solutions,Easy,0.8,0,0,349.3,24,Easy,Easy,0
+L00001,L00001-025,Laws of Motion,Easy,0.8,0,0,446.9,25,Easy,Easy,0
+L00001,L00001-026,Laws of Motion,Easy,0.8,0,0,333.5,26,Easy,Easy,0
+L00001,L00001-027,Laws of Motion,Easy,0.8,0,3,207.3,27,Easy,Medium,0
+L00001,L00001-028,Laws of Motion,Medium,0.8,1,1,569.6,28,Easy,Easy,1
+L00001,L00001-029,Laws of Motion,Easy,0.8,0,0,384.4,29,Medium,Medium,0
+L00001,L00001-030,Laws of Motion,Medium,0.8,0,0,410.7,30,Easy,Hard,0
+L00001,L00001-031,Laws of Motion,Hard,0.8,0,2,875.8,31,Medium,Hard,0
+L00001,L00001-032,Coordination Compounds,Hard,0.8,5,3,2912.8,32,Hard,Medium,1
+L00001,L00001-033,Coordination Compounds,Medium,0.6,1,0,394.4,33,Hard,Medium,0
+L00001,L00001-034,Coordination Compounds,Medium,0.6,0,0,499.3,34,Medium,Medium,0

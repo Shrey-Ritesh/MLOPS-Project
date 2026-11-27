@@ -174,8 +174,9 @@ def test_a_crashing_drift_evaluator_does_not_kill_monitoring(logger, db_path, cf
     assert report["health"]["error_rate"] == 0.0
 
 
-def test_missing_evaluator_module_means_not_configured():
-    assert drift_hook.load_evaluator() is None  # until Person 2 adds src/monitoring/drift_windows.py
+def test_missing_evaluator_module_means_not_configured(monkeypatch):
+    monkeypatch.setattr(drift_hook, "EVALUATOR_MODULE", "src.monitoring.does_not_exist")
+    assert drift_hook.load_evaluator() is None
 
 
 # ---- scheduler -------------------------------------------------------------------------------

@@ -193,3 +193,39 @@ stages:
       hash: md5
       md5: 70d3ef5a35a6a0e0d2f43a54b4d85a22
       size: 2496
+  train_challenger:
+    cmd: python -m src.track_b.train_candidate --output-dir 
+      models/track_b/challenger --comparison-out 
+      reports/track_b/challenger_comparison.json
+    deps:
+    - path: configs/track_b/drift_experiment.yaml
+      hash: md5
+      md5: 69119d90189d94d0e191ecf2dcd6f291
+      size: 2520
+    - path: data/synthetic/learner_interactions_shifted_v1.csv
+      hash: md5
+      md5: 4a266be515d97ed1f856c730a0b80da8
+      size: 2120592
+    - path: data/synthetic/learner_interactions_v1.csv
+      hash: md5
+      md5: 30bbccb48649f71bb5f5eb877df9064f
+      size: 2107098
+    - path: models/track_b/baseline
+      hash: md5
+      md5: 3881e5b3a5bde089e33dbf5adf2cf7cb.dir
+      size: 7862
+      nfiles: 2
+    - path: src/track_b/train_candidate.py
+      hash: md5
+      md5: a188523dc87f9db9ae61e7a259308ae9
+      size: 6380
+    outs:
+    - path: models/track_b/challenger
+      hash: md5
+      md5: fecc7286176aa7d6d9e3268de229c110.dir
+      size: 275841
+      nfiles: 2
+    - path: reports/track_b/challenger_comparison.json
+      hash: md5
+      md5: 62850e9c0f328e212b6e45d3373683b6
+      size: 3452

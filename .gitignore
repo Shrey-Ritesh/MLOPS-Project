@@ -30,6 +30,9 @@ htmlcov/
 data/raw/
 /data/raw/
 data/quarantine/
+data/snapshots/
+models/track_b/challenger/
+reports/track_b/challenger_comparison.json
 
 # Temporary & Log Files
 *.log
