@@ -119,6 +119,16 @@ def promote_challenger(
     client = MlflowClient(tracking_uri=uri)
 
     challenger_version = str(approval["challenger_version"])
+
+    # Verify the target challenger version exists in MLflow BEFORE mutating any alias or tag
+    # so a bad version (e.g. "challenger" instead of a version number) never leaves the registry half-changed.
+    try:
+        client.get_model_version(model_name, challenger_version)
+    except Exception as exc:
+        raise GovernanceApprovalError(
+            f"Challenger version {challenger_version!r} does not exist in MLflow model {model_name!r}: {exc}"
+        ) from exc
+
     previous_version: str | None = None
     try:
         prev_mv = client.get_model_version_by_alias(model_name, "production")
@@ -126,19 +136,18 @@ def promote_challenger(
     except Exception:
         previous_version = None
 
-    # Archive previous champion first (if different from challenger)
-    if previous_version and previous_version != challenger_version:
-        client.set_model_version_tag(model_name, previous_version, "status", "archived")
-        client.set_model_version_tag(model_name, previous_version, "archived_at_utc", _utc_now())
-        client.set_registered_model_alias(model_name, "archived", previous_version)
-
-    # Promote challenger to production
+    # Move production alias FIRST; only archive the previous champion after promotion succeeds.
     client.set_registered_model_alias(model_name, "production", challenger_version)
     client.set_model_version_tag(model_name, challenger_version, "status", "production")
     client.set_model_version_tag(model_name, challenger_version, "gate_id", str(decision["gate_id"]))
     client.set_model_version_tag(model_name, challenger_version, "gate_decision", str(decision["decision"]))
     client.set_model_version_tag(model_name, challenger_version, "approved_by", str(approval["approved_by"]))
     client.set_model_version_tag(model_name, challenger_version, "approval_id", str(approval["approval_id"]))
+
+    if previous_version and previous_version != challenger_version:
+        client.set_model_version_tag(model_name, previous_version, "status", "archived")
+        client.set_model_version_tag(model_name, previous_version, "archived_at_utc", _utc_now())
+        client.set_registered_model_alias(model_name, "archived", previous_version)
 
     event = {
         "at": _utc_now(),
@@ -215,6 +224,19 @@ def rollback_production(
         target_version = str(archived_mv.version)
     else:
         target_version = str(to_version)
+
+    if from_version == target_version:
+        raise GovernanceApprovalError(
+            f"Version {target_version!r} is already the active production version; nothing to roll back."
+        )
+
+    # Verify target version exists before mutating aliases/tags.
+    try:
+        client.get_model_version(model_name, target_version)
+    except Exception as exc:
+        raise GovernanceApprovalError(
+            f"Rollback target version {target_version!r} does not exist in MLflow model {model_name!r}: {exc}"
+        ) from exc
 
     client.set_registered_model_alias(model_name, "production", target_version)
     client.set_model_version_tag(model_name, target_version, "status", "production")

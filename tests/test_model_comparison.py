@@ -36,6 +36,10 @@ OK_CHECKS = {
     "reproducibility_fields_present": {
         f: True for f in GATE_V2["criteria"]["reproducibility"]["required_fields"]
     },
+    "gate_integrity": {
+        "gate_file_unmodified": True,
+        "committed_before_candidate_trained": True,
+    },
 }
 
 
@@ -60,8 +64,8 @@ def _mock_comparison(
         return {
             "n_rows": n,
             "row_fingerprint": "abc",
-            "champion": {"n_rows": n, "has_both_classes": both, "metrics": champ_m if n else None},
-            "challenger": {"n_rows": n, "has_both_classes": both, "metrics": chall_m if n else None},
+            "champion": {"n_rows": n, "row_fingerprint": "abc", "has_both_classes": both, "metrics": champ_m if n else None},
+            "challenger": {"n_rows": n, "row_fingerprint": "abc", "has_both_classes": both, "metrics": chall_m if n else None},
         }
 
     return {
@@ -126,6 +130,30 @@ def test_gate_v2_rejects_each_failing_criterion(kwargs, failed_criterion):
 def test_gate_v2_rejects_even_when_live_window_is_sparse_if_hard_criterion_fails():
     decision, _ = evaluate_gate_v2(GATE_V2, _mock_comparison(live_n=0, chall_brier=0.25), OK_CHECKS)
     assert decision == "REJECT_CHALLENGER_RETAIN_CHAMPION"
+
+
+def test_gate_v2_rejects_mismatched_rows_and_broken_gate_integrity():
+    # Review #6a: mismatched row fingerprints between champion and challenger MUST fail the gate.
+    comp = _mock_comparison()
+    comp["datasets"]["shifted_test"]["challenger"]["row_fingerprint"] = "different-sha256"
+    decision, results = evaluate_gate_v2(GATE_V2, comp, OK_CHECKS)
+    assert decision == "REJECT_CHALLENGER_RETAIN_CHAMPION"
+    assert "data_validity.identical_evaluation_rows" in [r["criterion"] for r in results if r["status"] == "fail"]
+
+    # Review #6b: gate committed AFTER challenger was trained (or modified) MUST fail the gate.
+    bad_integrity = {**OK_CHECKS, "gate_integrity": {"gate_file_unmodified": True, "committed_before_candidate_trained": False}}
+    decision2, results2 = evaluate_gate_v2(GATE_V2, _mock_comparison(), bad_integrity)
+    assert decision2 == "REJECT_CHALLENGER_RETAIN_CHAMPION"
+    assert "gate_integrity" in [r["criterion"] for r in results2 if r["status"] == "fail"]
+
+
+def test_serving_config_parity_between_app_and_gate():
+    # Review #7: missing threshold / guard defaults must match ProgressModel (0.7, True).
+    from src.learner.progress_model import DEFAULT_APPLY_BOUNDARY_GUARD, DEFAULT_THRESHOLD, resolve_serving_config
+
+    thr, guard = resolve_serving_config()
+    assert thr == DEFAULT_THRESHOLD == 0.7
+    assert guard is DEFAULT_APPLY_BOUNDARY_GUARD is True
 
 
 # ---- End-to-end 3-dataset comparison + MLflow + approval-gated promotion & rollback ----------
@@ -204,6 +232,8 @@ def test_end_to_end_comparison_gate_v2_promotion_and_rollback(tmp_path):
 
     champion = load_model_from_dir("models/track_b/baseline", version_label=v1)
     challenger = load_model_from_dir("models/track_b/candidate", version_label=v2)
+    # Simulate a Phase 3 challenger trained AFTER promotion_gate_v2.yaml was committed.
+    challenger.card["trained_at_utc"] = "2099-01-01T00:00:00+00:00"
 
     comp_out = tmp_path / "comparison_v2.json"
     dec_out = tmp_path / "decision_v2.json"
@@ -231,6 +261,34 @@ def test_end_to_end_comparison_gate_v2_promotion_and_rollback(tmp_path):
             tracking_uri=mlflow_uri,
             history_path=tmp_path / "history.json",
         )
+
+    # 1b. Review #5: failed promote (e.g. non-existent version string "challenger") MUST NOT archive live champion.
+    bad_dec = tmp_path / "bad_dec.json"
+    bad_dec.write_text(json.dumps({**decision, "challenger": {"model_id": "x", "model_version": "challenger"}}), encoding="utf-8")
+    bad_appr = tmp_path / "bad_appr.json"
+    bad_appr.write_text(
+        json.dumps(
+            {
+                "approval_id": "appr-bad-001",
+                "approved_by": "person4",
+                "approved_at": "2026-11-26T12:00:00Z",
+                "challenger_version": "challenger",
+                "rationale": "Testing atomic refusal",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(GovernanceApprovalError, match="does not exist"):
+        promote_challenger(
+            decision_path=bad_dec,
+            approval_path=bad_appr,
+            tracking_uri=mlflow_uri,
+            history_path=tmp_path / "history.json",
+        )
+    # Live champion v1 must still be production and NOT tagged archived.
+    mv1 = client.get_model_version("learner-difficulty", v1)
+    assert mv1.tags.get("status") != "archived"
+    assert str(client.get_model_version_by_alias("learner-difficulty", "production").version) == v1
 
     # 2. Record human approval (Person 4) and promote v1 -> v2.
     approval_path = tmp_path / "approval.json"
@@ -288,6 +346,16 @@ def test_end_to_end_comparison_gate_v2_promotion_and_rollback(tmp_path):
     assert rb_event["from_version"] == v2
     assert rb_event["to_version"] == v1
     assert pm.predict(sample).model_version == v1
+
+    # 3b. Review minor #1: running rollback twice must refuse and NEVER tag live production as "rolled_back".
+    with pytest.raises(GovernanceApprovalError, match="already the active production version"):
+        rollback_production(
+            reason="Duplicate rollback attempt",
+            operator="person3",
+            tracking_uri=mlflow_uri,
+            history_path=history_path,
+        )
+    assert client.get_model_version("learner-difficulty", v1).tags.get("status") == "production"
 
     # 4. Reject flow sets rejected_candidate without touching production (still v1).
     rej_event = reject_challenger(

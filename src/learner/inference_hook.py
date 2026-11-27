@@ -36,14 +36,16 @@ def build_learner_features(
     hint_count: int,
     response_time_seconds: float,
     previous_difficulty: str | None = None,
+    prior_interaction_count: int | None = None,
     recent_window: int = 5,
 ) -> dict[str, Any]:
     """Construct the 8 Track B features using only pre-submission learner state.
 
     ``prior_attempts`` must contain only attempts recorded *before* the current submission
-    so there is no target or future leakage.
+    so there is no target or future leakage. Pass ``prior_interaction_count`` from an
+    unbounded ``COUNT(*)`` query so learners with >500 attempts never cap at 500.
     """
-    prior_count = len(prior_attempts)
+    prior_count = len(prior_attempts) if prior_interaction_count is None else int(prior_interaction_count)
     # list_for_learner returns newest-first; take up to `recent_window` most recent attempts.
     recent = list(prior_attempts)[:recent_window]
     scored_values: list[float] = []

@@ -79,10 +79,12 @@ def test_coverage_report_on_fixture_questions():
     assert set(tag_map.values()) <= (set(load_chemistry_topics()) | {"unknown"})
 
 
-def test_topic_tagger_falls_back_cleanly_for_empty_question():
+def test_topic_tagger_falls_back_to_unknown_and_matches_bracket_complexes():
     tagger = QuestionTopicTagger()
-    topic = tagger.get_topic({"question_id": "q-empty", "question_text": ""})
-    assert topic in set(load_chemistry_topics())
+    assert tagger.get_topic({"question_id": "q-empty", "question_text": ""}) == "unknown"
+    # Review minor #2: bracketed transition-metal complex formulas like [Fe(CN)6] must match Coordination Compounds.
+    res = tag_text("Find the oxidation number of Fe in [Fe(CN)6]4-.")
+    assert res.topic == "Coordination Compounds"
 
 
 # ---- ProgressModel wrapper -------------------------------------------------------------------
@@ -93,10 +95,13 @@ def test_progress_model_loads_local_champion_and_enforces_boundary_guard():
     assert meta["source_backend"] == "local_joblib"
     assert meta["model_id"] == "candidate_hgb_shifted_v2"
     assert meta["threshold"] == pytest.approx(0.7)
+    # Review minor #3: local file fallback must NOT claim registry_alias='production'.
+    assert meta["registry_alias"] is None
 
     res = pm.predict(_sample_features(selected_difficulty="Hard"))
     assert res.status == "ok"
     assert not res.fallback
+    assert res.registry_alias is None
     assert 0.0 <= res.score <= 1.0
     assert res.label in (0, 1)
     assert res.latency_ms >= 0.0
@@ -108,6 +113,81 @@ def test_progress_model_loads_local_champion_and_enforces_boundary_guard():
     assert easy_res.status == "ok"
     assert easy_res.score == 0.0
     assert easy_res.label == 0
+
+
+def test_progress_model_contract_mismatch_at_predict_time_falls_back_safely():
+    # Review #2: contract error (e.g. during switch to chapter_mastery) must return fallback, not crash.
+    pm = ProgressModel(tracking_uri="", local_model_dir="models/track_b/candidate")
+    res = pm.predict({"topic": "Chemical Kinetics", "topic_accuracy": 0.5})
+    assert res.status == "fallback"
+    assert res.fallback is True
+    assert res.model_name == "rule_fallback"
+    assert res.error_type == "PredictionRecordError"
+    assert 0.0 <= res.score <= 1.0
+
+
+def test_progress_model_keeps_mlflow_model_on_outage_and_refreshes_in_background(monkeypatch):
+    # Review #3 & #4: brief MLflow outage keeps cached MLflow model; background refresh does not block predict().
+    pm = ProgressModel(
+        tracking_uri="",
+        local_model_dir="models/track_b/candidate",
+        refresh_seconds=0.01,
+        background_refresh=True,
+    )
+    # Simulate an already-loaded promoted MLflow model.
+    pm._source_backend = "mlflow"
+    pm._loaded_version = "7"
+    pm._loaded_alias = "production"
+    pm._last_checked_monotonic = 0.0
+
+    def _slow_failing_fetch(_current_ver):
+        time.sleep(0.15)
+        return None, "ConnectionError"
+
+    monkeypatch.setattr(pm, "_fetch_mlflow_candidate", _slow_failing_fetch)
+
+    t0 = time.perf_counter()
+    res = pm.predict(_sample_features())
+    elapsed_ms = (time.perf_counter() - t0) * 1000.0
+    assert elapsed_ms < 120.0  # predict() did NOT block on the 150ms background refresh
+    assert res.status == "ok"
+    assert res.model_version == "7"
+    assert res.source_backend == "mlflow"
+
+    # Wait for background refresh to finish failing; cached MLflow model must STILL be kept.
+    time.sleep(0.22)
+    assert pm.current_metadata["source_backend"] == "mlflow"
+    assert pm.current_metadata["model_version"] == "7"
+
+
+def test_attempt_store_count_for_learner_exceeds_500_limit(tmp_path):
+    # Review #1: count_for_learner must not cap at list_for_learner()'s 500-row limit.
+    from src.learner.history import SQLiteAttemptStore
+
+    store = SQLiteAttemptStore(tmp_path / "history.sqlite3")
+    now = datetime.now(timezone.utc)
+    for i in range(505):
+        store.save(
+            AttemptRecord(
+                learner_id="lrn-heavy",
+                question_id=f"q-{i}",
+                concept_ids=("Chemical Kinetics",),
+                outcome="correct",
+                answer_mode="typed",
+                attempted_at=now,
+            )
+        )
+    assert len(store.list_for_learner("lrn-heavy")) == 500
+    assert store.count_for_learner("lrn-heavy") == 505
+    feats = build_learner_features(
+        topic="Chemical Kinetics",
+        selected_difficulty="Medium",
+        prior_attempts=store.list_for_learner("lrn-heavy", limit=5),
+        prior_interaction_count=store.count_for_learner("lrn-heavy"),
+        hint_count=0,
+        response_time_seconds=30.0,
+    )
+    assert feats["prior_interaction_count"] == 505
 
 
 def test_progress_model_works_with_model_missing():

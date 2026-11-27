@@ -32,7 +32,7 @@ _TOPIC_RULES: dict[str, list[tuple[str, int]]] = {
         (r"\bcoordination\b|\bcomplex(?:es)?\b|\bligand|\bchelat|\bwerner\b", 3),
         (r"\bcrystal\s+field|\bcfse\b|\bspectrochemical|\bjahn[- ]?teller|\boctahedral\s+complex|\btetrahedral\s+complex", 3),
         (r"\b(?:edta|en|dmg|oxalate|carbonyl|ammine|aqua|cyano|chlorido|nitrito)\b", 2),
-        (r"\b\[(?:fe|co|ni|cr|cu|pt|pd|mn|zn|ag|ti|v)\b", 3),
+        (r"(?<!\w)\[(?:fe|co|ni|cr|cu|pt|pd|mn|zn|ag|ti|v)\b", 3),
         (r"\bhigh\s+spin|\blow\s+spin|\bspin[- ]only|\bmagnetic\s+moment.*b\.?m\.?|\bt_?2g\b|\be_?g\b", 2),
         (r"\bhomoleptic|\bheteroleptic|\bambidentate|\blinkage\s+isomer|\bionisation\s+isomer", 3),
     ],
@@ -271,10 +271,11 @@ class QuestionTopicTagger:
             return cls(precomputed_tags=tags, valid_topics=valid)
         return cls(precomputed_tags={}, valid_topics=valid)
 
-    def get_topic(self, question: Any, *, fallback_topic: str = "Basic Concepts of Chemistry") -> str:
+    def get_topic(self, question: Any, *, fallback_topic: str = "unknown") -> str:
         """Return a Track B topic for a question (uses precomputed map, else tags on the fly).
 
-        If no keyword matches, returns ``fallback_topic`` when provided (or ``"unknown"``).
+        If no keyword matches, returns ``fallback_topic`` (default ``"unknown"`` so untagged
+        questions are reported honestly as unseen topics rather than inflating a real chapter).
         """
         qid = question.get("question_id") if isinstance(question, dict) else getattr(question, "question_id", None)
         if qid and qid in self._tags and self._tags[qid] in self._valid_topics:

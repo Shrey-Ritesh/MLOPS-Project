@@ -46,6 +46,7 @@ from sklearn.metrics import (
 )
 import yaml
 
+from src.learner.progress_model import resolve_serving_config
 from src.track_b import tracking
 from src.track_b.modeling import (
     apply_difficulty_boundary_guard,
@@ -111,12 +112,13 @@ def load_model_from_dir(model_dir: str | Path, *, version_label: str = "local") 
     card_file = path / "model_card.json"
     model = joblib.load(model_file)
     card = json.loads(card_file.read_text(encoding="utf-8")) if card_file.is_file() else {}
+    threshold, apply_guard = resolve_serving_config(card=card)
     return LoadedModelSpec(
         model=model,
         model_id=str(card.get("model_id", path.name)),
         model_version=str(card.get("model_version", version_label)),
-        threshold=float(card.get("decision_threshold", 0.5)),
-        apply_boundary_guard=bool(card.get("apply_boundary_guard", False)),
+        threshold=threshold,
+        apply_boundary_guard=apply_guard,
         model_size_mb=_estimate_model_size_mb(model, model_file),
         card=card,
         source=str(model_file),
@@ -140,7 +142,8 @@ def load_model_from_mlflow(
 
     run = client.get_run(mv.run_id)
     params = run.data.params or {}
-    tags = {**(run.data.tags or {}), **(mv.tags or {})}
+    mv_tags = dict(mv.tags or {})
+    tags = {**(run.data.tags or {}), **mv_tags}
     card: dict[str, Any] = {
         "model_id": tags.get("model_id") or params.get("model_id") or run.info.run_name or f"{model_name}_v{mv.version}",
         "feature_columns": list(getattr(model, "feature_names_in_", FEATURE_COLUMNS)),
@@ -154,8 +157,7 @@ def load_model_from_mlflow(
         ).isoformat(timespec="seconds"),
         "test_learners_used_for_training": [],
     }
-    threshold = float(params.get("decision_threshold", 0.5))
-    apply_guard = str(params.get("apply_boundary_guard", "true")).strip().lower() in {"1", "true", "yes"}
+    threshold, apply_guard = resolve_serving_config(params=params, tags=mv_tags)
     return LoadedModelSpec(
         model=model,
         model_id=str(card["model_id"]),
@@ -296,23 +298,30 @@ def compare_models(
     original_test: pd.DataFrame,
     shifted_test: pd.DataFrame,
     live_window: pd.DataFrame | None = None,
+    challenger_original_test: pd.DataFrame | None = None,
+    challenger_shifted_test: pd.DataFrame | None = None,
+    challenger_live_window: pd.DataFrame | None = None,
     dataset_hashes: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """Score champion and challenger on identical rows across all three evaluation datasets."""
     live_df = live_window if live_window is not None else pd.DataFrame(columns=[*FEATURE_COLUMNS, TARGET])
 
     datasets_map = {
-        "original_test": original_test,
-        "shifted_test": shifted_test,
-        "live_window": live_df,
+        "original_test": (original_test, challenger_original_test if challenger_original_test is not None else original_test),
+        "shifted_test": (shifted_test, challenger_shifted_test if challenger_shifted_test is not None else shifted_test),
+        "live_window": (live_df, challenger_live_window if challenger_live_window is not None else live_df),
     }
     eval_results: dict[str, Any] = {}
     identical_rows_ok = True
 
-    for name, df in datasets_map.items():
-        champ_res = score_model_on_dataset(champion, df)
-        chall_res = score_model_on_dataset(challenger, df)
-        if champ_res["row_fingerprint"] != chall_res["row_fingerprint"]:
+    for name, (champ_df, chall_df) in datasets_map.items():
+        champ_res = score_model_on_dataset(champion, champ_df)
+        chall_res = score_model_on_dataset(challenger, chall_df)
+        rows_match = (
+            champ_res["n_rows"] == chall_res["n_rows"]
+            and champ_res["row_fingerprint"] == chall_res["row_fingerprint"]
+        )
+        if not rows_match:
             identical_rows_ok = False
         delta: dict[str, float | None] | None = None
         if champ_res["metrics"] and chall_res["metrics"]:
@@ -322,8 +331,9 @@ def compare_models(
                 bv = champ_res["metrics"][k]
                 delta[k] = round(cv - bv, 4) if (cv is not None and bv is not None) else None
         eval_results[name] = {
-            "n_rows": int(len(df)),
+            "n_rows": int(len(champ_df)),
             "row_fingerprint": champ_res["row_fingerprint"],
+            "identical_rows": rows_match,
             "champion": champ_res,
             "challenger": chall_res,
             "challenger_minus_champion": delta,
@@ -483,10 +493,25 @@ def evaluate_gate_v2(
         "pass" if size_mb <= ops["max_model_size_mb"] else "fail",
     )
 
-    # 7. Data validity
-    for name in ("schema_validation", "leakage_check", "learner_level_split", "identical_evaluation_rows"):
+    # 7. Data validity (verify identical rows directly from per-dataset fingerprints, not just a flag)
+    per_dataset_match = all(
+        ds_block["champion"].get("n_rows") == ds_block["challenger"].get("n_rows")
+        and ds_block["champion"].get("row_fingerprint") == ds_block["challenger"].get("row_fingerprint")
+        and bool(ds_block["champion"].get("row_fingerprint"))
+        for ds_block in datasets.values()
+    )
+    identical_ok = bool(checks.get("identical_evaluation_rows", True)) and per_dataset_match
+
+    for name in ("schema_validation", "leakage_check", "learner_level_split"):
         ok = bool(checks.get(name, False))
         _add(f"data_validity.{name}", ok, "required", "pass" if ok else "fail")
+    _add(
+        "data_validity.identical_evaluation_rows",
+        identical_ok,
+        "required",
+        "pass" if identical_ok else "fail",
+        "" if identical_ok else "champion and challenger row fingerprints or counts differ",
+    )
 
     # 8. Reproducibility fields
     present = checks.get("reproducibility_fields_present", {})
@@ -495,6 +520,21 @@ def evaluate_gate_v2(
         present,
         c["reproducibility"]["required_fields"],
         "pass" if (present and all(present.values())) else "fail",
+    )
+
+    # 9. Gate integrity (thresholds must be committed unmodified BEFORE challenger was trained)
+    integrity = checks.get("gate_integrity") or {}
+    integrity_ok = bool(integrity.get("gate_file_unmodified")) and bool(
+        integrity.get("committed_before_candidate_trained")
+    )
+    _add(
+        "gate_integrity",
+        {
+            "gate_file_unmodified": bool(integrity.get("gate_file_unmodified", False)),
+            "committed_before_candidate_trained": bool(integrity.get("committed_before_candidate_trained", False)),
+        },
+        "gate committed unmodified before challenger trained",
+        "pass" if integrity_ok else "fail",
     )
 
     has_fail = any(r["status"] == "fail" for r in results)
@@ -616,6 +656,9 @@ def run_comparison_pipeline(
         not (set(shifted_train["learner_id"]) & set(shifted_test["learner_id"]))
         and not challenger.card.get("test_learners_used_for_training")
     )
+    trained_at = challenger.card.get("trained_at_utc") or dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    integrity = gate_integrity(gate_path, trained_at)
+
     req_fields = gate["criteria"]["reproducibility"]["required_fields"]
     checks = {
         "schema_validation": schema_ok,
@@ -623,11 +666,10 @@ def run_comparison_pipeline(
         "learner_level_split": split_ok,
         "identical_evaluation_rows": comparison["identical_evaluation_rows"],
         "reproducibility_fields_present": {f: bool(challenger.card.get(f)) for f in req_fields},
+        "gate_integrity": integrity,
     }
 
     decision_str, criteria_results = evaluate_gate_v2(gate, comparison, checks)
-    trained_at = challenger.card.get("trained_at_utc") or dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
-    integrity = gate_integrity(gate_path, trained_at)
 
     decision_doc: dict[str, Any] = {
         "gate_id": gate["gate_id"],

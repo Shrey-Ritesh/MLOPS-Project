@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import logging
 import os
 import random
 import secrets
@@ -34,6 +35,7 @@ from src.learner.history import (
 from src.learner.inference_hook import InferenceService, build_learner_features
 from src.learner.topic_tagger import QuestionTopicTagger
 from src.models.jee import JEEQuestionRecord
+from src.monitoring.app_logging import log_event
 from src.tutoring.prompt import build_tutor_user_message
 
 DEFAULT_MODEL = "qwen/qwen3.8-27b"
@@ -624,8 +626,9 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
             )
 
             with st.spinner("Evaluating against canonical answer key and NCERT..."):
-                # Build pre-submission features and run versioned inference before recording the new attempt.
-                prior_attempts = _attempt_store.list_for_learner(learner_id)
+                # Snapshot pre-submission learner state (unbounded count so learner_seq never caps at 500).
+                prior_attempts = _attempt_store.list_for_learner(learner_id, limit=5)
+                prior_count = _attempt_store.count_for_learner(learner_id)
                 elapsed_seconds = time.monotonic() - float(
                     st.session_state.get("practice_question_started_at", time.monotonic())
                 )
@@ -633,35 +636,23 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
                     topic=topic,
                     selected_difficulty=selected_difficulty,
                     prior_attempts=prior_attempts,
+                    prior_interaction_count=prior_count,
                     hint_count=hint_count,
                     response_time_seconds=elapsed_seconds,
                     previous_difficulty=st.session_state.get("last_selected_difficulty"),
                 )
-                inference_event = None
-                try:
-                    inference_event = _get_inference_service().predict_and_log(
-                        learner_id=learner_id,
-                        learner_seq=len(prior_attempts),
-                        question_id=question.question_id,
-                        features=features,
-                        source="live",
-                    )
-                    st.session_state["last_prediction_event"] = inference_event
-                except Exception:
-                    pass
-                st.session_state["last_selected_difficulty"] = selected_difficulty
-                st.session_state["practice_question_started_at"] = time.monotonic()
-                st.session_state["practice_hint_count"] = 0
 
                 eval_res = _evaluation_service.evaluate_answer(submission_req)
                 st.session_state["practice_evaluation_result"] = eval_res
 
-                # Record attempt to SQLite attempt store
+                # Record attempt to SQLite attempt store FIRST; only log prediction if save succeeds
+                # so a failed save never consumes a learner_seq and causes a duplicate on retry.
                 outcome_str = (
                     "correct"
                     if eval_res.is_correct is True
                     else ("incorrect" if eval_res.is_correct is False else "uncertain")
                 )
+                attempt_saved = False
                 try:
                     _attempt_store.save(
                         AttemptRecord(
@@ -673,19 +664,39 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
                             attempted_at=datetime.now(timezone.utc),
                         )
                     )
-                except Exception:
-                    pass
-                try:
-                    _get_inference_service().log_outcome(
-                        learner_id=learner_id,
-                        topic=topic,
-                        question_id=question.question_id,
-                        outcome=outcome_str,
-                        source="live",
-                        request_id=inference_event.request_id if inference_event else None,
-                    )
-                except Exception:
-                    pass
+                    attempt_saved = True
+                except Exception as exc:
+                    log_event("attempt_save_failed", level=logging.ERROR, error_type=type(exc).__name__)
+
+                if attempt_saved:
+                    inference_event = None
+                    try:
+                        inference_event = _get_inference_service().predict_and_log(
+                            learner_id=learner_id,
+                            learner_seq=prior_count,
+                            question_id=question.question_id,
+                            features=features,
+                            source="live",
+                        )
+                        st.session_state["last_prediction_event"] = inference_event
+                    except Exception as exc:
+                        log_event("inference_hook_failed", level=logging.ERROR, error_type=type(exc).__name__)
+
+                    try:
+                        _get_inference_service().log_outcome(
+                            learner_id=learner_id,
+                            topic=topic,
+                            question_id=question.question_id,
+                            outcome=outcome_str,
+                            source="live",
+                            request_id=inference_event.request_id if inference_event else None,
+                        )
+                    except Exception as exc:
+                        log_event("outcome_hook_failed", level=logging.ERROR, error_type=type(exc).__name__)
+
+                    st.session_state["last_selected_difficulty"] = selected_difficulty
+                    st.session_state["practice_question_started_at"] = time.monotonic()
+                    st.session_state["practice_hint_count"] = 0
 
     # Display Evaluation Result
     eval_res = st.session_state.get("practice_evaluation_result")
