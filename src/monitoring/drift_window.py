@@ -138,8 +138,14 @@ def evaluate_window_drift(
             ks_res = compute_ks(window_df[col], meta.get("ks_reference_sample", []))
             
             status = "ALERT" if psi >= psi_alert else "WARN" if psi >= psi_warn else "OK"
+            alert_metric = "psi"
+            alert_value = round(psi, 4)
+            alert_threshold = psi_alert if status == "ALERT" else psi_warn
             if ks_res["p_value"] < ks_alpha and status == "OK":
                 status = "WARN"
+                alert_metric = "ks"
+                alert_value = float(ks_res["p_value"])
+                alert_threshold = float(ks_alpha)
 
             drift_results[col] = {
                 "psi": round(psi, 4),
@@ -152,9 +158,9 @@ def evaluate_window_drift(
                 alerts.append({
                     "type": "FEATURE_DRIFT",
                     "feature": col,
-                    "metric": "psi",
-                    "value": round(psi, 4),
-                    "threshold": psi_alert if status == "ALERT" else psi_warn,
+                    "metric": alert_metric,
+                    "value": alert_value,
+                    "threshold": alert_threshold,
                     "severity": status,
                 })
 

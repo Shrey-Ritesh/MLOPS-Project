@@ -3,9 +3,9 @@
 schema_version: "1.0.0"
 
 trigger_policy:
-  enabled: true                           # Master switch for automated retraining execution
-  target_stage: "candidate"               # Target DVC stage to reproduce
-  pipeline_command: "dvc repro candidate" # Reproducible DVC pipeline execution command
+  enabled: true                                  # Master switch for automated retraining execution
+  target_stage: "train_challenger"               # Target DVC stage to reproduce (never overwrites champion)
+  pipeline_command: "dvc repro train_challenger" # Reproducible DVC pipeline execution command
   
 trigger_conditions:
   min_feature_alerts: 2                   # Retrain if two or more input features trigger PSI alert (>= 0.20)

@@ -119,11 +119,19 @@ def evaluate_window(rows: list[dict[str, Any]]) -> dict[str, Any]:
     normalized_alerts: list[dict[str, Any]] = []
     for a in eval_result.get("alerts", []):
         sev = "critical" if a.get("severity") == "ALERT" else "warning"
-        category = "performance" if "PERFORMANCE" in a.get("type", "") else "drift"
-        metric = f"{a.get('type')}:{a.get('feature', a.get('metric', 'value'))}"
+        alert_type = str(a.get("type", ""))
+        category = "performance" if "PERFORMANCE" in alert_type else "drift"
+        test_name = str(a.get("metric", "value"))
+        if "feature" in a:
+            metric = f"{alert_type}:{test_name}:{a['feature']}"
+        else:
+            metric = f"{alert_type}:{test_name}"
         val = a.get("value", 0.0)
         thr = a.get("threshold", 0.0)
-        msg = f"{metric} breached threshold ({val} >= {thr})"
+        if test_name == "ks":
+            msg = f"{metric} breached threshold (ks_p={float(val):.4g} < {thr})"
+        else:
+            msg = f"{metric} breached threshold ({val} >= {thr})"
 
         normalized_alerts.append({
             "severity": sev,

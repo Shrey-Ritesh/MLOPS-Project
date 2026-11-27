@@ -2,9 +2,9 @@
 
 Conforms to Section 4.3 contract:
 Evaluates monitoring window reports against configs/monitoring/retrain_trigger.yaml.
-When drift/degradation criteria hold, it snapshots data, executes the retraining
-pipeline (dvc repro candidate), logs lineage to MLflow, registers the challenger model,
-and enforces cooldown constraints.
+When drift/degradation criteria hold, it snapshots labelled monitoring data for lineage,
+executes the configured retraining pipeline (dvc repro train_challenger), logs lineage
+and registers the challenger model in MLflow, and enforces cooldown constraints.
 """
 
 from __future__ import annotations
@@ -14,10 +14,11 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import logging
+import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
-import time
 from typing import Any
 import uuid
 import yaml
@@ -29,14 +30,25 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("RetrainTrigger")
 
 DEFAULT_CONFIG_PATH = Path("configs/monitoring/retrain_trigger.yaml")
+DEFAULT_THRESHOLDS_PATH = Path("configs/monitoring/thresholds.yaml")
 DEFAULT_STATE_PATH = Path("reports/monitoring/trigger_state.json")
 DEFAULT_EVENTS_LOG = Path("reports/monitoring/trigger_events.jsonl")
+DEFAULT_CHALLENGER_DIR = Path("models/track_b/challenger")
+DEFAULT_CHALLENGER_COMPARISON = Path("reports/track_b/challenger_comparison.json")
 
 
 def load_trigger_config(path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Trigger config not found at {path}")
     return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def load_baseline_f1(thresholds_path: Path = DEFAULT_THRESHOLDS_PATH) -> float:
+    """Read champion baseline F1 from thresholds.yaml to stay aligned with drift_window.py."""
+    if not thresholds_path.exists():
+        return 0.6828
+    thresholds = yaml.safe_load(thresholds_path.read_text(encoding="utf-8")) or {}
+    return float(thresholds.get("performance_degradation", {}).get("baseline_f1", 0.6828))
 
 
 def load_trigger_state(path: Path = DEFAULT_STATE_PATH) -> dict[str, Any]:
@@ -82,6 +94,7 @@ def check_cooldown(state: dict[str, Any], now: datetime, max_runs_per_day: int =
 def evaluate_trigger_conditions(
     report: dict[str, Any],
     cfg: dict[str, Any],
+    thresholds_path: Path = DEFAULT_THRESHOLDS_PATH,
 ) -> tuple[bool, str | None, list[str]]:
     """Evaluate whether window report justifies firing retraining trigger."""
     guardrails = cfg.get("guardrails", {})
@@ -103,12 +116,16 @@ def evaluate_trigger_conditions(
         for a in alerts
     )
     feature_alerts = [
-        a for a in alerts if a.get("category") == "drift" and a.get("severity") in ("critical", "ALERT")
+        a
+        for a in alerts
+        if a.get("category") == "drift"
+        and not str(a.get("metric", "")).startswith("PREDICTION_DRIFT")
+        and a.get("severity") in ("critical", "ALERT")
     ]
 
-    # Rule 1: Feature drift count
+    # Rule 1: Feature drift count (excludes prediction-drift alerts)
     if len(feature_alerts) >= min_feature_alerts:
-        features_drifted = [a.get("metric") for a in feature_alerts]
+        features_drifted = [str(a.get("metric")) for a in feature_alerts]
         return True, f"feature_drift_exceeded_threshold ({', '.join(features_drifted)})", [report.get("window_id", "unknown")]
 
     # Rule 2: Prediction PSI (suppressed during inference outage/fallback incidents)
@@ -120,7 +137,7 @@ def evaluate_trigger_conditions(
     perf = report.get("performance")
     n_labeled = report.get("n_labelled", 0)
     if not has_health_outage and isinstance(perf, dict) and "f1" in perf and n_labeled >= min_labeled:
-        base_f1 = 0.6828  # Champion baseline F1
+        base_f1 = load_baseline_f1(thresholds_path)
         f1_drop = base_f1 - perf["f1"]
         if f1_drop >= perf_f1_drop:
             return True, f"performance_f1_drop_exceeded_threshold ({f1_drop:.4f} >= {perf_f1_drop})", [report.get("window_id", "unknown")]
@@ -129,7 +146,7 @@ def evaluate_trigger_conditions(
 
 
 def snapshot_data(source_csv: Path, out_dir: Path = Path("data/snapshots")) -> tuple[Path, str]:
-    """Create reproducible data snapshot and return (path, sha256)."""
+    """Create reproducible data snapshot from a CSV and return (path, sha256)."""
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     snap_path = out_dir / f"snapshot_{stamp}.csv"
@@ -139,63 +156,40 @@ def snapshot_data(source_csv: Path, out_dir: Path = Path("data/snapshots")) -> t
     return snap_path, sha256
 
 
-def execute_retraining_pipeline(
-    trigger_id: str,
-    evidence_windows: list[str],
-    snapshot_sha: str,
-) -> dict[str, Any]:
-    """Execute dvc repro candidate and register challenger in MLflow."""
-    logger.info("Executing retraining pipeline for trigger %s...", trigger_id)
+def snapshot_from_monitoring(
+    db_path: Path | str,
+    start: str,
+    end: str,
+    out_dir: Path = Path("data/snapshots"),
+) -> tuple[Path, str]:
+    """Snapshot labelled prediction rows for [start, end) from the monitoring DB."""
+    import pandas as pd
 
-    # 1. Run DVC repro candidate
-    cmd = ["dvc", "repro", "candidate"]
-    try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        logger.info("DVC repro completed:\n%s", proc.stdout)
-    except Exception as e:
-        logger.warning("dvc repro failed (%s). Running fallback candidate training script...", e)
-        # Fallback to direct python script invocation using active interpreter
-        subprocess.run([sys.executable, "-m", "src.track_b.train_candidate"], check=True)
-
-    # 2. Register challenger in MLflow (best-effort; do not crash if MLflow store is unavailable)
-    reg_cmd = [sys.executable, "-m", "src.track_b.register_mlflow"]
-    reg_proc = subprocess.run(reg_cmd, capture_output=True, text=True)
-    if reg_proc.returncode == 0:
-        logger.info("MLflow registration result:\n%s", reg_proc.stdout.strip())
-    else:
-        logger.warning(
-            "MLflow registration exited with %s (stderr: %s)",
-            reg_proc.returncode,
-            (reg_proc.stderr or "").strip(),
+    with db.session(db_path) as conn:
+        db.ensure_schema(conn)
+        df = pd.read_sql_query(
+            "SELECT features, label_observed FROM predictions "
+            "WHERE label_status = 'joined' AND occurred_at >= ? AND occurred_at < ?",
+            conn,
+            params=(start, end),
         )
 
-    registered_version = _tag_challenger_in_mlflow(
-        trigger_id=trigger_id,
-        evidence_windows=evidence_windows,
-        snapshot_sha=snapshot_sha,
-    )
+    if df.empty:
+        raise ValueError(f"No joined prediction rows found in [{start}, {end}) in {db_path}")
 
-    # 3. Read challenger model card to get version and run ID
-    challenger_card_path = Path("models/track_b/candidate/model_card.json")
-    if challenger_card_path.exists():
-        card = json.loads(challenger_card_path.read_text(encoding="utf-8"))
-        model_version = card.get("model_id", "candidate_v2")
-    else:
-        model_version = "candidate_v2"
-
-    return {
-        "pipeline_run_id": f"run_{uuid.uuid4().hex[:12]}",
-        "challenger_model_version": model_version,
-        "mlflow_model_version": registered_version,
-    }
+    flat = pd.json_normalize(df["features"].map(json.loads))
+    flat["switch_to_lower_difficulty"] = df["label_observed"].astype(int).to_numpy()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    snap_path = out_dir / f"snapshot_{stamp}_{uuid.uuid4().hex[:6]}.csv"
+    csv_bytes = flat.to_csv(index=False).encode("utf-8")
+    snap_path.write_bytes(csv_bytes)
+    sha256 = hashlib.sha256(csv_bytes).hexdigest()
+    return snap_path, sha256
 
 
-def _tag_challenger_in_mlflow(
-    trigger_id: str,
-    evidence_windows: list[str],
-    snapshot_sha: str,
-) -> str | None:
-    """Attach the 'challenger' alias and trigger lineage tags in MLflow (best-effort)."""
+def _latest_version_number() -> str | None:
+    """Return the highest registered MLflow model version number, or None if unavailable."""
     try:
         from mlflow import MlflowClient
         from src.track_b import tracking
@@ -205,28 +199,146 @@ def _tag_challenger_in_mlflow(
         versions = list(client.search_model_versions(f"name='{tracking.REGISTERED_MODEL_NAME}'"))
         if not versions:
             return None
-        versions.sort(key=lambda v: int(v.version), reverse=True)
-        candidate_versions = [v for v in versions if (v.tags or {}).get("role") == "candidate"]
-        target = candidate_versions[0] if candidate_versions else versions[0]
+        return str(max(int(v.version) for v in versions))
+    except Exception as exc:
+        logger.warning("Could not query MLflow model versions (%s)", exc)
+        return None
 
-        client.set_registered_model_alias(tracking.REGISTERED_MODEL_NAME, "challenger", target.version)
-        client.set_model_version_tag(tracking.REGISTERED_MODEL_NAME, target.version, "trigger_id", trigger_id)
-        client.set_model_version_tag(tracking.REGISTERED_MODEL_NAME, target.version, "snapshot_sha256", snapshot_sha)
+
+def _tag_challenger_in_mlflow(
+    version: str,
+    trigger_id: str,
+    evidence_windows: list[str],
+    snapshot_sha: str,
+) -> str | None:
+    """Attach the 'challenger' alias and trigger lineage tags to a specific MLflow model version."""
+    try:
+        from mlflow import MlflowClient
+        from src.track_b import tracking
+
+        tracking.configure()
+        client = MlflowClient()
+        client.set_registered_model_alias(tracking.REGISTERED_MODEL_NAME, "challenger", str(version))
+        client.set_model_version_tag(tracking.REGISTERED_MODEL_NAME, str(version), "trigger_id", trigger_id)
+        client.set_model_version_tag(tracking.REGISTERED_MODEL_NAME, str(version), "snapshot_sha256", snapshot_sha)
         client.set_model_version_tag(
-            tracking.REGISTERED_MODEL_NAME, target.version, "evidence_window_ids", ",".join(evidence_windows)
+            tracking.REGISTERED_MODEL_NAME, str(version), "evidence_window_ids", ",".join(evidence_windows)
         )
-        logger.info("Set MLflow alias 'challenger' -> %s v%s", tracking.REGISTERED_MODEL_NAME, target.version)
-        return str(target.version)
+        logger.info("Set MLflow alias 'challenger' -> %s v%s", tracking.REGISTERED_MODEL_NAME, version)
+        return str(version)
     except Exception as exc:
         logger.warning("Could not tag challenger alias in MLflow (%s)", exc)
         return None
 
 
+def execute_retraining_pipeline(
+    trigger_id: str,
+    evidence_windows: list[str],
+    snapshot_sha: str,
+    cfg: dict[str, Any] | None = None,
+    challenger_dir: Path = DEFAULT_CHALLENGER_DIR,
+    comparison_out: Path = DEFAULT_CHALLENGER_COMPARISON,
+) -> dict[str, Any]:
+    """Execute configured retraining stage and register new challenger version in MLflow."""
+    logger.info("Executing retraining pipeline for trigger %s...", trigger_id)
+
+    pipeline_cmd = (cfg or {}).get("trigger_policy", {}).get("pipeline_command", "dvc repro train_challenger")
+    cmd = shlex.split(pipeline_cmd)
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        logger.info("Pipeline command completed:\n%s", proc.stdout)
+    except Exception as e:
+        logger.warning("Pipeline command %r failed (%s). Running fallback challenger training...", cmd, e)
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "src.track_b.train_candidate",
+                "--output-dir",
+                str(challenger_dir),
+                "--comparison-out",
+                str(comparison_out),
+            ],
+            check=True,
+        )
+
+    before = _latest_version_number()
+    reg_cmd = [
+        sys.executable,
+        "-m",
+        "src.track_b.register_mlflow",
+        "--challenger-only",
+        "--candidate-dir",
+        str(challenger_dir),
+        "--comparison-report",
+        str(comparison_out),
+        "--trigger-id",
+        trigger_id,
+        "--snapshot-sha256",
+        snapshot_sha,
+    ]
+    reg_proc = subprocess.run(reg_cmd, capture_output=True, text=True)
+    registered_version: str | None = None
+    if reg_proc.returncode == 0:
+        logger.info("MLflow registration result:\n%s", reg_proc.stdout.strip())
+        after = _latest_version_number()
+        if after and after != before:
+            registered_version = _tag_challenger_in_mlflow(
+                version=after,
+                trigger_id=trigger_id,
+                evidence_windows=evidence_windows,
+                snapshot_sha=snapshot_sha,
+            )
+    else:
+        logger.warning(
+            "MLflow registration exited with %s (stderr: %s)",
+            reg_proc.returncode,
+            (reg_proc.stderr or "").strip(),
+        )
+
+    challenger_card_path = challenger_dir / "model_card.json"
+    if challenger_card_path.exists():
+        card = json.loads(challenger_card_path.read_text(encoding="utf-8"))
+        model_version = card.get("model_id", "challenger_v2")
+    else:
+        model_version = "challenger_v2"
+
+    return {
+        "pipeline_run_id": f"run_{uuid.uuid4().hex[:12]}",
+        "challenger_model_version": model_version,
+        "mlflow_model_version": registered_version,
+    }
+
+
+def _create_trigger_snapshot(
+    report: dict[str, Any],
+    db_path: Path | str | None,
+) -> tuple[Path, str, str]:
+    """Create snapshot from monitoring DB joined rows when available, else fallback dataset."""
+    start = report.get("start")
+    end = report.get("end")
+    candidate_db = db_path if db_path is not None else Path(db.db_path_from_env())
+    if start and end and (db_path is not None or Path(candidate_db).exists()):
+        try:
+            snap_path, snap_sha = snapshot_from_monitoring(candidate_db, start, end)
+            return snap_path, snap_sha, "monitoring_db"
+        except Exception as exc:
+            logger.warning("Monitoring DB snapshot unavailable (%s); falling back to shifted CSV.", exc)
+
+    source_dataset = Path("data/synthetic/learner_interactions_shifted_v1.csv")
+    snap_path, snap_sha = snapshot_data(source_dataset)
+    return snap_path, snap_sha, "static_fallback"
+
+
 def process_window_for_trigger(
     report: dict[str, Any],
     cfg_path: Path = DEFAULT_CONFIG_PATH,
-    state_path: Path = DEFAULT_STATE_PATH,
+    state_path: Path | None = None,
+    events_path: Path | None = None,
     simulated_mode: bool = False,
+    execute_pipeline: bool = True,
+    db_path: Path | str | None = None,
+    thresholds_path: Path = DEFAULT_THRESHOLDS_PATH,
 ) -> dict[str, Any] | None:
     """Evaluate a window report and trigger retraining if policy matches."""
     cfg = load_trigger_config(cfg_path)
@@ -234,8 +346,19 @@ def process_window_for_trigger(
         logger.info("Retraining trigger policy is disabled in config.")
         return None
 
-    now = datetime.now(timezone.utc)
-    state = load_trigger_state(state_path)
+    target_state_path = DEFAULT_STATE_PATH if state_path is None else state_path
+    target_events_path = DEFAULT_EVENTS_LOG if events_path is None else events_path
+    now = parse_iso(report["end"]) if report.get("end") else datetime.now(timezone.utc)
+
+    # Evaluate trigger conditions BEFORE cooldown so clean windows are not counted as blocked
+    should_fire, condition_met, evidence_windows = evaluate_trigger_conditions(
+        report, cfg, thresholds_path=thresholds_path
+    )
+    if not should_fire:
+        logger.info("Window %s: no trigger conditions met.", report.get("window_id"))
+        return None
+
+    state = load_trigger_state(target_state_path)
 
     # Check cooldown and daily cap from config
     guardrails = cfg.get("guardrails", {})
@@ -245,40 +368,52 @@ def process_window_for_trigger(
         logger.info("Trigger skipped: %s", reason)
         return {"status": "cooldown_blocked", "reason": reason}
 
-    # Evaluate conditions
-    should_fire, condition_met, evidence_windows = evaluate_trigger_conditions(report, cfg)
-    if not should_fire:
-        logger.info("Window %s: no trigger conditions met.", report.get("window_id"))
-        return None
-
-    # Condition met! Fire trigger
+    # Condition met and cooldown clear -> fire trigger
     trigger_id = f"trig_{now.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:6]}"
     logger.warning(">>> RETRAINING TRIGGER FIRED: %s (%s) <<<", trigger_id, condition_met)
 
-    # Snapshot training data
-    source_dataset = Path("data/synthetic/learner_interactions_shifted_v1.csv")
-    snap_path, snap_sha = snapshot_data(source_dataset)
+    _, snap_sha, snapshot_source = _create_trigger_snapshot(report, db_path)
 
-    # Calculate cooldown
-    cooldown_secs = 60 if simulated_mode else guardrails.get("cooldown_seconds", 21600)
+    # Calculate cooldown from config (window-time based)
+    window_minutes = int(os.environ.get("MONITORING_WINDOW_MINUTES", 15))
+    if simulated_mode:
+        cooldown_secs = int(guardrails.get("simulated_cooldown_windows", 5)) * window_minutes * 60
+    else:
+        cooldown_secs = int(guardrails.get("cooldown_seconds", 21600))
     cooldown_until = now + timedelta(seconds=cooldown_secs)
 
     try:
-        pipeline_res = execute_retraining_pipeline(
-            trigger_id=trigger_id,
-            evidence_windows=evidence_windows,
-            snapshot_sha=snap_sha,
-        )
+        if execute_pipeline:
+            pipeline_res = execute_retraining_pipeline(
+                trigger_id=trigger_id,
+                evidence_windows=evidence_windows,
+                snapshot_sha=snap_sha,
+                cfg=cfg,
+            )
+        else:
+            pipeline_res = {
+                "pipeline_run_id": "dry_run",
+                "challenger_model_version": None,
+                "mlflow_model_version": None,
+            }
 
+        note = (
+            "Snapshot recorded for lineage; candidate retrained on the documented shifted dataset"
+            if execute_pipeline
+            else "Snapshot recorded for lineage; pipeline execution skipped (dry_run)"
+        )
         event = {
             "trigger_id": trigger_id,
             "fired_at": iso(now),
             "condition_met": condition_met,
             "evidence_window_ids": evidence_windows,
             "data_snapshot_sha256": snap_sha,
+            "snapshot_source": snapshot_source,
+            "retraining_dataset_note": note,
             "cooldown_until": iso(cooldown_until),
             "pipeline_run_id": pipeline_res["pipeline_run_id"],
             "challenger_model_version": pipeline_res["challenger_model_version"],
+            "mlflow_model_version": pipeline_res.get("mlflow_model_version"),
             "status": "success",
         }
     except Exception as e:
@@ -289,6 +424,7 @@ def process_window_for_trigger(
             "condition_met": condition_met,
             "evidence_window_ids": evidence_windows,
             "data_snapshot_sha256": snap_sha,
+            "snapshot_source": snapshot_source,
             "cooldown_until": iso(cooldown_until),
             "status": f"failed: {e}",
         }
@@ -300,9 +436,9 @@ def process_window_for_trigger(
     state["runs_today"] = state.get("runs_today", 0) + 1 if state.get("last_run_date") == today_str else 1
     state["last_run_date"] = today_str
     state["total_runs"] = state.get("total_runs", 0) + 1
-    save_trigger_state(state, state_path)
+    save_trigger_state(state, target_state_path)
 
-    log_trigger_event(event)
+    log_trigger_event(event, log_path=target_events_path)
     logger.info("Trigger event recorded: %s", event["trigger_id"])
     return event
 
@@ -311,12 +447,27 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--window-report", type=Path, required=True,
                         help="Path to window report JSON to evaluate")
+    parser.add_argument("--db", type=Path, default=None,
+                        help="Monitoring SQLite DB path for snapshotting joined rows")
+    parser.add_argument("--state-path", type=Path, default=None,
+                        help="Trigger state JSON path")
+    parser.add_argument("--events-path", type=Path, default=None,
+                        help="Trigger events JSONL path")
     parser.add_argument("--simulated", action="store_true",
-                        help="Enable simulated mode with shorter cooldown")
+                        help="Enable simulated mode with window-based cooldown")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Skip executing DVC/MLflow retraining pipeline")
     args = parser.parse_args()
 
     report = json.loads(args.window_report.read_text(encoding="utf-8"))
-    event = process_window_for_trigger(report, simulated_mode=args.simulated)
+    event = process_window_for_trigger(
+        report,
+        state_path=args.state_path,
+        events_path=args.events_path,
+        simulated_mode=args.simulated,
+        execute_pipeline=not args.dry_run,
+        db_path=args.db,
+    )
     if event:
         print(json.dumps(event, indent=2))
 

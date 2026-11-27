@@ -147,3 +147,46 @@ def test_drift_windows_bridge_edge_cases(monkeypatch):
     fallback_res = drift_windows.evaluate_window(small_rows)
     assert fallback_res["drift"] == "not_configured"
     assert fallback_res["prediction_psi"] is None
+
+
+def test_ks_only_alert_labelled_as_ks_not_psi(monkeypatch):
+    """When PSI stays below warn threshold and only KS rejects, alert must report ks."""
+    from src.monitoring import drift_windows
+
+    ref_profile = {
+        "model_id": "test_model",
+        "dataset_sha256": "abc123",
+        "decision_threshold": 0.7,
+        "numeric_features": {
+            "response_time_seconds": {
+                "bin_edges": [-float("inf"), 10.0, float("inf")],
+                "bin_proportions": [0.5, 0.5],
+                "ks_reference_sample": [1.0] * 50 + [20.0] * 50,
+            }
+        },
+        "categorical_features": {},
+    }
+    thresholds = {
+        "window": {"min_predictions": 50, "min_labeled": 20},
+        "feature_drift": {"psi_warn": 0.10, "psi_alert": 0.20, "ks_alpha": 0.01},
+    }
+    # Identical bin proportions (psi == 0.0), but clustered away from 1.0 and 20.0 so KS p < 0.01
+    df = pd.DataFrame({"response_time_seconds": [9.0] * 30 + [11.0] * 30})
+    res = evaluate_window_drift(df, ref_profile, thresholds, window_id="win_ks_only")
+    assert res["drift"]["response_time_seconds"]["psi"] == pytest.approx(0.0, abs=1e-4)
+    assert res["drift"]["response_time_seconds"]["status"] == "WARN"
+    assert len(res["alerts"]) == 1
+    alert = res["alerts"][0]
+    assert alert["metric"] == "ks"
+    assert alert["value"] < 0.01
+    assert alert["threshold"] == 0.01
+
+    monkeypatch.setattr(drift_windows, "load_reference_profile", lambda *a, **kw: ref_profile)
+    monkeypatch.setattr(drift_windows, "load_thresholds", lambda *a, **kw: thresholds)
+    rows = [{"features": {"response_time_seconds": float(v)}, "score": 0.5, "label_status": "pending"} for v in df["response_time_seconds"]]
+    bridged = drift_windows.evaluate_window(rows)
+    assert len(bridged["alerts"]) == 1
+    norm = bridged["alerts"][0]
+    assert norm["metric"] == "FEATURE_DRIFT:ks:response_time_seconds"
+    assert "ks_p=" in norm["message"]
+    assert ">= 0.1" not in norm["message"]

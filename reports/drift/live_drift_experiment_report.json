@@ -1,6 +1,6 @@
 {
-  "experiment_id": "exp_live_drift_20261126_164148",
-  "conducted_at": "2026-11-26T16:41:48.840493+00:00",
+  "experiment_id": "exp_live_drift_20261127_161910",
+  "conducted_at": "2026-11-27T16:19:10.388677+00:00",
   "shift_injected_at": "2026-11-26T10:30:00+00:00",
   "window_sample_size": 450,
   "phases": {
@@ -12,7 +12,7 @@
     "shifted": {
       "windows_evaluated": 2,
       "data_drift_detected": true,
-      "first_data_drift_metric": "FEATURE_DRIFT:hint_count",
+      "first_data_drift_metric": "FEATURE_DRIFT:psi:hint_count",
       "data_drift_delay_minutes": 16.0,
       "performance_degradation_detected": true,
       "first_performance_metric": "PERFORMANCE_DEGRADATION:f1_drop",
@@ -23,23 +23,27 @@
   },
   "trigger_results": [
     {
-      "trigger_id": "trig_20261126_164133_d3453a",
-      "fired_at": "2026-11-26T16:41:33.843Z",
-      "condition_met": "feature_drift_exceeded_threshold (FEATURE_DRIFT:hint_count, FEATURE_DRIFT:response_time_seconds)",
+      "trigger_id": "trig_20261126_104500_536c35",
+      "fired_at": "2026-11-26T10:45:00.000Z",
+      "condition_met": "feature_drift_exceeded_threshold (FEATURE_DRIFT:psi:hint_count, FEATURE_DRIFT:psi:response_time_seconds)",
       "evidence_window_ids": [
         "w-20261126T1030Z-15m"
       ],
-      "data_snapshot_sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
-      "cooldown_until": "2026-11-26T16:42:33.843Z",
-      "pipeline_run_id": "run_6b58bc69a4e8",
-      "challenger_model_version": "candidate_hgb_shifted_v2",
+      "data_snapshot_sha256": "2ef6dee147ea9f5bd9211f3e0d8b4bc6e17c3cdc18fd1c5ab37265597fdcfc67",
+      "snapshot_source": "monitoring_db",
+      "retraining_dataset_note": "Snapshot recorded for lineage; pipeline execution skipped (dry_run)",
+      "cooldown_until": "2026-11-26T12:00:00.000Z",
+      "pipeline_run_id": "dry_run",
+      "challenger_model_version": null,
+      "mlflow_model_version": null,
       "status": "success"
     },
     {
       "status": "cooldown_blocked",
-      "reason": "Cooldown active until 2026-11-26T16:42:33.843Z (45s remaining)"
+      "reason": "Cooldown active until 2026-11-26T12:00:00.000Z (3600s remaining)"
     }
   ],
+  "retraining_dataset_note": "Snapshot recorded for lineage; candidate retrained on the documented shifted dataset (pipeline skipped via execute_pipeline=False during live drift experiment; direct training on DB snapshots is deferred as future work).",
   "detection_report_raw": {
     "shift_at": "2026-11-26T10:30:00.000Z",
     "windows": {
@@ -60,7 +64,7 @@
       "note": "health/validity alerts before the shift are listed but are not counted as drift false alarms"
     },
     "detection_by_metric": {
-      "FEATURE_DRIFT:hint_count": {
+      "FEATURE_DRIFT:psi:hint_count": {
         "category": "drift",
         "first_window": "w-20261126T1030Z-15m",
         "first_window_end": "2026-11-26T10:45:00.000Z",
@@ -70,7 +74,7 @@
         "share_of_shifted_windows": 1.0,
         "control_windows_alerting": 0
       },
-      "FEATURE_DRIFT:response_time_seconds": {
+      "FEATURE_DRIFT:psi:response_time_seconds": {
         "category": "drift",
         "first_window": "w-20261126T1030Z-15m",
         "first_window_end": "2026-11-26T10:45:00.000Z",
@@ -80,7 +84,7 @@
         "share_of_shifted_windows": 1.0,
         "control_windows_alerting": 0
       },
-      "CATEGORICAL_DRIFT:topic": {
+      "CATEGORICAL_DRIFT:psi:topic": {
         "category": "drift",
         "first_window": "w-20261126T1030Z-15m",
         "first_window_end": "2026-11-26T10:45:00.000Z",
@@ -102,7 +106,7 @@
       }
     },
     "data_drift_detection": {
-      "metric": "FEATURE_DRIFT:hint_count",
+      "metric": "FEATURE_DRIFT:psi:hint_count",
       "category": "drift",
       "first_window": "w-20261126T1030Z-15m",
       "first_window_end": "2026-11-26T10:45:00.000Z",
@@ -126,15 +130,15 @@
     "performance_trend": {
       "before_shift": {
         "windows_with_performance": 2,
-        "mean_f1": 0.7535,
-        "mean_roc_auc": 0.954,
+        "mean_f1": 0.7533,
+        "mean_roc_auc": 0.9539,
         "mean_brier": 0.0903
       },
       "after_shift": {
         "windows_with_performance": 2,
-        "mean_f1": 0.3906,
-        "mean_roc_auc": 0.6357,
-        "mean_brier": 0.2993
+        "mean_f1": 0.3904,
+        "mean_roc_auc": 0.6361,
+        "mean_brier": 0.299
       }
     },
     "contract_ids": [

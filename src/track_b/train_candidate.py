@@ -33,6 +33,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("configs/track_b/drift_experiment.yaml"))
     parser.add_argument("--baseline-dir", type=Path, default=Path("models/track_b/baseline"))
+    parser.add_argument("--output-dir", type=Path, default=None,
+                        help="Optional directory for trained model artifacts (defaults to config candidate.outputs.model_dir)")
+    parser.add_argument("--comparison-out", type=Path, default=None,
+                        help="Optional path for comparison JSON report (defaults to config candidate.outputs.comparison_report)")
     args = parser.parse_args()
     cfg = yaml.safe_load(args.config.read_text(encoding="utf-8"))
     cand = cfg["candidate"]
@@ -57,7 +61,8 @@ def main() -> None:
     else:
         thr = float(thr_cfg)
 
-    model_dir = Path(cand["outputs"]["model_dir"])
+    default_model_dir = Path(cand["outputs"]["model_dir"])
+    model_dir = args.output_dir if args.output_dir is not None else default_model_dir
     model_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, model_dir / "model.joblib")
     card = {
@@ -110,7 +115,13 @@ def main() -> None:
         **results,
         "candidate_minus_baseline": delta,
     }
-    out = Path(cand["outputs"]["comparison_report"])
+    if args.comparison_out is not None:
+        out = args.comparison_out
+    elif args.output_dir is not None and args.output_dir != default_model_dir:
+        out = Path("reports/track_b/challenger_comparison.json")
+    else:
+        out = Path(cand["outputs"]["comparison_report"])
+    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, indent=2), encoding="utf-8")
     for ds in ("shifted_test", "original_test"):
         b, c = results["baseline"][ds]["model"], results["candidate"][ds]["model"]

@@ -33,11 +33,7 @@ import pandas as pd
 from src.monitoring import db, detection_report, run_window
 from src.monitoring.contract import load_contract
 from src.monitoring.prediction_log import PredictionLogger, PredictionRecord
-from src.monitoring.trigger import (
-    DEFAULT_EVENTS_LOG,
-    DEFAULT_STATE_PATH,
-    process_window_for_trigger,
-)
+from src.monitoring.trigger import process_window_for_trigger
 from src.track_b.modeling import apply_difficulty_boundary_guard
 from src.track_b.schema import FEATURE_COLUMNS, TARGET
 
@@ -76,23 +72,24 @@ def _log_window_records(
     seq_offset: int,
     prefix: str,
     latency_ms: float,
-) -> None:
-    """Write a window of synthetic prediction records + joined labels."""
+) -> dict[str, int]:
+    """Write a window of synthetic prediction records and return ground truth keyed by request_id."""
     step_seconds = (14.0 * 60.0) / max(1, len(df))
+    truth: dict[str, int] = {}
     for idx, (_, row) in enumerate(df.iterrows()):
-        ts = (window_start + timedelta(seconds=idx * step_seconds)).isoformat()
+        ts = run_window.iso(window_start + timedelta(seconds=idx * step_seconds))
         score = float(scores[idx])
         pred_label = int(score >= threshold)
-        # Keep true ground truth temporarily in label_observed via DB update below
+        req_id = f"req_{prefix}_{uuid.uuid4().hex[:8]}"
         rec = PredictionRecord(
-            request_id=f"req_{prefix}_{uuid.uuid4().hex[:8]}",
+            request_id=req_id,
             source="simulated",
             learner_id=str(row["learner_id"]),
             learner_seq=seq_offset + idx,
             question_id=f"q_{prefix}_{idx}",
             features={col: row[col] for col in FEATURE_COLUMNS if col in row},
             score=score,
-            label=int(labels[idx]),  # store ground truth in log for label-join simulation
+            label=pred_label,
             threshold=threshold,
             model_name="learner-difficulty",
             model_version="1",
@@ -102,8 +99,9 @@ def _log_window_records(
             status="ok",
             occurred_at=ts,
         )
-        pred_logger.log(rec)
-        _ = pred_label
+        if pred_logger.log(rec):
+            truth[req_id] = int(labels[idx])
+    return truth
 
 
 def run_experiment(
@@ -117,11 +115,13 @@ def run_experiment(
     if db_path.exists():
         db_path.unlink()
 
+    exp_state_path = report_out_dir / "trigger_state.json"
+    exp_events_path = report_out_dir / "trigger_events.jsonl"
     if reset_trigger_logs:
-        if DEFAULT_STATE_PATH.exists():
-            DEFAULT_STATE_PATH.unlink()
-        if DEFAULT_EVENTS_LOG.exists():
-            DEFAULT_EVENTS_LOG.unlink()
+        if exp_state_path.exists():
+            exp_state_path.unlink()
+        if exp_events_path.exists():
+            exp_events_path.unlink()
 
     with db.session(db_path) as conn:
         db.ensure_schema(conn)
@@ -152,17 +152,22 @@ def run_experiment(
     scores_w1, threshold, model_id = _score_with_champion(ctrl_w1)
     scores_w2, _, _ = _score_with_champion(ctrl_w2)
 
-    _log_window_records(
-        pred_logger, ctrl_w1, scores_w1, ctrl_w1[TARGET].to_numpy(),
-        threshold, model_id, t0, seq_offset=0, prefix="ctrl1", latency_ms=15.0,
+    all_truth: dict[str, int] = {}
+    all_truth.update(
+        _log_window_records(
+            pred_logger, ctrl_w1, scores_w1, ctrl_w1[TARGET].to_numpy(),
+            threshold, model_id, t0, seq_offset=0, prefix="ctrl1", latency_ms=15.0,
+        )
     )
-    _log_window_records(
-        pred_logger, ctrl_w2, scores_w2, ctrl_w2[TARGET].to_numpy(),
-        threshold, model_id, t0 + timedelta(minutes=15), seq_offset=1000, prefix="ctrl2", latency_ms=16.0,
+    all_truth.update(
+        _log_window_records(
+            pred_logger, ctrl_w2, scores_w2, ctrl_w2[TARGET].to_numpy(),
+            threshold, model_id, t0 + timedelta(minutes=15), seq_offset=1000, prefix="ctrl2", latency_ms=16.0,
+        )
     )
 
     # 2. Shifted Phase Windows (documented extra input shift + concept degradation)
-    logger.info("Populating Shifted Phase traffic (2 windows after %s)...", shift_time.isoformat())
+    logger.info("Populating Shifted Phase traffic (2 windows after %s)...", run_window.iso(shift_time))
     rng = np.random.default_rng(33)
 
     shift_w3 = base_df.sample(n=WINDOW_SAMPLE_SIZE, random_state=303).reset_index(drop=True).copy()
@@ -181,18 +186,26 @@ def run_experiment(
     flip_w4 = (scores_w4 < threshold) & (rng.random(len(labels_w4)) < 0.35)
     labels_w4[flip_w4] = 1
 
-    _log_window_records(
-        pred_logger, shift_w3, scores_w3, labels_w3,
-        threshold, model_id, shift_time, seq_offset=2000, prefix="shift3", latency_ms=35.0,
+    all_truth.update(
+        _log_window_records(
+            pred_logger, shift_w3, scores_w3, labels_w3,
+            threshold, model_id, shift_time, seq_offset=2000, prefix="shift3", latency_ms=35.0,
+        )
     )
-    _log_window_records(
-        pred_logger, shift_w4, scores_w4, labels_w4,
-        threshold, model_id, shift_time + timedelta(minutes=15), seq_offset=3000, prefix="shift4", latency_ms=38.0,
+    all_truth.update(
+        _log_window_records(
+            pred_logger, shift_w4, scores_w4, labels_w4,
+            threshold, model_id, shift_time + timedelta(minutes=15), seq_offset=3000, prefix="shift4", latency_ms=38.0,
+        )
     )
 
-    # 3. Join delayed ground-truth labels for evaluation
+    # 3. Join delayed ground-truth labels by request_id (never copying predicted label)
+    joined_at = run_window.iso(shift_time + timedelta(minutes=30))
     with db.session(db_path) as conn:
-        conn.execute("UPDATE predictions SET label_observed = label, label_status = 'joined'")
+        conn.executemany(
+            "UPDATE predictions SET label_observed = ?, label_status = 'joined', label_joined_at = ? WHERE request_id = ?",
+            [(y, joined_at, r) for r, y in all_truth.items()],
+        )
 
     # 4. Evaluate Monitoring Windows & Run Policy-Driven Trigger
     windows = [
@@ -217,7 +230,14 @@ def run_experiment(
         )
         evaluated_reports.append(rep)
 
-        trig_event = process_window_for_trigger(rep, simulated_mode=True)
+        trig_event = process_window_for_trigger(
+            rep,
+            simulated_mode=True,
+            execute_pipeline=False,
+            state_path=exp_state_path,
+            events_path=exp_events_path,
+            db_path=db_path,
+        )
         if trig_event:
             if phase == "control":
                 control_triggers.append(trig_event)
@@ -263,6 +283,11 @@ def run_experiment(
             },
         },
         "trigger_results": shifted_triggers,
+        "retraining_dataset_note": (
+            "Snapshot recorded for lineage; candidate retrained on the documented shifted dataset "
+            "(pipeline skipped via execute_pipeline=False during live drift experiment; "
+            "direct training on DB snapshots is deferred as future work)."
+        ),
         "detection_report_raw": det_report,
         "limitations": "Conducted on SYNTHETIC learner data only; findings not validated for real students.",
     }
@@ -322,6 +347,7 @@ def run_experiment(
 ```
 
 - **Cooldown Verification:** Window 4 (`10:45Z - 11:00Z`) returned `{cooldown_blocked[0].get('status') if cooldown_blocked else 'N/A'}` (`{cooldown_blocked[0].get('reason') if cooldown_blocked else 'N/A'}`).
+- **Snapshot & Retraining Lineage:** Snapshot recorded for lineage from joined monitoring rows (`snapshot_source={primary_trigger.get('snapshot_source', 'N/A')}`, `data_snapshot_sha256={primary_trigger.get('data_snapshot_sha256', 'N/A')}`); candidate retrained on the documented shifted dataset (`learner_interactions_shifted_v1.csv`) in real trigger runs (`execute_pipeline=False` dry-run in this experiment to preserve the committed champion). Direct training on DB snapshots is deferred as future work.
 
 ---
 
