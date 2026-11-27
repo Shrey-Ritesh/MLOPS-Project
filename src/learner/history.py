@@ -138,6 +138,17 @@ class SQLiteAttemptStore:
             for row in rows
         ]
 
+    def count_for_learner(self, learner_id: str) -> int:
+        """Return total persisted attempts for a learner with no row limit."""
+        if not learner_id.strip():
+            raise ValueError("learner_id must be non-empty")
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT COUNT(*) FROM attempts WHERE learner_id = ?",
+                (learner_id,),
+            ).fetchone()
+        return int(row[0]) if row else 0
+
     def _connect(self) -> sqlite3.Connection:
         if self._memory_connection is not None:
             return self._memory_connection

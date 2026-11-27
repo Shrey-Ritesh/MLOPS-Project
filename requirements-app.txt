@@ -14,3 +14,8 @@ chromadb==1.5.9
 sentence-transformers==5.7.0
 PyYAML==6.0.3
 numpy==2.5.4
+pandas==3.0.6
+scikit-learn==1.7.2
+joblib==1.6.0
+mlflow-skinny==3.17.1
+skops==0.16.0
