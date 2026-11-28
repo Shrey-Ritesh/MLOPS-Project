@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -23,10 +24,11 @@ from src.track_b.schema import FEATURE_COLUMNS, SCHEMA_VERSION, TARGET
 
 
 def git_commit() -> str:
+    """Commit of the code that trains the model: git if available, else the GIT_COMMIT baked into the image."""
     try:
         return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     except Exception:
-        return "unknown"
+        return os.environ.get("GIT_COMMIT", "").strip() or "unknown"
 
 
 def main() -> None:

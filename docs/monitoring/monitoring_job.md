@@ -12,10 +12,11 @@ The `monitor` service in Docker Compose uses the same image as the app and is ca
 1. **Joins labels.** It fills in the true answer for each prediction from the learner's next interaction (see the schema doc, §3).
 2. **Evaluates due windows.** A window `[start, end)` is evaluated once `now ≥ end + label_lag` (5 min), which gives next-interaction labels time to arrive. Windows line up on multiples of the window length counted from the Unix epoch, so window IDs are the same on every run.
 3. **Catches up after downtime.** It re-runs up to 96 missed windows. If the gap is longer, it raises a `monitoring_gap` alert instead of silently skipping. If the window length changes, a short bridge window keeps coverage free of gaps and overlaps.
-4. **Backs up nightly.** Once per UTC day after 02:00 it backs up the database to the `monitoring_backups` volume and keeps 7 copies.
-5. **Writes a heartbeat.** The container health check fails if no tick has finished in 5 minutes.
+4. **Calls the retraining trigger (off by default).** With `MONITORING_TRIGGER_ENABLED=1`, each newly evaluated window report goes to Person 2's `src/monitoring/trigger.py`, which applies its own policy and may retrain and register a challenger. A trigger failure is logged as `trigger_failed` and never stops monitoring. Setup and outputs: runbook §11.4.
+5. **Backs up nightly.** Once per UTC day after 02:00 it backs up the database to the `monitoring_backups` volume and keeps 7 copies.
+6. **Writes a heartbeat.** The container health check fails if no tick has finished in 5 minutes.
 
-To change the window length for the drift experiment, set `MONITORING_WINDOW_MINUTES=2` in the server's `.env`, then run `docker compose up -d monitor`.
+For the drift experiment (2-minute windows and the trigger switched on), follow runbook §11.4.
 
 ## 2. Where results are stored
 

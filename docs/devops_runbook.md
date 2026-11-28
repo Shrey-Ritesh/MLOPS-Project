@@ -34,6 +34,9 @@ Copy `.env.example` to `.env`. `.env` is git-ignored and excluded from the image
 | `LOG_PSEUDONYM_KEY` | yes for prediction logging | - | Secret (at least 16 characters) used to pseudonymise learner IDs in the prediction log. If it is missing, the app starts with a warning and prediction logging is off. **Never change it once set** (§11.6). |
 | `MONITORING_DB_PATH` | no | `data/state/monitoring.sqlite3`; compose sets `/app/data/state/monitoring.sqlite3` | prediction log, window reports and alerts, on the `app_state` volume |
 | `MONITORING_WINDOW_MINUTES` | no | `15` | monitoring window length; set to `2` during the drift experiment (§11.4) |
+| `MONITORING_TRIGGER_ENABLED` | no | `0` | `1` makes the monitor pass each window to the retraining trigger (drift experiment, §11.4) |
+| `MONITORING_TRIGGER_SIMULATED` | no | `0` | `1` uses the experiment cooldown (5 windows) instead of 6 hours |
+| `MONITORING_TRIGGER_EXECUTE` | no | `1` | `0` = dry run: record the trigger event and snapshot, skip retraining |
 | `MONITORING_TICK_SECONDS` | no | `60` | how often the monitor wakes up |
 | `MONITORING_CONTRACT` | no | `configs/monitoring/contracts/track_b_difficulty_v1.yaml` | Model contract (features and label rule). Must be the same for `app` and `monitor`; switching models is described in the schema doc, §7. |
 
@@ -252,15 +255,43 @@ How to read the result:
 - `last_window_end` should be within about 20 minutes of now (window length plus a 5-minute label lag).
 - `last_backup_date` should be today, or yesterday if it is before 02:00 UTC.
 
-### 11.4 Changing the window length (drift experiment)
+### 11.4 Drift experiment setup (Day 4): window length and the retraining trigger
+
+The `monitor` passes every evaluated window to Person 2's retraining trigger (`src/monitoring/trigger.py`) when `MONITORING_TRIGGER_ENABLED=1`. The trigger decides on its own: conditions, cooldown, daily cap and minimum records all live in `configs/monitoring/retrain_trigger.yaml`. Nobody runs it by hand. It is **off by default**, so normal days never retrain.
+
+**Before the experiment**, on the server:
 
 ```bash
-echo "MONITORING_WINDOW_MINUTES=2" >> .env        # remove the line again after the experiment
-docker compose up -d monitor                       # recreates only the monitor container
-docker compose logs monitor | grep monitor_started # expect "window=2m"
+cd ~/MLOPS-Project
+cp .env .env.bak-$(date +%Y%m%d)
+cat >> .env <<'ENV'
+MONITORING_WINDOW_MINUTES=2
+MONITORING_TRIGGER_ENABLED=1
+MONITORING_TRIGGER_SIMULATED=1
+ENV
+docker compose up -d monitor                          # recreates only the monitor container
+docker compose logs monitor | grep monitor_started    # expect "window=2m"
 ```
 
-Changing the length is safe. Already-evaluated windows are kept, and a short "bridge" window covers the time up to the first boundary of the new length, so there is no gap and no overlap. Put the line back to 15 minutes, or delete it, after the experiment.
+`MONITORING_TRIGGER_SIMULATED=1` uses the experiment cooldown: `simulated_cooldown_windows` × window length, i.e. 5 × 2 min. Add `MONITORING_TRIGGER_EXECUTE=0` for a dry run that records the trigger event and snapshot without training.
+
+**During the experiment:**
+
+```bash
+docker compose logs -f monitor | grep -E 'window_evaluated|alert_raised|trigger_(fired|blocked|failed)'
+docker compose exec monitor cat /app/data/state/retraining/trigger_events.jsonl   # one line per firing
+```
+
+When the trigger fires, it:
+1. snapshots the window's labelled rows to `/app/data/state/retraining/snapshots/` and records the SHA-256;
+2. tries `dvc repro train_challenger`. `dvc` is not in the image, so it falls back to `python -m src.track_b.train_candidate`, which writes to `/app/data/state/retraining/challenger/`;
+3. registers the challenger in MLflow with alias `challenger` and tags `trigger_id`, `snapshot_sha256` and `evidence_window_ids`. `production` is not touched. The model card records `git_commit` (baked into the image at build time), `config_sha256` and `dataset_sha256`.
+
+**Resources:** `monitor` is capped at 1 CPU and 1 GB. A retrain measured locally takes ~3 s of training (~9 s including registration) and ~300 MB peak, inside one monitor tick, well within the 5-minute heartbeat. The training data and baseline are mounted read-only from the checkout (`./data/synthetic`, `./models/track_b/baseline`). Outputs live on the `app_state` volume, never over the committed champion in `models/track_b/candidate/`.
+
+**For Person 3's comparison**, the challenger is at `/app/data/state/retraining/challenger` in the `monitor` container, and in MLflow as `learner-difficulty@challenger`.
+
+**After the experiment:** remove the three lines from `.env` (or restore the backup), then run `docker compose up -d monitor`. Windows go back to 15 minutes with a short bridge window, with no gap and no overlap, and the trigger is off again.
 
 ### 11.5 Alerts: what they mean and what to do
 
@@ -332,6 +363,7 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
 | Backups land on the `monitoring_backups` volume | — | yes, 2026-11-28 |
 | Drift evaluator runs in the deployed image (Person 2's sample windows, 60 rows each, scored by `production` v2 from MLflow, run inside the live `monitor` container) | yes (tests) | yes, 2026-11-28, after #33/#34. Baseline window: 3 features flagged, prediction PSI 0.04, F1 0.75. Shifted window: 5 features flagged, prediction PSI 0.055, F1 0.92. **Caution for Day 4:** the unshifted baseline already flags 3 features (≥ 2 fires the trigger), because PSI is noisy on 60 rows and `topic` has 40 categories. Expect control-window false alarms unless windows are larger or `topic` is excluded from the trigger count. |
 | Window length change during the experiment | yes (test) | not yet (Day 4) |
+| Retraining trigger called by the monitor (fires on a shifted window, cooldown holds the next one, a crash never stops monitoring) | yes, 2026-11-28 (`tests/test_monitoring_trigger_hook.py`); full retrain path (fallback training → MLflow `challenger` alias with lineage tags, `production` untouched) run against a local MLflow, ~9 s | not yet (Day 4) |
 | Alert recorded from real traffic | — | not yet (Day 4) |
 
 ## 12. MLflow registry on the server (Phase 3)

@@ -33,8 +33,12 @@ DEFAULT_CONFIG_PATH = Path("configs/monitoring/retrain_trigger.yaml")
 DEFAULT_THRESHOLDS_PATH = Path("configs/monitoring/thresholds.yaml")
 DEFAULT_STATE_PATH = Path("reports/monitoring/trigger_state.json")
 DEFAULT_EVENTS_LOG = Path("reports/monitoring/trigger_events.jsonl")
-DEFAULT_CHALLENGER_DIR = Path("models/track_b/challenger")
-DEFAULT_CHALLENGER_COMPARISON = Path("reports/track_b/challenger_comparison.json")
+# Overridable so the monitor container can keep retraining outputs on its persistent volume.
+DEFAULT_CHALLENGER_DIR = Path(os.environ.get("TRIGGER_CHALLENGER_DIR", "models/track_b/challenger"))
+DEFAULT_CHALLENGER_COMPARISON = Path(
+    os.environ.get("TRIGGER_CHALLENGER_COMPARISON", "reports/track_b/challenger_comparison.json")
+)
+DEFAULT_SNAPSHOT_DIR = Path(os.environ.get("TRIGGER_SNAPSHOT_DIR", "data/snapshots"))
 
 
 def load_trigger_config(path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
@@ -145,8 +149,9 @@ def evaluate_trigger_conditions(
     return False, None, []
 
 
-def snapshot_data(source_csv: Path, out_dir: Path = Path("data/snapshots")) -> tuple[Path, str]:
+def snapshot_data(source_csv: Path, out_dir: Path | None = None) -> tuple[Path, str]:
     """Create reproducible data snapshot from a CSV and return (path, sha256)."""
+    out_dir = Path(out_dir) if out_dir is not None else DEFAULT_SNAPSHOT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     snap_path = out_dir / f"snapshot_{stamp}.csv"
@@ -160,9 +165,10 @@ def snapshot_from_monitoring(
     db_path: Path | str,
     start: str,
     end: str,
-    out_dir: Path = Path("data/snapshots"),
+    out_dir: Path | None = None,
 ) -> tuple[Path, str]:
     """Snapshot labelled prediction rows for [start, end) from the monitoring DB."""
+    out_dir = Path(out_dir) if out_dir is not None else DEFAULT_SNAPSHOT_DIR
     import pandas as pd
 
     with db.session(db_path) as conn:
@@ -236,10 +242,12 @@ def execute_retraining_pipeline(
     evidence_windows: list[str],
     snapshot_sha: str,
     cfg: dict[str, Any] | None = None,
-    challenger_dir: Path = DEFAULT_CHALLENGER_DIR,
-    comparison_out: Path = DEFAULT_CHALLENGER_COMPARISON,
+    challenger_dir: Path | None = None,
+    comparison_out: Path | None = None,
 ) -> dict[str, Any]:
     """Execute configured retraining stage and register new challenger version in MLflow."""
+    challenger_dir = Path(challenger_dir) if challenger_dir is not None else DEFAULT_CHALLENGER_DIR
+    comparison_out = Path(comparison_out) if comparison_out is not None else DEFAULT_CHALLENGER_COMPARISON
     logger.info("Executing retraining pipeline for trigger %s...", trigger_id)
 
     pipeline_cmd = (cfg or {}).get("trigger_policy", {}).get("pipeline_command", "dvc repro train_challenger")
