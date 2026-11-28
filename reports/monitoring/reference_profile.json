@@ -1,7 +1,9 @@
 {
   "model_id": "candidate_hgb_shifted_v2",
-  "dataset": "data\\synthetic\\learner_interactions_shifted_v1.csv",
+  "dataset": "data/synthetic/learner_interactions_shifted_v1.csv",
   "dataset_sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
+  "dataset_sha256_lf": "bae23f2f28751504937c5b969843a759b0085c513dca90bdd001be4cafffdbd9",
+  "dataset_sha256_note": "52876f... matches Windows CRLF checkout & models/track_b/candidate/model_card.json; bae23f... is the git-committed LF sha256 of the same file.",
   "scenario_id": "shifted_v1",
   "schema_version": "1.0.0",
   "decision_threshold": 0.7,

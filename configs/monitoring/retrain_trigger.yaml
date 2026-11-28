@@ -11,7 +11,10 @@ trigger_conditions:
   min_feature_alerts: 2                   # Retrain if two or more input features trigger PSI alert (>= 0.20)
   prediction_psi_alert: 0.20              # Retrain if output score distribution experiences major shift (>= 0.20)
   performance_f1_drop: 0.05               # Retrain if window F1 degrades by 0.05 or more below champion baseline
-  min_labeled_for_perf: 30                # Minimum labeled records needed before performance drop condition can fire
+  min_labeled_for_perf: 1000              # F1 on 300 labels (~17% positives) has sd ≈ 0.07; a 0.05 drop needs ~1k labels to be meaningful (dashboard still shows F1 at min_labeled: 20)
+  exclude_features_from_trigger:          # High-cardinality or session-position features kept on dashboard but excluded from trigger firing
+    topic: "40 topics spread over small windows create noisy PSI false alarms unrelated to model shift"
+    prior_interaction_count: "Reflects session replay length/start offset rather than population drift"
 
 guardrails:
   cooldown_seconds: 21600                 # 6 hours cooldown to prevent thrashing and redundant retrains

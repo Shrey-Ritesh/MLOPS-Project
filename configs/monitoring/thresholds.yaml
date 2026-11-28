@@ -10,6 +10,7 @@ feature_drift:
   psi_warn: 0.10                # Conventional threshold indicating moderate feature distribution change
   psi_alert: 0.20               # Conventional threshold indicating significant feature drift requiring action
   ks_alpha: 0.01                # 99% confidence level test rejecting null hypothesis of identical distributions
+  min_rows_per_category: 5      # Minimum expected rows per category before categorical PSI raises alerts (prevents 40-topic false alarms on small windows)
   features:
     numeric:
       - recent_accuracy

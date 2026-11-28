@@ -23,6 +23,7 @@ from src.track_b.schema import FEATURE_COLUMNS
 
 KEY = "test-pseudonym-key-0123456789"
 W0 = datetime(2026, 11, 28, 10, 0, tzinfo=timezone.utc)
+BASELINE = Path("tests/fixtures/monitoring/sample_window_baseline.csv")
 SHIFTED = Path("tests/fixtures/monitoring/sample_window_shifted.csv")
 
 
@@ -53,8 +54,10 @@ def _log_one(settings, at, seq=0):
 
 
 def _log_shifted_window(settings, start, seq: dict[str, int]):
-    """Replay Person 2's shifted sample (60 rows) inside one window, in learner order so labels join."""
-    df = pd.read_csv(SHIFTED)
+    """Replay Person 2's shifted sample (60 rows) with documented input shift, in learner order so labels join."""
+    df = pd.read_csv(SHIFTED).copy()
+    df["response_time_seconds"] = (df["response_time_seconds"] * 0.45).round(2)
+    df["hint_count"] = df["hint_count"] + 2
     logger = PredictionLogger(settings.db_path, KEY)
     step = timedelta(minutes=14) / len(df)
     for i, row in df.iterrows():
@@ -66,6 +69,29 @@ def _log_shifted_window(settings, start, seq: dict[str, int]):
         logger.log(PredictionRecord(
             request_id=uuid.uuid4().hex, source="simulated", learner_id=learner, learner_seq=n,
             question_id=f"q{i}", features=feats, model_name="learner-difficulty", model_version="2",
+            latency_ms=5.0, status="ok", score=score, label=int(score >= 0.7), threshold=0.7,
+            occurred_at=_iso(start + i * step),
+        ))
+
+
+def _log_baseline_window(settings, start, seq: dict[str, int]):
+    """Replay the unshifted 60-row baseline fixture scored by the champion model, in learner order."""
+    import joblib
+
+    df = pd.read_csv(BASELINE).copy()
+    model = joblib.load("models/track_b/candidate/model.joblib")
+    scores = model.predict_proba(df[FEATURE_COLUMNS])[:, 1]
+    logger = PredictionLogger(settings.db_path, KEY)
+    step = timedelta(minutes=14) / len(df)
+    for i, row in df.iterrows():
+        learner = str(row["learner_id"])
+        n = seq.get(learner, 0)
+        seq[learner] = n + 1
+        feats = {c: (row[c].item() if hasattr(row[c], "item") else row[c]) for c in FEATURE_COLUMNS}
+        score = float(scores[i])
+        logger.log(PredictionRecord(
+            request_id=uuid.uuid4().hex, source="simulated", learner_id=learner, learner_seq=n,
+            question_id=f"qb{i}", features=feats, model_name="learner-difficulty", model_version="2",
             latency_ms=5.0, status="ok", score=score, label=int(score >= 0.7), threshold=0.7,
             occurred_at=_iso(start + i * step),
         ))
@@ -156,6 +182,17 @@ def test_real_trigger_fires_on_a_shifted_window_then_cooldown_holds(settings, tm
     assert '"event":"trigger_fired"' in out and '"event":"trigger_blocked"' in out
 
 
+def test_real_trigger_does_not_fire_on_baseline_fixture(settings):
+    """Control phase: unshifted 60-row baseline replay must not false-alarm trigger."""
+    seq: dict[str, int] = {}
+    _log_baseline_window(settings, W0, seq)
+    summary = scheduler.tick(settings, now=W0 + timedelta(minutes=20))
+    assert summary["windows"]
+    assert summary.get("trigger_events", []) == []
+    events_file = Path(settings.trigger_state_dir) / "trigger_events.jsonl"
+    assert not events_file.exists()
+
+
 def test_git_commit_falls_back_to_the_image_build_arg(monkeypatch):
     def no_git(*a, **k):
         raise FileNotFoundError("git")
@@ -165,3 +202,85 @@ def test_git_commit_falls_back_to_the_image_build_arg(monkeypatch):
     assert train_candidate.git_commit() == "abc123"
     monkeypatch.delenv("GIT_COMMIT")
     assert train_candidate.git_commit() == "unknown"
+
+
+def test_day4_five_baseline_then_shifted_300_row_windows(tmp_path, monkeypatch):
+    """End-to-end Day 4 replay: 5x300 baseline windows stay quiet; shifted window 1 fires; window 2 blocked."""
+    import joblib
+    from scripts.simulate_traffic import iter_learner_ordered_rows, load_traffic_dataset
+    from src.track_b.modeling import apply_difficulty_boundary_guard
+
+    monkeypatch.setenv("MONITORING_WINDOW_MINUTES", "2")
+    monkeypatch.setattr(trigger, "DEFAULT_SNAPSHOT_DIR", tmp_path / "snapshots")
+
+    win_settings = scheduler.Settings(
+        db_path=str(tmp_path / "monitoring.sqlite3"),
+        output_dir=str(tmp_path / "out"),
+        backup_dir=str(tmp_path / "backups"),
+        window=timedelta(minutes=2),
+        label_lag=timedelta(minutes=5),
+        max_catch_up=10,
+        tick_seconds=60,
+        backup_hour_utc=2,
+        config=load_config(),
+        trigger_enabled=True,
+        trigger_execute=False,
+        trigger_simulated=True,
+        trigger_state_dir=str(tmp_path / "retraining"),
+    )
+
+    model = joblib.load("models/track_b/candidate/model.joblib")
+    pred_logger = PredictionLogger(win_settings.db_path, KEY)
+
+    base_df = load_traffic_dataset("baseline", test_only=True)
+    shift_df = load_traffic_dataset("shifted", test_only=True)
+    base_rows = iter_learner_ordered_rows(base_df, limit=1500, seed=1)
+    shift_rows = iter_learner_ordered_rows(shift_df, limit=600, seed=101)
+
+    def _log_batch(batch, start_dt, prefix):
+        bdf = pd.DataFrame([r for _, _, r in batch])
+        scores = apply_difficulty_boundary_guard(model.predict_proba(bdf[FEATURE_COLUMNS])[:, 1], bdf["selected_difficulty"])
+        step = timedelta(seconds=110) / len(batch)
+        for idx, (lid, seq, row) in enumerate(batch):
+            feats = {c: (row[c].item() if hasattr(row[c], "item") else row[c]) for c in FEATURE_COLUMNS}
+            score = float(scores[idx])
+            pred_logger.log(PredictionRecord(
+                request_id=f"req_{prefix}_{idx}",
+                source="simulated",
+                learner_id=f"{prefix}_{lid}",
+                learner_seq=seq,
+                question_id=f"q_{idx}",
+                features=feats,
+                model_name="learner-difficulty",
+                model_version="2",
+                latency_ms=5.0,
+                status="ok",
+                score=score,
+                label=int(score >= 0.7),
+                threshold=0.7,
+                occurred_at=_iso(start_dt + idx * step),
+            ))
+
+    # 5 control windows (10:00..10:10Z), then 2 shifted windows (10:10..10:14Z)
+    for w in range(5):
+        _log_batch(base_rows[w * 300:(w + 1) * 300], W0 + timedelta(minutes=2 * w), "ctrl")
+    for w in range(2):
+        _log_batch(shift_rows[w * 300:(w + 1) * 300], W0 + timedelta(minutes=10 + 2 * w), "shift")
+
+    # Evaluate control windows one by one (now = window_end + 5m label_lag)
+    for w in range(5):
+        summary = scheduler.tick(win_settings, now=W0 + timedelta(minutes=2 * (w + 1) + 5))
+        assert summary.get("trigger_events", []) == []
+
+    # First shifted window must fire on hint_count + response_time_seconds
+    s1 = scheduler.tick(win_settings, now=W0 + timedelta(minutes=12 + 5))
+    assert len(s1.get("trigger_events", [])) == 1
+    fired = s1["trigger_events"][0]
+    assert fired["status"] == "success"
+    assert "hint_count" in fired["condition_met"]
+    assert "response_time_seconds" in fired["condition_met"]
+
+    # Second shifted window must be cooldown_blocked
+    s2 = scheduler.tick(win_settings, now=W0 + timedelta(minutes=14 + 5))
+    assert len(s2.get("trigger_events", [])) == 1
+    assert s2["trigger_events"][0]["status"] == "cooldown_blocked"

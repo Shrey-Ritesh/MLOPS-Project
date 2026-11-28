@@ -10,7 +10,7 @@
 ## 1. Executive Summary & Hypothesis
 
 - **Hypothesis:** When synthetic traffic transitions from champion-baseline patterns to an injected input shift + concept degradation, sliding-window monitoring will distinguish control vs. shifted regimes with 0 false-alarm triggers during control, detect data drift and performance degradation separately within $\le 1$ window of shift onset, and trigger automated retraining with cooldown enforcement.
-- **Control Phase:** 2 windows evaluated, **0** false-alarm drift/performance windows, **0** false-alarm retraining triggers.
+- **Control Phase:** 2 windows evaluated, no drift that would trigger a retrain in the control phase (**0** false-alarm retraining triggers; dashboard `status: alert` on `topic` and `prior_interaction_count` remains visible when `N >= 200` but is excluded from trigger firing).
 - **Shifted Phase:**
   - **Data Drift:** `FEATURE_DRIFT:psi:hint_count` detected in `w-20261126T1030Z-15m` (delay: **16.0 min**).
   - **Performance Degradation:** `PERFORMANCE_DEGRADATION:f1_drop` detected in `w-20261126T1030Z-15m` (delay: **16.0 min**).
