@@ -231,3 +231,21 @@ def test_simulate_traffic_test_only_learner_order_and_inference_service():
     assert len(calls) == 30
     assert all(c["source"] == "simulated" for c in calls)
     assert all("switch_to_lower_difficulty" not in c["features"] for c in calls)
+
+    shifted_df = load_traffic_dataset("shifted", test_only=True)
+    assert set(shifted_df["learner_id"]) <= set(test_df["learner_id"])
+
+
+def test_simulate_traffic_fails_loudly_without_prediction_logger(monkeypatch):
+    """Running live replay without LOG_PSEUDONYM_KEY / PredictionLogger must raise instead of warning."""
+    from scripts.simulate_traffic import stream_traffic
+    from src.learner.inference_hook import InferenceService
+
+    monkeypatch.delenv("LOG_PSEUDONYM_KEY", raising=False)
+    monkeypatch.setattr("src.learner.inference_hook.ProgressModel.from_env", classmethod(lambda cls: object()))
+    with pytest.raises(RuntimeError, match="PredictionLogger is disabled"):
+        stream_traffic("baseline", limit=5)
+
+    disabled_service = InferenceService(model=object(), prediction_logger=None)
+    with pytest.raises(RuntimeError, match="PredictionLogger is disabled"):
+        stream_traffic("baseline", limit=5, inference_service=disabled_service)

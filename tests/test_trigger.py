@@ -186,8 +186,8 @@ def test_trigger_reads_baseline_f1_and_pipeline_command_from_config(tmp_path, tr
     )
     report = {
         "window_id": "win_perf_cfg",
-        "n_predictions": 80,
-        "n_labelled": 40,
+        "n_predictions": 1000,
+        "n_labelled": 1000,
         "alerts": [],
         "performance": {"f1": 0.74, "roc_auc": 0.85},
     }
@@ -397,5 +397,20 @@ def test_baseline_fixture_does_not_fire_trigger(trigger_config):
         "alerts": normalized_alerts,
     }
     should_fire, cond, _ = evaluate_trigger_conditions(report, trigger_config)
+    assert not should_fire
+    assert cond is None
+
+
+def test_small_window_f1_drop_does_not_fire_trigger(trigger_config):
+    """300-row control windows have noisy F1 (sd ~0.07) and must not fire below min_labeled_for_perf."""
+    noisy_small_window = {
+        "window_id": "win_small_f1_noise",
+        "n_predictions": 300,
+        "n_labelled": 300,
+        "alerts": [],
+        "prediction_psi": 0.05,
+        "performance": {"f1": 0.58, "roc_auc": 0.85},
+    }
+    should_fire, cond, _ = evaluate_trigger_conditions(noisy_small_window, trigger_config)
     assert not should_fire
     assert cond is None

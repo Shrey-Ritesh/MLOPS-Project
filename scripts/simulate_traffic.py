@@ -38,7 +38,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("TrafficGenerator")
 
 BASELINE_DATASET = Path("data/synthetic/learner_interactions_shifted_v1.csv")
-SHIFT_SOURCE_DATASET = Path("data/synthetic/learner_interactions_v1.csv")
+SHIFT_SOURCE_DATASET = Path("data/synthetic/learner_interactions_shifted_v1.csv")
 
 
 def load_traffic_dataset(mode: str, *, test_only: bool = True) -> pd.DataFrame:
@@ -151,9 +151,15 @@ def _load_inference_service() -> Any:
         from src.learner.inference_hook import InferenceService
     except ImportError as exc:
         raise RuntimeError(
-            "src.learner.inference_hook is required for live simulated replay; merge dev/PR #26 first."
+            "src.learner.inference_hook is required for live simulated replay; run from the repo root with app dependencies installed."
         ) from exc
-    return InferenceService.from_env()
+    service = InferenceService.from_env()
+    if service.prediction_logger is None:
+        raise RuntimeError(
+            "PredictionLogger is disabled (LOG_PSEUDONYM_KEY is missing or invalid). "
+            "Run inside the `app` container where LOG_PSEUDONYM_KEY is configured, not `monitor`."
+        )
+    return service
 
 
 def stream_traffic(
@@ -180,6 +186,10 @@ def stream_traffic(
     )
 
     service = inference_service if inference_service is not None else (_load_inference_service() if use_inference_service else None)
+    if service is not None and hasattr(service, "prediction_logger") and service.prediction_logger is None:
+        raise RuntimeError(
+            "PredictionLogger is disabled (LOG_PSEUDONYM_KEY is missing or invalid); refusing to replay without logging."
+        )
     run_tag = uuid.uuid4().hex[:6]
 
     sent_count = 0

@@ -412,8 +412,20 @@ docker compose exec mlflow python -c "import sqlite3; s=sqlite3.connect('/mlflow
 
 - **Drift Thresholds:** `configs/monitoring/thresholds.yaml` defines PSI warning (0.10), PSI alert (0.20), KS-test $\alpha$ (0.01), prediction PSI alert (0.15), `min_rows_per_category: 5` (suppresses 40-topic false alerts on < 200-row windows), and min sample sizes (50).
 - **Trigger Policy:** `configs/monitoring/retrain_trigger.yaml` defines trigger conditions:
-  - $\ge 2$ features in alert status (PSI $\ge 0.20$, excluding `PREDICTION_DRIFT` and `exclude_features_from_trigger`: `topic`, `prior_interaction_count`) OR prediction PSI $\ge 0.20$ OR F1 drop $\ge 0.05$ (with $\ge 30$ labels).
-  - **Guardrails:** Cooldown period (6 hours / 5 simulated windows), max 3 runs per day ceiling, `min_window_records: 50` (for 2-minute live windows during the Day 4 experiment, stream 300+ predictions per window via `python scripts/simulate_traffic.py --limit 300 --rate 2.5` through `InferenceService.from_env().predict_and_log(source='simulated')`).
+  - $\ge 2$ features in alert status (PSI $\ge 0.20$, excluding `PREDICTION_DRIFT` and `exclude_features_from_trigger`: `topic`, `prior_interaction_count`) OR prediction PSI $\ge 0.20$ OR F1 drop $\ge 0.05$ (with `min_labeled_for_perf: 1000`, since 300-row windows have F1 sd $\approx 0.07$; performance still renders on the dashboard at `min_labeled: 20`).
+  - **Guardrails:** Cooldown period (6 hours / 5 simulated windows), max 3 runs per day ceiling, `min_window_records: 50`.
+  - **Live Day 4 traffic replay (on the server):** Run inside the **`app`** container (only `app` has `LOG_PSEUDONYM_KEY`; `monitor` does not, and the image excludes `scripts/` and `data/synthetic/` so both must be mounted read-only):
+    ```bash
+    export APP_IMAGE=$(docker inspect -f '{{.Config.Image}}' $(docker compose ps -q app))
+    # 5 control windows (300 rows per 2-minute window = 1500 rows)
+    docker compose run --rm --no-deps -T \
+      -v "$PWD/scripts:/app/scripts:ro" -v "$PWD/data/synthetic:/app/data/synthetic:ro" \
+      app python scripts/simulate_traffic.py --mode baseline --limit 1500 --rate 2.5
+    # 3 shifted windows (900 rows at 2.5 req/s)
+    docker compose run --rm --no-deps -T \
+      -v "$PWD/scripts:/app/scripts:ro" -v "$PWD/data/synthetic:/app/data/synthetic:ro" \
+      app python scripts/simulate_traffic.py --mode shifted --limit 900 --rate 2.5
+    ```
   - **Target Stage:** `dvc repro train_challenger` (outputs only to `models/track_b/challenger/`, never overwriting the `models/track_b/candidate/` champion fallback).
 
 ### 13.2 Operating the Retraining Trigger

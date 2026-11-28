@@ -312,7 +312,7 @@ def run_experiment(
 ## 1. Executive Summary & Hypothesis
 
 - **Hypothesis:** When synthetic traffic transitions from champion-baseline patterns to an injected input shift + concept degradation, sliding-window monitoring will distinguish control vs. shifted regimes with 0 false-alarm triggers during control, detect data drift and performance degradation separately within $\\le 1$ window of shift onset, and trigger automated retraining with cooldown enforcement.
-- **Control Phase:** {det_report['windows']['control']} windows evaluated, **{len(det_report['control_phase']['false_alarm_windows_drift_or_performance'])}** false-alarm drift/performance windows, **{len(fired_control)}** false-alarm retraining triggers.
+- **Control Phase:** {det_report['windows']['control']} windows evaluated, no drift that would trigger a retrain in the control phase (**{len(fired_control)}** false-alarm retraining triggers; {len(det_report['control_phase']['false_alarm_windows_drift_or_performance'])} non-trigger dashboard drift/performance alert windows).
 - **Shifted Phase:**
   - **Data Drift:** `{data_det['metric'] if data_det else 'none'}` detected in `{data_det['first_window'] if data_det else 'N/A'}` (delay: **{data_det['delay_minutes'] if data_det else 'N/A'} min**).
   - **Performance Degradation:** `{perf_det['metric'] if perf_det else 'none'}` detected in `{perf_det['first_window'] if perf_det else 'N/A'}` (delay: **{perf_det['delay_minutes'] if perf_det else 'N/A'} min**).
