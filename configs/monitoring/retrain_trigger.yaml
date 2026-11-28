@@ -1,0 +1,20 @@
+# Retraining trigger policy and guardrails for Phase 3.
+# Declares conditions under which automated retraining executes.
+schema_version: "1.0.0"
+
+trigger_policy:
+  enabled: true                                  # Master switch for automated retraining execution
+  target_stage: "train_challenger"               # Target DVC stage to reproduce (never overwrites champion)
+  pipeline_command: "dvc repro train_challenger" # Reproducible DVC pipeline execution command
+  
+trigger_conditions:
+  min_feature_alerts: 2                   # Retrain if two or more input features trigger PSI alert (>= 0.20)
+  prediction_psi_alert: 0.20              # Retrain if output score distribution experiences major shift (>= 0.20)
+  performance_f1_drop: 0.05               # Retrain if window F1 degrades by 0.05 or more below champion baseline
+  min_labeled_for_perf: 30                # Minimum labeled records needed before performance drop condition can fire
+
+guardrails:
+  cooldown_seconds: 21600                 # 6 hours cooldown to prevent thrashing and redundant retrains
+  simulated_cooldown_windows: 5           # In simulated mode, wait at least 5 windows before re-triggering
+  max_runs_per_day: 3                     # Safety ceiling to avoid AWS EC2 compute exhaustion and API rate limits
+  min_window_records: 50                  # Refuse to evaluate trigger if window has insufficient records

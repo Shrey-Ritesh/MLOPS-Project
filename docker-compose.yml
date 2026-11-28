@@ -1,6 +1,16 @@
+# Cap container logs (Docker's default json-file driver keeps them forever, unbounded).
+# These logs are for operations only; the persistent prediction record is the
+# predictions table in /app/data/state/monitoring.sqlite3.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   chroma:
     image: chromadb/chroma:1.5.3
+    logging: *default-logging
     ports:
       - "8000:8000"
     volumes:
@@ -20,6 +30,7 @@ services:
   api:
     build: .
     image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
     command: ["uvicorn", "src.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "8001:8000"
@@ -46,6 +57,7 @@ services:
   app:
     build: .
     image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
     command:
       - sh
       - -c
@@ -62,11 +74,20 @@ services:
       # Student accounts and progress live on a named volume so deploys keep them.
       USERS_CSV_PATH: /app/data/state/users.csv
       LEARNER_DB_PATH: /app/data/state/learner_history.sqlite3
+      # Phase 3 prediction log (same persisted volume). The pseudonym key turns learner IDs into
+      # irreversible keys before they are stored; keep it constant for the whole project.
+      MONITORING_DB_PATH: /app/data/state/monitoring.sqlite3
+      LOG_PSEUDONYM_KEY: ${LOG_PSEUDONYM_KEY:-}
+      # Which model contract (features + label rule) predictions are logged under; must match monitor.
+      MONITORING_CONTRACT: ${MONITORING_CONTRACT:-configs/monitoring/contracts/track_b_difficulty_v1.yaml}
+      # Model registry (needs the mlflow client in the image; the app must keep working if it is down).
+      MLFLOW_TRACKING_URI: http://mlflow:5000
       CHROMA_HOST: chroma
       CHROMA_PORT: "8000"
       HF_HOME: /cache/huggingface
     volumes:
       - ./data/processed:/app/data/processed:ro
+      - ./models:/app/models:ro
       - app_state:/app/data/state
       - hf_cache:/cache/huggingface
     depends_on:
@@ -82,9 +103,74 @@ services:
       retries: 5
       start_period: 40s
 
+  # Model registry and experiment tracking (Phase 3). SQLite backend + artifacts on the
+  # mlflow_data volume. Reachable by the other containers as http://mlflow:5000 and on the server
+  # itself at 127.0.0.1:5001 (use an SSH tunnel from a laptop); never published to the internet.
+  # --allowed-hosts: MLflow refuses unknown Host headers (403), including "mlflow:5000" by default.
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.17.1
+    logging: *default-logging
+    command:
+      - mlflow
+      - server
+      - --host=0.0.0.0
+      - --port=5000
+      - --workers=1
+      - --backend-store-uri=sqlite:////mlflow/mlflow.db
+      - --artifacts-destination=/mlflow/artifacts
+      - --serve-artifacts
+      - --allowed-hosts=mlflow,mlflow:5000,localhost,localhost:*,127.0.0.1,127.0.0.1:*
+    environment:
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    ports:
+      - "127.0.0.1:5001:5000"
+    volumes:
+      - mlflow_data:/mlflow
+    cpus: 0.5
+    mem_limit: 768m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # Phase 3 monitoring (Person 1): joins labels, evaluates monitoring windows, raises alerts,
+  # and backs up the monitoring database nightly. Same image as the app; small resource caps
+  # so it can never starve the tutor.
+  monitor:
+    image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
+    command: ["python", "-m", "src.monitoring.scheduler"]
+    environment:
+      MONITORING_DB_PATH: /app/data/state/monitoring.sqlite3
+      MONITORING_CONTRACT: ${MONITORING_CONTRACT:-configs/monitoring/contracts/track_b_difficulty_v1.yaml}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MONITORING_OUTPUT_DIR: /app/data/state/monitoring
+      MONITORING_BACKUP_DIR: /app/data/backups
+      # 15 by default; set e.g. MONITORING_WINDOW_MINUTES=2 in .env during the drift experiment.
+      MONITORING_WINDOW_MINUTES: ${MONITORING_WINDOW_MINUTES:-15}
+      MONITORING_TICK_SECONDS: ${MONITORING_TICK_SECONDS:-60}
+      MONITORING_BACKUP_HOUR_UTC: "2"
+    volumes:
+      - app_state:/app/data/state
+      - monitoring_backups:/app/data/backups
+    cpus: 0.5
+    mem_limit: 512m
+    restart: unless-stopped
+    healthcheck:
+      # Healthy while the scheduler has completed a tick in the last 5 minutes.
+      test: ["CMD", "python", "-m", "src.monitoring.scheduler", "--check-heartbeat", "300"]
+      interval: 60s
+      timeout: 20s
+      retries: 3
+      start_period: 120s
+
   indexer:
     build: .
     image: ${APP_IMAGE:-jee-tutor:local}
+    logging: *default-logging
     profiles: ["tools"]
     command: ["sh", "-c", "python -m src.retrieval.index_builder && python -m src.retrieval.jee_index_builder_v1"]
     environment:
@@ -105,3 +191,5 @@ volumes:
   hf_cache:
   index_reports:
   app_state:
+  monitoring_backups:
+  mlflow_data:

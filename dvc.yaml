@@ -56,6 +56,17 @@ stages:
     outs:
       - models/track_b/candidate: {cache: false}
       - reports/track_b/candidate_comparison.json: {cache: false}
+  train_challenger:
+    cmd: python -m src.track_b.train_candidate --output-dir models/track_b/challenger --comparison-out reports/track_b/challenger_comparison.json
+    deps:
+      - src/track_b/train_candidate.py
+      - configs/track_b/drift_experiment.yaml
+      - models/track_b/baseline
+      - data/synthetic/learner_interactions_v1.csv
+      - data/synthetic/learner_interactions_shifted_v1.csv
+    outs:
+      - models/track_b/challenger: {cache: false}
+      - reports/track_b/challenger_comparison.json: {cache: false}
   promotion_gate:
     cmd: python -m src.track_b.promotion_gate
     deps:

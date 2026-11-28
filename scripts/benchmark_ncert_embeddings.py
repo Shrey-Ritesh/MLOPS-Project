@@ -18,11 +18,11 @@ def unique(p):
 def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config",default="configs/retrieval.yaml")
-    ap.add_argument("--benchmark",default="chemistry_retrieval_benchmark_v1.json")
+    ap.add_argument("--benchmark",default="data/benchmarks/chemistry_retrieval_benchmark_v1.json")
     ap.add_argument("--label",required=True)
     ap.add_argument("--top-k",type=int,default=10)
     ap.add_argument("--query-mode",choices=["question_and_response","question"],default="question_and_response")
-    ap.add_argument("--output-dir",default="artifacts/retrieval_benchmark")
+    ap.add_argument("--output-dir",default="reports/retrieval/benchmark")
     a=ap.parse_args()
     if a.top_k<1: ap.error("--top-k must be >= 1")
     cfg=yaml.safe_load(rooted(a.config).read_text(encoding="utf-8"))

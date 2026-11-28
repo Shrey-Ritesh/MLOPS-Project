@@ -1,0 +1,31 @@
+# Model contract: what the model receives and how its ground truth is observed.
+# The prediction logger, the label joiner and the monitoring job read this file; nothing about
+# features or labels is hard-coded in src/monitoring. Selected with MONITORING_CONTRACT.
+#
+# This contract matches the Track B learner model (model gate outcome C, candidate_hgb_shifted_v2).
+# Feature order = model input order (src/track_b/schema.py FEATURE_COLUMNS; a test enforces it).
+
+contract_id: track_b_difficulty_v1
+status: active
+description: >
+  Predicts whether the learner will switch to a lower difficulty on their next interaction.
+  Synthetic training data only; not validated for real students.
+
+features:
+  topic:                   {type: categorical, vocabulary_file: configs/track_b/topic_difficulty_priors.csv}
+  selected_difficulty:     {type: categorical, levels: [Easy, Medium, Hard]}
+  recent_accuracy:         {type: numeric, min: 0.0, max: 1.0}
+  mistake_count:           {type: integer, min: 0, max: 50}
+  hint_count:              {type: integer, min: 0, max: 50}
+  response_time_seconds:   {type: numeric, min: 0.0, max: 3600.0}
+  prior_interaction_count: {type: integer, min: 0, max: 100000}
+  previous_difficulty:     {type: categorical, levels: [Easy, Medium, Hard]}
+
+label:
+  name: switch_to_lower_difficulty
+  # 1 if the learner's NEXT logged interaction (learner_seq + 1) has a lower difficulty.
+  rule: next_interaction_lower_difficulty
+  params:
+    difficulty_feature: selected_difficulty
+    levels: [Easy, Medium, Hard]          # ordinal, lowest first
+  expiry_hours: 72

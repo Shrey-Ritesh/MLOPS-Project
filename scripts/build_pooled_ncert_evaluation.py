@@ -120,16 +120,16 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--minilm",
-        default="src/retrieval/chemistry_retrieval_benchmark_v1_annotated_minilm.json",
+        default="data/benchmarks/chemistry_retrieval_benchmark_v1_annotated_minilm.json",
     )
     parser.add_argument(
         "--chembed",
-        default="src/retrieval/chemistry_retrieval_benchmark_v1_annotated_chembed.json",
+        default="data/benchmarks/chemistry_retrieval_benchmark_v1_annotated_chembed.json",
     )
     parser.add_argument("--top-k", type=int, default=5)
     parser.add_argument(
         "--output-dir",
-        default="artifacts/retrieval_benchmark/pooled_evaluation",
+        default="reports/retrieval/benchmark/pooled_evaluation",
     )
     args = parser.parse_args()
 

@@ -6,6 +6,29 @@ course project in the education domain.
 
 Team: Shraddha PS, Shreesha DR, Shrey Ritesh, Shreyank DK
 
+## Repository layout
+
+| Folder / file | What is in it |
+|---|---|
+| `app.py` | Streamlit tutor app (sign-in, tutor, practice, progress, debug tabs) |
+| `src/api/` | FastAPI answer-evaluation service |
+| `src/evaluation/` | Answer grading: normalisers, attempt store, retriever adapter |
+| `src/retrieval/` | Embeddings, Chroma index builders, `retrieve.py`, and the MiniLM / chEmbed benchmark tools (`benchmark_minilm.py`, `benchmark_chembed.py`, `evaluate_chembed.py`) |
+| `src/retrieval_mlflow/` | Registers the retrieval benchmark runs in MLflow |
+| `src/handwriting/`, `src/learner/`, `src/tutoring/` | OCR.space transcription, learner history and recommendations, tutor prompt |
+| `src/data/`, `src/models/` | NCERT/JEE PDF extraction pipeline and its data models (built the corpus in Phase 1) |
+| `src/track_b/` | **Phase 1** Track B: synthetic learners, drift detection and promotion gate (the DVC pipeline in `dvc.yaml`) |
+| `configs/` | Retrieval, MLflow and Track B configuration |
+| `data/` | DVC pointers (`processed.dvc`, `assets.dvc`), `benchmarks/` (retrieval question sets), Track B synthetic data |
+| `reports/` | All results: `retrieval/` (index manifests, benchmark runs, analysis, evaluations), `track_b/`, `data_quality/` |
+| `models/track_b/` | Phase 1 Track B models |
+| `tests/` | pytest suite (run by CI) and its fixtures |
+| `scripts/` | Utility scripts: `deploy.sh` (server deploy), `smoke_test_api.py` (CI), retrieval analysis tools, `phase1/` (Phase 1 retrieval evaluation) |
+| `deploy/` | AWS IAM policy and the one-time server bootstrap script |
+| `.github/workflows/` | CI (`ci.yml`, `docker.yml`) and CD (`deploy.yml`) |
+| `docs/` | Runbook, CI/branch workflow, design notes; `planning/` holds the roadmap and phase plans |
+| `Dockerfile`, `docker-compose.yml` | Container image and the stack (Chroma, API, app, indexer) |
+
 ## Run the project with Docker
 
 Prerequisites: Docker Desktop with Compose, access to the configured DVC remote,

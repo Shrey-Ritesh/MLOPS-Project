@@ -7,7 +7,7 @@ Run from the repository root:
 
 Defaults:
     input:  src/retrieval/annotated_chunks.json
-    output: artifacts/retrieval_analysis/
+    output: reports/retrieval/analysis/
 
 No embedding model, Chroma connection, or retrieval operation is performed.
 Only Python's standard library is required.
@@ -322,7 +322,7 @@ def main() -> None:
         help="Annotated retrieval run JSON (relative to repository root).",
     )
     parser.add_argument(
-        "--output-dir", default="artifacts/retrieval_analysis",
+        "--output-dir", default="reports/retrieval/analysis",
         help="Directory for JSON output (relative to repository root).",
     )
     parser.add_argument("--cutoff", type=int, default=5, help="Top-k boundary; default: 5.")

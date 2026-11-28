@@ -1,0 +1,134 @@
+{
+  "report_version": "1.1.0",
+  "window_id": "w-20261120T0530Z-15m",
+  "contract_id": "track_b_difficulty_v1",
+  "start": "2026-11-20T05:30:00.000Z",
+  "end": "2026-11-20T05:45:00.000Z",
+  "evaluated_at": "2026-11-20T05:50:00.000Z",
+  "status": "alert",
+  "n_predictions": 147,
+  "n_labelled": 125,
+  "n_label_pending": 22,
+  "n_label_expired": 0,
+  "n_label_excluded": 0,
+  "health": {
+    "p50": 4.189,
+    "p95": 7.251,
+    "error_rate": 0.0,
+    "timeout_rate": 0.0,
+    "fallback_rate": 0.0,
+    "by_source": {
+      "simulated": 147
+    },
+    "by_model_version": {
+      "fixture-1": 147
+    }
+  },
+  "validity": {
+    "contract_mismatch": 0,
+    "schema_failures": 0,
+    "out_of_range": 0,
+    "unseen_topics": 0,
+    "schema_failure_rate": 0.0,
+    "out_of_range_rate": 0.0,
+    "unseen_topic_rate": 0.0,
+    "unseen_topic_names": {}
+  },
+  "prediction_distribution": {
+    "n_scored": 147,
+    "mean_score": 0.1378,
+    "positive_rate": 0.0884,
+    "score_bins": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "score_counts": [
+      103,
+      15,
+      7,
+      6,
+      3,
+      2,
+      3,
+      1,
+      2,
+      5
+    ]
+  },
+  "drift": {
+    "recent_accuracy": {
+      "psi": 0.1221,
+      "ks_stat": 0.0682,
+      "ks_p": 0.4979972471955732,
+      "status": "stable"
+    },
+    "mistake_count": {
+      "psi": 0.0229,
+      "ks_stat": 0.0719,
+      "ks_p": 0.4314437639820923,
+      "status": "stable"
+    },
+    "hint_count": {
+      "psi": 0.0307,
+      "ks_stat": 0.08,
+      "ks_p": 0.30353023276526236,
+      "status": "stable"
+    },
+    "response_time_seconds": {
+      "psi": 2.0377,
+      "ks_stat": 0.5319,
+      "ks_p": 3.7462946452110463e-38,
+      "status": "drift"
+    },
+    "prior_interaction_count": {
+      "psi": 0.1167,
+      "ks_stat": 0.1108,
+      "ks_p": 0.055538743964182,
+      "status": "stable"
+    },
+    "selected_difficulty": {
+      "psi": 0.0136,
+      "ks_stat": null,
+      "ks_p": null,
+      "status": "stable"
+    },
+    "previous_difficulty": {
+      "psi": 0.0085,
+      "ks_stat": null,
+      "ks_p": null,
+      "status": "stable"
+    }
+  },
+  "prediction_psi": 0.0711,
+  "performance": {
+    "f1": 0.7222,
+    "roc_auc": 0.9544,
+    "brier": 0.0641,
+    "n": 125
+  },
+  "alerts": [
+    {
+      "severity": "warning",
+      "category": "drift",
+      "metric": "psi.response_time_seconds",
+      "value": 2.0377,
+      "threshold": 0.2,
+      "message": "response_time_seconds PSI 2.038 >= 0.2"
+    }
+  ],
+  "reference_dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "champion_version": "fixture-1",
+  "thresholds": {
+    "min_predictions_for_rates": 10,
+    "config_version": 1
+  }
+}

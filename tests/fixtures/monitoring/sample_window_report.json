@@ -1,0 +1,80 @@
+{
+  "window_id": "win_fixture_001",
+  "start": "2026-11-25T10:00:00Z",
+  "end": "2026-11-25T11:00:00Z",
+  "n_predictions": 60,
+  "n_labelled": 45,
+  "health": {
+    "p50_latency_ms": 12.4,
+    "p95_latency_ms": 28.1,
+    "error_rate": 0.0,
+    "fallback_rate": 0.0
+  },
+  "validity": {
+    "schema_failures": 0,
+    "out_of_range": 0,
+    "unseen_topics": 0
+  },
+  "drift": {
+    "recent_accuracy": {
+      "psi": 0.0032,
+      "ks_stat": 0.045,
+      "ks_p": 0.38,
+      "status": "OK"
+    },
+    "mistake_count": {
+      "psi": 0.0011,
+      "ks_stat": 0.022,
+      "ks_p": 0.85,
+      "status": "OK"
+    },
+    "hint_count": {
+      "psi": 0.2241,
+      "ks_stat": 0.142,
+      "ks_p": 0.00012,
+      "status": "ALERT"
+    },
+    "response_time_seconds": {
+      "psi": 0.0125,
+      "ks_stat": 0.061,
+      "ks_p": 0.18,
+      "status": "OK"
+    },
+    "prior_interaction_count": {
+      "psi": 0.0008,
+      "ks_stat": 0.019,
+      "ks_p": 0.92,
+      "status": "OK"
+    },
+    "topic": {
+      "psi": 0.021,
+      "status": "OK"
+    },
+    "selected_difficulty": {
+      "psi": 0.015,
+      "status": "OK"
+    },
+    "previous_difficulty": {
+      "psi": 0.012,
+      "status": "OK"
+    }
+  },
+  "prediction_psi": 0.185,
+  "performance": {
+    "f1": 0.612,
+    "roc_auc": 0.695,
+    "brier": 0.188
+  },
+  "alerts": [
+    {
+      "type": "FEATURE_DRIFT",
+      "feature": "hint_count",
+      "metric": "psi",
+      "value": 0.2241,
+      "threshold": 0.2,
+      "severity": "ALERT"
+    }
+  ],
+  "reference_dataset_sha256": "52876f92add9058271b7d42bccb7c83e197815a19be7184642ab8e8e24fbafc0",
+  "champion_version": "candidate_hgb_shifted_v2"
+}

@@ -10,6 +10,7 @@ file's hash and skipped if already logged.
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -43,14 +44,15 @@ def _metrics(prefix: str, block: dict) -> dict:
 
 
 def log_model_run(client, experiment_id, model_dir: Path, run_name: str, params: dict, metrics: dict,
-                  tags: dict, artifacts: list[Path]) -> tuple[str, str]:
+                  tags: dict, artifacts: list[Path], dedupe_by_sha: bool = True) -> tuple[str, str]:
     """Log one run with its model; return (run_id, model_version)."""
     model_file = model_dir / "model.joblib"
     sha = file_sha256(model_file)
-    existing = _existing_run(client, experiment_id, sha)
-    if existing:
-        versions = client.search_model_versions(f"run_id='{existing}'")
-        return existing, versions[0].version if versions else ""
+    if dedupe_by_sha:
+        existing = _existing_run(client, experiment_id, sha)
+        if existing:
+            versions = client.search_model_versions(f"run_id='{existing}'")
+            return existing, versions[0].version if versions else ""
 
     card = _read(model_dir / "model_card.json")
     model = joblib.load(model_file)
@@ -79,17 +81,64 @@ def log_model_run(client, experiment_id, model_dir: Path, run_name: str, params:
     return run.info.run_id, str(info.registered_model_version)
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--challenger-only", action="store_true",
+                        help="Register only the retrained challenger without touching production/rejected aliases")
+    parser.add_argument("--candidate-dir", type=Path, default=Path("models/track_b/candidate"))
+    parser.add_argument("--comparison-report", type=Path, default=REPORTS / "candidate_comparison.json")
+    parser.add_argument("--trigger-id", type=str, default=None)
+    parser.add_argument("--snapshot-sha256", type=str, default=None)
+    args = parser.parse_args(argv)
+
     uri = tracking.configure()
     client = MlflowClient()
     experiment_id = mlflow.get_experiment_by_name(tracking.EXPERIMENT_NAME).experiment_id
 
+    comparison = _read(args.comparison_report)
+    cand_card = _read(args.candidate_dir / "model_card.json")
+    cand_metrics = {
+        **_metrics("shifted_test", comparison["candidate"]["shifted_test"]),
+        **_metrics("original_test", comparison["candidate"]["original_test"]),
+    }
+    cand_model_id = cand_card.get("model_id", comparison["candidate"]["model_id"])
+    cand_params = {
+        "model_id": cand_model_id,
+        "decision_threshold": cand_card["decision_threshold"],
+        "apply_boundary_guard": cand_card.get("apply_boundary_guard", True),
+        "dataset": cand_card["dataset"],
+    }
+
+    if args.challenger_only:
+        tags = {
+            "role": "candidate",
+            "retraining_dataset_note": "Snapshot recorded for lineage; candidate retrained on the documented shifted dataset",
+        }
+        if args.trigger_id:
+            tags["trigger_id"] = args.trigger_id
+        if args.snapshot_sha256:
+            tags["snapshot_sha256"] = args.snapshot_sha256
+        cand_run, cand_version = log_model_run(
+            client,
+            experiment_id,
+            args.candidate_dir,
+            f"{cand_model_id}_challenger",
+            cand_params,
+            cand_metrics,
+            tags,
+            [args.comparison_report],
+            dedupe_by_sha=False,
+        )
+        name = tracking.REGISTERED_MODEL_NAME
+        client.set_model_version_tag(name, cand_version, "role", "candidate")
+        print(f"tracking store: {uri}")
+        print(f"challenger run {cand_run[:8]}  model {name} v{cand_version}")
+        return
+
     base_eval = _read(REPORTS / "baseline_evaluation.json")
     shifted = _read(REPORTS / "shifted_evaluation.json")
-    comparison = _read(REPORTS / "candidate_comparison.json")
     decision = _read(REPORTS / "promotion_decision.json")
     base_card = _read(Path("models/track_b/baseline/model_card.json"))
-    cand_card = _read(Path("models/track_b/candidate/model_card.json"))
 
     base_metrics = {
         **_metrics("original_test", base_eval["test"]),
@@ -103,24 +152,13 @@ def main() -> None:
         [REPORTS / "baseline_evaluation.json", REPORTS / "shifted_evaluation.json", REPORTS / "drift_report.json"],
     )
 
-    cand_metrics = {
-        **_metrics("shifted_test", comparison["candidate"]["shifted_test"]),
-        **_metrics("original_test", comparison["candidate"]["original_test"]),
-    }
-    cand_model_id = cand_card.get("model_id", comparison["candidate"]["model_id"])
-    cand_params = {
-        "model_id": cand_model_id,
-        "decision_threshold": cand_card["decision_threshold"],
-        "apply_boundary_guard": cand_card.get("apply_boundary_guard", True),
-        "dataset": cand_card["dataset"],
-    }
     cand_run, cand_version = log_model_run(
-        client, experiment_id, Path("models/track_b/candidate"), cand_model_id,
+        client, experiment_id, args.candidate_dir, cand_model_id,
         cand_params,
         cand_metrics,
         {"role": "candidate", "gate_decision": decision["decision"],
          "gate_failed_criteria": ",".join(decision["failed_criteria"]) or "none"},
-        [REPORTS / "candidate_comparison.json", REPORTS / "promotion_decision.json"],
+        [args.comparison_report, REPORTS / "promotion_decision.json"],
     )
 
     # Registry state follows the gate decision: the baseline stays "production"; a candidate

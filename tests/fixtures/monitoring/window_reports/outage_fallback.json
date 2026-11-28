@@ -1,0 +1,138 @@
+{
+  "report_version": "1.1.0",
+  "window_id": "w-20261120T0100Z-15m",
+  "contract_id": "track_b_difficulty_v1",
+  "start": "2026-11-20T01:00:00.000Z",
+  "end": "2026-11-20T01:15:00.000Z",
+  "evaluated_at": "2026-11-20T01:20:00.000Z",
+  "status": "alert",
+  "n_predictions": 106,
+  "n_labelled": 90,
+  "n_label_pending": 16,
+  "n_label_expired": 0,
+  "n_label_excluded": 0,
+  "health": {
+    "p50": 0.495,
+    "p95": 5.941,
+    "error_rate": 0.0,
+    "timeout_rate": 0.0,
+    "fallback_rate": 0.6698,
+    "by_source": {
+      "simulated": 106
+    },
+    "by_model_version": {
+      "fallback-v1": 71,
+      "fixture-1": 35
+    }
+  },
+  "validity": {
+    "contract_mismatch": 0,
+    "schema_failures": 0,
+    "out_of_range": 0,
+    "unseen_topics": 0,
+    "schema_failure_rate": 0.0,
+    "out_of_range_rate": 0.0,
+    "unseen_topic_rate": 0.0,
+    "unseen_topic_names": {}
+  },
+  "prediction_distribution": {
+    "n_scored": 35,
+    "mean_score": 0.1131,
+    "positive_rate": 0.1132,
+    "score_bins": [
+      0.0,
+      0.1,
+      0.2,
+      0.3,
+      0.4,
+      0.5,
+      0.6,
+      0.7,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "score_counts": [
+      22,
+      6,
+      3,
+      2,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  "drift": {
+    "recent_accuracy": {
+      "psi": 0.1262,
+      "ks_stat": 0.1062,
+      "ks_p": 0.7888657638457314,
+      "status": "stable"
+    },
+    "mistake_count": {
+      "psi": 0.0403,
+      "ks_stat": 0.0433,
+      "ks_p": 0.999999016818281,
+      "status": "stable"
+    },
+    "hint_count": {
+      "psi": 0.0658,
+      "ks_stat": 0.1187,
+      "ks_p": 0.6680974357695074,
+      "status": "stable"
+    },
+    "response_time_seconds": {
+      "psi": 0.3429,
+      "ks_stat": 0.2192,
+      "ks_p": 0.06027591081371986,
+      "status": "drift"
+    },
+    "prior_interaction_count": {
+      "psi": 0.2805,
+      "ks_stat": 0.1171,
+      "ks_p": 0.6834962800331152,
+      "status": "drift"
+    },
+    "selected_difficulty": {
+      "psi": 0.0237,
+      "ks_stat": null,
+      "ks_p": null,
+      "status": "stable"
+    },
+    "previous_difficulty": {
+      "psi": 0.0074,
+      "ks_stat": null,
+      "ks_p": null,
+      "status": "stable"
+    }
+  },
+  "prediction_psi": 0.9291,
+  "performance": "insufficient_data",
+  "alerts": [
+    {
+      "severity": "critical",
+      "category": "health",
+      "metric": "fallback_rate",
+      "value": 0.6698,
+      "threshold": 0.3,
+      "message": "fallback_rate=0.6698 breached critical threshold 0.3"
+    },
+    {
+      "severity": "warning",
+      "category": "drift",
+      "metric": "psi.response_time_seconds",
+      "value": 0.3429,
+      "threshold": 0.2,
+      "message": "response_time_seconds PSI 0.343 >= 0.2"
+    }
+  ],
+  "reference_dataset_sha256": "90cc0708ef70bbc4880ac73769615b74d620d1a9dc3db8e77863ef3fef4901fe",
+  "champion_version": "fallback-v1",
+  "thresholds": {
+    "min_predictions_for_rates": 10,
+    "config_version": 1
+  }
+}
