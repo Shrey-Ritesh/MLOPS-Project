@@ -41,6 +41,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Monitor image can evaluate drift
+        run: |
+          docker run --rm jee-tutor:ci python -c "
+          from src.monitoring.drift_windows import load_reference_profile, load_thresholds
+          load_reference_profile(); load_thresholds(); print('drift reference profile and thresholds present')"
+
       - name: Compose file is valid
         run: docker compose config -q
 
