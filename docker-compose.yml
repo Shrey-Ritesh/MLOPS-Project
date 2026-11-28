@@ -122,6 +122,9 @@ services:
       - --allowed-hosts=mlflow,mlflow:5000,localhost,localhost:*,127.0.0.1,127.0.0.1:*
     environment:
       MLFLOW_DISABLE_AGENT_HINT: "1"
+      # MLflow 3.x starts a background job runner (7 worker processes, ~1.5 GB) for features we
+      # do not use; under mem_limit it was OOM-killed in a restart loop on the server (2026-11-28).
+      MLFLOW_SERVER_ENABLE_JOB_EXECUTION: "false"
     ports:
       - "127.0.0.1:5001:5000"
     volumes:
