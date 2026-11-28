@@ -618,7 +618,7 @@ def _safe_get_chemistry_questions() -> list[JEEQuestionRecord]:
 
 
 def _render_question_assets(assets: list[ResolvedAsset]) -> None:
-    """Render attached question figures with clean captions or missing-file guidance."""
+    """Render attached question figures, or a plain notice when a figure file is missing."""
     if not assets:
         return
     for asset in assets:
@@ -626,10 +626,9 @@ def _render_question_assets(assets: list[ResolvedAsset]) -> None:
         if asset.exists:
             st.image(str(asset.file_path), caption=caption)
         else:
-            st.warning(
-                f"Figure {asset.figure_number} (`{asset.asset_id}`) is not available locally. "
-                "Run `dvc pull data/assets.dvc` to fetch question diagrams."
-            )
+            # Students see a plain notice; the fix (dvc pull data/assets.dvc on the host) goes to the ops log.
+            st.info(f"Figure {asset.figure_number} is unavailable right now.")
+            log_event("question_asset_missing", level=logging.WARNING, path=asset.asset_id)
 
 
 def render_practice_tab(current_user: dict[str, str]) -> None:
