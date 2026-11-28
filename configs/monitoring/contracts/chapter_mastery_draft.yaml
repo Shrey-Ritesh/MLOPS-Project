@@ -1,8 +1,9 @@
-# DRAFT model contract for the reframed task (team decision pending, 26 Nov 2026):
+# DRAFT model contract for a possible future task:
 #   "probability that the learner solves their next question in this chapter".
-# The app no longer captures a chosen difficulty, so the difficulty features are gone. The
-# feature list below is a PROPOSAL: edit it once the team agrees, then rename the file / id
-# (e.g. chapter_mastery_v1), set status: active and point MONITORING_CONTRACT at it.
+# Decision 27 Nov 2026: NOT activated for Phase 3. The app (PR #26) keeps the difficulty
+# selector and serves the Track B model, so track_b_difficulty_v1 stays active. This file is
+# kept, and tested, as future work: to use it, rename the file / id (e.g. chapter_mastery_v1),
+# set status: active and point MONITORING_CONTRACT at it.
 #
 # The label needs answer outcomes: the app calls PredictionLogger.log_outcome(...) after each
 # evaluated answer (see docs/monitoring/prediction_log_schema.md).
