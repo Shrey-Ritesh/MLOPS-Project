@@ -340,7 +340,7 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
 | Reached from containers | `http://mlflow:5000` (`MLFLOW_TRACKING_URI` is set for `app` and `monitor`) |
 | Reached from the server | `http://127.0.0.1:5001` only. It is not published to the internet, so no security-group change is needed. |
 | Reached from a laptop | an SSH tunnel: `ssh -i <key> -L 5001:127.0.0.1:5001 ubuntu@<ip>`, then open `http://localhost:5001` |
-| Resources | 1 worker (SQLite needs a single writer), 0.5 CPU, 768 MB |
+| Resources | 1 worker (SQLite needs a single writer), 0.5 CPU, 768 MB. `MLFLOW_SERVER_ENABLE_JOB_EXECUTION=false` is required: by default MLflow 3.x also starts a job runner with 7 worker processes (~1.5 GB), which was OOM-killed in a restart loop on the first server deploy (2026-11-28). With it off, the server uses ~360 MB. |
 | Host check | `--allowed-hosts` includes `mlflow:5000`. Without it, MLflow 3.x answers **403** to the other containers. This was verified locally on 2026-11-26: refused by default, accepted with the flag, and `evil.com` still refused. |
 
 **Seed the registry once** (Person 3, after the first deploy): with the tunnel open, run the registration script against the server. Use an environment with `scikit-learn==1.7.2` (`requirements.txt`). The champion does not load under 1.9.1.
