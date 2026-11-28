@@ -48,6 +48,8 @@ jobs:
           load_reference_profile(); load_thresholds(); print('drift reference profile and thresholds present')"
 
       - name: Compose file is valid
+        env:
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
         run: docker compose config -q
 
       - name: Missing required configuration fails clearly
