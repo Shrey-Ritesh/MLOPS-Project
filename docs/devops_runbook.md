@@ -198,7 +198,7 @@ DVC on EC2 reads its credentials from the instance role. Without `AWS_METADATA_S
 
 ## 11. Monitoring and prediction logging (Phase 3, owner: Person 1)
 
-**Status: draft.** Code and tests are on `dev` (PR #25, merged 27 Nov 2026). Every command below works locally. On the server, only the pseudonym key has been set so far. When a step is first done on the server, record it in §11.9.
+**Status: running on the server since 28 Nov 2026** (release #30, with the fixes released in #32 and #34). The live check on 28 Nov is recorded in §11.9: predictions, labels, a window, a backup and a restore. Steps still open (the window-length change and alerts from real traffic) happen in the Day 4 experiment.
 
 Background docs: `docs/monitoring/prediction_log_schema.md` (what is logged), `docs/monitoring/monitoring_job.md` (window report format), `configs/monitoring/health.yaml` (thresholds and the reason for each).
 
@@ -222,8 +222,8 @@ dashboard (Person 4), retraining trigger (Person 2): read only ─────�
 
 1. **Done 2026-11-27.** Generate the pseudonym key **once** on the server (`openssl rand -hex 32`).
 2. **Done 2026-11-27.** Add it to `~/MLOPS-Project/.env` as `LOG_PSEUDONYM_KEY=<value>`. Never commit it, paste it into chat, or rotate it. If the instance is ever rebuilt, copy the old `.env` across instead of generating a new key, or old and new rows stop linking up.
-3. Merge the release into `main`. `deploy.sh` pulls and starts `monitor` together with the other services.
-4. Check (§11.3) that `monitor` is healthy and that the app log contains **no** `LOG_PSEUDONYM_KEY is not set` warning:
+3. **Done 2026-11-28 (#30).** Merge the release into `main`. `deploy.sh` pulls and starts `monitor` together with the other services.
+4. **Done 2026-11-28: 0 warnings.** Check (§11.3) that `monitor` is healthy and that the app log contains **no** `LOG_PSEUDONYM_KEY is not set` warning:
    `docker compose logs app | grep -c LOG_PSEUDONYM_KEY` should print `0`.
 
 ### 11.3 Daily checks
@@ -312,6 +312,9 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
 | `prediction_log_write_failed` with `PredictionRecordError` | The hook sends a record that breaks the contract (wrong features, request ID containing the learner ID, and so on) | Fix the hook. The log's rules are in the schema doc, §5 |
 | Many `pending` labels never join | Learners stop after one answer, or `learner_seq` has gaps | Expected for the last answer of a session; they expire after 72 h. Gaps mean a prediction was not logged, so check the write failures. |
 | `drift` shows `"error"` in reports | Person 2's evaluator raised an exception | The report has `drift_error_type`. Monitoring keeps running; tell Person 2. |
+| `drift` and `performance` stay `"not_configured"` with ≥ 10 predictions | The evaluator cannot load `reports/monitoring/reference_profile.json` or `configs/monitoring/thresholds.yaml` (happened on 28 Nov: the profile was not in the image, fixed in #33) | `docker compose logs monitor \| grep drift_evaluator_unavailable` shows the `error_type`. Check that the image contains the file. CI's "Monitor image can evaluate drift" step guards this. |
+| A one-off `docker compose run … monitor` (or `app`) behaves like old code | In an SSH shell `APP_IMAGE` is not set, so Compose falls back to `jee-tutor:local`, an older image, not the one `deploy.sh` started | Use `docker compose exec` on the running container, or set the tag first: `export APP_IMAGE=$(docker inspect -f '{{.Config.Image}}' $(docker compose ps -q app))` |
+| `mlflow` keeps restarting | OOM kill inside its 768 MB limit (`sudo dmesg -T \| grep -i oom`) | Make sure `MLFLOW_SERVER_ENABLE_JOB_EXECUTION=false` is set on the service (§12) |
 
 ### 11.9 Verification record
 
@@ -320,13 +323,18 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
 | `LOG_PSEUDONYM_KEY` added to `~/MLOPS-Project/.env` (64 hex chars, generated on the server, `.env` mode 600, old file kept as `.env.bak-20261127`) | — | yes, 2026-11-27 |
 | Logger, label joiner, backups, window evaluation, scheduler (unit tests) | yes (`tests/test_monitoring_*.py`) | — |
 | App inference path (Person 3's `InferenceService`, PR #26) → log → labels → window (`tests/test_monitoring_integration.py`) | yes, 2026-11-27, against PR #26 head `c2e6191` | — |
-| Scheduler end-to-end as a process (labels joined, window evaluated, backup, heartbeat) | yes, 2026-11-25 | not yet |
-| `monitor` container built and healthy | no (no Docker on the dev machine) | not yet |
-| Backup restored into a working database | yes (test) | not yet (Day 5) |
+| App inference path on the server: 3 live answers (Hard → Medium → Easy, one test account) → 3 predictions (`learner_seq` 0, 1, 2; latency 9–15 ms; no fallback) → 3 outcomes linked by `request_id` → labels 1, 1, pending | — | yes, 2026-11-28 |
+| Privacy: the test account's username in the monitoring DB, its WAL files, window snapshots and the `app`/`monitor` logs | yes (integration test) | yes, 2026-11-28: 0 occurrences |
+| Scheduler end-to-end as a process (labels joined, window evaluated, backup, heartbeat) | yes, 2026-11-25 | yes, 2026-11-28 |
+| Window evaluated from live traffic (`w-20261128T0600Z-15m`: 3 predictions, 2 labelled, `insufficient_data`, no alerts, snapshot files written) | — | yes, 2026-11-28 |
+| `monitor` container built and healthy | no (no Docker on the dev machine) | yes, 2026-11-28 |
+| Backup restored into a working database (`backup` → `--restore` into a scratch file: integrity ok, 3 predictions, 2 labels, 3 outcomes) | yes (test) | yes, 2026-11-28 |
+| Backups land on the `monitoring_backups` volume | — | yes, 2026-11-28 |
+| Drift evaluator runs in the deployed image (Person 2's sample windows, 60 rows each, scored by `production` v2 from MLflow, run inside the live `monitor` container) | yes (tests) | yes, 2026-11-28, after #33/#34. Baseline window: 3 features flagged, prediction PSI 0.04, F1 0.75. Shifted window: 5 features flagged, prediction PSI 0.055, F1 0.92. **Caution for Day 4:** the unshifted baseline already flags 3 features (≥ 2 fires the trigger), because PSI is noisy on 60 rows and `topic` has 40 categories. Expect control-window false alarms unless windows are larger or `topic` is excluded from the trigger count. |
 | Window length change during the experiment | yes (test) | not yet (Day 4) |
 | Alert recorded from real traffic | — | not yet (Day 4) |
 
-## 12. MLflow registry on the server (Phase 3, draft)
+## 12. MLflow registry on the server (Phase 3)
 
 **Decision (27 Nov 2026): yes.** Person 3's app loads the champion by alias (`learner-difficulty@production`), the retraining trigger registers challengers, and the gate and rollback commands move aliases. All of that needs a registry the server can reach. Until the registry is seeded, the app falls back to the committed local model, so nothing breaks in the meantime.
 
@@ -343,11 +351,14 @@ Changing the length is safe. Already-evaluated windows are kept, and a short "br
 | Resources | 1 worker (SQLite needs a single writer), 0.5 CPU, 768 MB. `MLFLOW_SERVER_ENABLE_JOB_EXECUTION=false` is required: by default MLflow 3.x also starts a job runner with 7 worker processes (~1.5 GB), which was OOM-killed in a restart loop on the first server deploy (2026-11-28). With it off, the server uses ~360 MB. |
 | Host check | `--allowed-hosts` includes `mlflow:5000`. Without it, MLflow 3.x answers **403** to the other containers. This was verified locally on 2026-11-26: refused by default, accepted with the flag, and `evil.com` still refused. |
 
-**Seed the registry once** (Person 3, after the first deploy): with the tunnel open, run the registration script against the server. Use an environment with `scikit-learn==1.7.2` (`requirements.txt`). The champion does not load under 1.9.1.
+**Seed the registry once** (done 2026-11-28). The simplest way runs the script in a one-off container from the app image, which already has `scikit-learn==1.7.2` and reaches `http://mlflow:5000`. The image does not contain `reports/`, so mount the checkout's reports read-only (the script only reads them):
 
 ```bash
-MLFLOW_TRACKING_URI=http://localhost:5001 python -m src.track_b.register_mlflow
+export APP_IMAGE=$(docker inspect -f '{{.Config.Image}}' $(docker compose ps -q app))   # the deployed image, not jee-tutor:local
+docker compose run --rm --no-deps -T -v "$PWD/reports:/app/reports:ro" app python -m src.track_b.register_mlflow
 ```
+
+From a laptop instead: open the tunnel and run `MLFLOW_TRACKING_URI=http://localhost:5001 python -m src.track_b.register_mlflow` in an environment with `scikit-learn==1.7.2`. The champion does not load under 1.9.1.
 
 **Backups:** the registry is not covered by the nightly monitoring backup yet. Until it is, copy it by hand after any registry change:
 
@@ -355,7 +366,10 @@ MLFLOW_TRACKING_URI=http://localhost:5001 python -m src.track_b.register_mlflow
 docker compose exec mlflow python -c "import sqlite3; s=sqlite3.connect('/mlflow/mlflow.db'); d=sqlite3.connect('/mlflow/mlflow-backup.db'); s.backup(d)"
 ```
 
-**Verification record:** verified locally (2026-11-26) with the real `mlflow server` 3.17.1 process: a model was logged, registered, given an alias and loaded back by alias over HTTP. **Not yet run as a container or on the server.**
+**Verification record:**
+
+- Locally (2026-11-26): the real `mlflow server` 3.17.1 process; a model was logged, registered, given an alias and loaded back by alias over HTTP.
+- On the server (2026-11-28): the first deploy (#30) showed an OOM restart loop, fixed in #31/#32. Since then `mlflow` is healthy, ~350 MB, 0 restarts. The registry is seeded: `learner-difficulty` v1 (baseline) and v2 (`candidate_hgb_shifted_v2`, gate `PROMOTE_CANDIDATE`), with alias `production` → v2. The app loads it by alias (`source_backend: mlflow`, threshold 0.7, boundary guard on). A hand backup was taken right after seeding (`/mlflow/mlflow-backup.db`, integrity ok, alias present).
 
 ## 13. Automated retraining trigger and drift experiment (Person 2)
 
