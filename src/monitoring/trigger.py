@@ -119,11 +119,26 @@ def evaluate_trigger_conditions(
         and a.get("metric") in ("fallback_rate", "error_rate", "timeout_rate")
         for a in alerts
     )
+    raw_excluded = conds.get("exclude_features_from_trigger", {})
+    if isinstance(raw_excluded, dict):
+        excluded_features = {str(k) for k in raw_excluded}
+    elif isinstance(raw_excluded, (list, tuple, set)):
+        excluded_features = {str(x) for x in raw_excluded}
+    else:
+        excluded_features = set()
+
+    def _alert_feature_name(alert: dict[str, Any]) -> str:
+        if alert.get("feature"):
+            return str(alert["feature"])
+        metric = str(alert.get("metric", ""))
+        return metric.split(":")[-1] if ":" in metric else metric
+
     feature_alerts = [
         a
         for a in alerts
         if a.get("category") == "drift"
         and not str(a.get("metric", "")).startswith("PREDICTION_DRIFT")
+        and _alert_feature_name(a) not in excluded_features
         and a.get("severity") in ("critical", "ALERT")
     ]
 

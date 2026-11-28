@@ -108,7 +108,7 @@ def test_cooldown_enforcement(tmp_path, trigger_config, monkeypatch):
         "n_labelled": 40,
         "alerts": [
             {"severity": "critical", "category": "drift", "metric": "hint_count", "value": 0.25, "threshold": 0.20},
-            {"severity": "critical", "category": "drift", "metric": "topic", "value": 0.22, "threshold": 0.20},
+            {"severity": "critical", "category": "drift", "metric": "response_time_seconds", "value": 0.22, "threshold": 0.20},
         ],
     }
 
@@ -346,3 +346,56 @@ def test_snapshot_from_monitoring_extracts_joined_rows(tmp_path):
     assert len(df) == 1
     assert df["switch_to_lower_difficulty"].iloc[0] == 0
     assert df["hint_count"].iloc[0] == 2
+
+
+def test_excluded_features_do_not_fire_trigger(trigger_config):
+    """topic and prior_interaction_count alerts stay on dashboard but do not fire trigger."""
+    report = {
+        "window_id": "win_excluded_001",
+        "n_predictions": 60,
+        "n_labelled": 40,
+        "alerts": [
+            {"severity": "critical", "category": "drift", "metric": "CATEGORICAL_DRIFT:psi:topic", "value": 4.95, "threshold": 0.20},
+            {"severity": "critical", "category": "drift", "metric": "FEATURE_DRIFT:psi:prior_interaction_count", "value": 0.75, "threshold": 0.20},
+            {"severity": "critical", "category": "drift", "metric": "FEATURE_DRIFT:psi:response_time_seconds", "value": 0.25, "threshold": 0.20},
+        ],
+    }
+    should_fire, cond, _ = evaluate_trigger_conditions(report, trigger_config)
+    assert not should_fire
+    assert cond is None
+
+
+def test_baseline_fixture_does_not_fire_trigger(trigger_config):
+    """Unshifted 60-row baseline fixture must not satisfy trigger conditions."""
+    import joblib
+    import pandas as pd
+    from src.monitoring.drift_window import evaluate_window_drift
+    from src.monitoring.drift_windows import load_reference_profile, load_thresholds
+    from src.track_b.schema import FEATURE_COLUMNS
+
+    df = pd.read_csv("tests/fixtures/monitoring/sample_window_baseline.csv")
+    ref = load_reference_profile()
+    thr = load_thresholds()
+    scores = joblib.load("models/track_b/candidate/model.joblib").predict_proba(df[FEATURE_COLUMNS])[:, 1]
+    res = evaluate_window_drift(df, ref, thr, prediction_scores=scores, window_id="win_fixture_base")
+    normalized_alerts = [
+        {
+            "severity": "critical" if a["severity"] == "ALERT" else "warning",
+            "category": "performance" if "PERFORMANCE" in a["type"] else "drift",
+            "metric": f"{a['type']}:{a['metric']}:{a['feature']}" if "feature" in a else f"{a['type']}:{a['metric']}",
+            "value": a["value"],
+            "threshold": a["threshold"],
+        }
+        for a in res["alerts"]
+    ]
+    report = {
+        "window_id": "win_fixture_base",
+        "status": "alert" if normalized_alerts else "ok",
+        "n_predictions": len(df),
+        "n_labelled": 0,
+        "prediction_psi": res["prediction_psi"],
+        "alerts": normalized_alerts,
+    }
+    should_fire, cond, _ = evaluate_trigger_conditions(report, trigger_config)
+    assert not should_fire
+    assert cond is None

@@ -165,9 +165,19 @@ def evaluate_window_drift(
                 })
 
     # 2. Categorical Feature Drift
+    min_rows_per_cat = int(thresholds.get("feature_drift", {}).get("min_rows_per_category", 5))
     for col, meta in reference_profile.get("categorical_features", {}).items():
         if col in window_df.columns:
             psi = compute_categorical_psi(window_df[col], meta["proportions"])
+            n_cats = max(1, len(meta["proportions"]))
+            n_non_null = int(window_df[col].dropna().shape[0])
+            if min_rows_per_cat > 0 and n_non_null < min_rows_per_cat * n_cats:
+                drift_results[col] = {
+                    "psi": round(psi, 4),
+                    "status": "insufficient_data",
+                }
+                continue
+
             status = "ALERT" if psi >= psi_alert else "WARN" if psi >= psi_warn else "OK"
             drift_results[col] = {
                 "psi": round(psi, 4),

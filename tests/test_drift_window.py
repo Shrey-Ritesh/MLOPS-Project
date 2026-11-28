@@ -190,3 +190,44 @@ def test_ks_only_alert_labelled_as_ks_not_psi(monkeypatch):
     assert norm["metric"] == "FEATURE_DRIFT:ks:response_time_seconds"
     assert "ks_p=" in norm["message"]
     assert ">= 0.1" not in norm["message"]
+
+
+def test_categorical_psi_suppressed_under_min_rows_per_category(reference_profile, thresholds):
+    """40-topic categorical PSI reports insufficient_data with no alert on 60-row windows."""
+    df_base = pd.read_csv("tests/fixtures/monitoring/sample_window_baseline.csv")
+    res_small = evaluate_window_drift(df_base, reference_profile, thresholds, window_id="win_small_cat")
+    assert res_small["drift"]["topic"]["status"] == "insufficient_data"
+    assert not any(a.get("feature") == "topic" for a in res_small["alerts"])
+    assert res_small["drift"]["selected_difficulty"]["status"] in ("OK", "WARN", "ALERT")
+
+
+def test_simulate_traffic_test_only_learner_order_and_inference_service():
+    """Traffic simulator replays held-out test learners in sequence through InferenceService."""
+    from scripts.simulate_traffic import iter_learner_ordered_rows, load_traffic_dataset, stream_traffic
+    from src.track_b.modeling import load_dataset, split_by_learner
+
+    full_df, meta = load_dataset("data/synthetic/learner_interactions_shifted_v1.csv")
+    train_df, test_df = split_by_learner(full_df, meta)
+    sim_base = load_traffic_dataset("baseline", test_only=True)
+    assert set(sim_base["learner_id"]) <= set(test_df["learner_id"])
+    assert set(sim_base["learner_id"]).isdisjoint(set(train_df["learner_id"]))
+
+    ordered = iter_learner_ordered_rows(sim_base, limit=60)
+    assert len(ordered) == 60
+    seen_seqs: dict[str, list[int]] = {}
+    for lid, seq, _ in ordered:
+        seen_seqs.setdefault(lid, []).append(seq)
+    for seqs in seen_seqs.values():
+        assert seqs == list(range(len(seqs)))
+
+    calls = []
+
+    class FakeService:
+        def predict_and_log(self, **kwargs):
+            calls.append(kwargs)
+
+    count = stream_traffic("shifted", limit=30, inference_service=FakeService())
+    assert count == 30
+    assert len(calls) == 30
+    assert all(c["source"] == "simulated" for c in calls)
+    assert all("switch_to_lower_difficulty" not in c["features"] for c in calls)
