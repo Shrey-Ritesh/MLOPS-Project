@@ -24,6 +24,8 @@ data/attempts
 data/processed
 models
 reports
+# The monitor needs the drift reference profile (drift_windows.py); keep it in the build context.
+!reports/monitoring/reference_profile.json
 tests
 mlruns
 mlartifacts

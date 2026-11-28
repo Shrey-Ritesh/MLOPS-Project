@@ -7,10 +7,13 @@ with the scheduled monitoring window evaluator (src/monitoring/run_window.py).
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+from src.monitoring.app_logging import log_event
 
 DEFAULT_PROFILE_PATH = Path("reports/monitoring/reference_profile.json")
 DEFAULT_THRESHOLDS_PATH = Path("configs/monitoring/thresholds.yaml")
@@ -54,8 +57,11 @@ def evaluate_window(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
         ref_profile = load_reference_profile()
         thresholds = load_thresholds()
-    except Exception:
-        # Fallback if configs or optional statistical/ML packages are missing
+    except Exception as exc:
+        # Fallback if configs or optional statistical/ML packages are missing. Log it: a silent
+        # "not_configured" hid a missing reference profile on the first server deploy (2026-11-28).
+        log_event("drift_evaluator_unavailable", level=logging.WARNING, service="monitoring",
+                  error_type=type(exc).__name__)
         return {
             "drift": "not_configured",
             "prediction_psi": None,

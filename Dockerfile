@@ -27,6 +27,9 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --chown=app:app app.py ./app.py
 COPY --chown=app:app src ./src
 COPY --chown=app:app configs ./configs
+# Drift reference profile for the monitor (src/monitoring/drift_windows.py). Without it the
+# evaluator falls back to "not_configured" and no drift or performance is measured.
+COPY --chown=app:app reports/monitoring/reference_profile.json ./reports/monitoring/reference_profile.json
 
 USER app
 
