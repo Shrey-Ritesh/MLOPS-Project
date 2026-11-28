@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import html
 import logging
 import os
 import random
@@ -17,9 +18,16 @@ import streamlit as st
 from dotenv import load_dotenv
 from groq import Groq
 
+from src.evaluation.assets import AssetRepository, ResolvedAsset
 from src.evaluation.repository import QuestionRepository
 from src.evaluation.schemas import AnswerSubmissionRequest, EvaluationOutcome, InputMode
 from src.evaluation.service import EvaluationService
+from src.evaluation.ui_state import (
+    APP_VIEWS,
+    clear_user_session_state,
+    queue_practice_question,
+    sync_navigation_and_practice_state,
+)
 from src.handwriting.ocr_space import (
     ImageValidationError,
     OCRSpaceError,
@@ -47,6 +55,7 @@ SEED_DEMO_ACCOUNT = os.getenv("SEED_DEMO_ACCOUNT", "").strip().lower() in {"1", 
 
 # Shared singletons for practice and learner evaluation
 _question_repo = QuestionRepository()
+_asset_repo = AssetRepository()
 _evaluation_service = EvaluationService(repository=_question_repo)
 _attempt_store = SQLiteAttemptStore(LEARNER_DB_PATH)
 _topic_tagger = QuestionTopicTagger.from_file()
@@ -59,6 +68,147 @@ def _get_inference_service() -> InferenceService:
     if _inference_service is None:
         _inference_service = InferenceService.from_env()
     return _inference_service
+
+
+def _inject_app_styles() -> None:
+    """Apply responsive layout and pill-nav styling while preserving Streamlit's default colors."""
+    st.markdown(
+        """
+        <style>
+        .block-container {
+            max-width: 960px;
+            padding-top: 1.5rem;
+            padding-bottom: 3rem;
+        }
+
+        [data-testid="stVerticalBlockBorderWrapper"] .stMarkdown p,
+        [data-testid="stVerticalBlockBorderWrapper"] .stMarkdown h4 {
+            max-width: 74ch;
+            line-height: 1.65;
+        }
+
+        [data-testid="stImage"] img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .meta-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem 0.75rem;
+            font-size: 0.88rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .meta-pill {
+            background-color: var(--secondary-background-color);
+            border: 1px solid rgba(128, 128, 128, 0.3);
+            border-radius: 6px;
+            padding: 0.18rem 0.55rem;
+        }
+
+        /* Scope navigation pills strictly to the top active_view radio */
+        .st-key-active_view div[role="radiogroup"] {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            background-color: var(--secondary-background-color);
+            border: 1px solid rgba(128, 128, 128, 0.25);
+            border-radius: 10px;
+            padding: 0.4rem;
+            margin-bottom: 1rem;
+        }
+
+        .st-key-active_view div[role="radiogroup"] label {
+            margin: 0;
+            padding: 0.45rem 0.9rem;
+            border-radius: 7px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .st-key-active_view div[role="radiogroup"] label[data-checked="true"],
+        .st-key-active_view div[role="radiogroup"] label:has(input:checked) {
+            background-color: var(--primary-color);
+            color: #FFFFFF;
+        }
+
+        .st-key-active_view div[role="radiogroup"] label:has(input:checked) p,
+        .st-key-active_view div[role="radiogroup"] label:has(input:checked) span {
+            color: #FFFFFF !important;
+        }
+
+        .st-key-active_view div[role="radiogroup"] input {
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        @media (max-width: 768px) {
+            .block-container {
+                padding-left: 0.85rem;
+                padding-right: 0.85rem;
+                padding-top: 1rem;
+            }
+
+            [data-testid="stHorizontalBlock"] {
+                flex-direction: column !important;
+                gap: 0.75rem !important;
+            }
+
+            [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+                width: 100% !important;
+                flex: 1 1 100% !important;
+            }
+
+            .stButton > button,
+            .stFormSubmitButton > button {
+                width: 100%;
+                min-height: 44px;
+            }
+
+            .st-key-active_view div[role="radiogroup"] label {
+                flex: 1 1 calc(50% - 0.5rem);
+                justify-content: center;
+                min-height: 44px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _queue_practice_question(
+    question_id: str,
+    *,
+    switch_view: bool = False,
+    notice: str | None = None,
+) -> None:
+    """Queue a question selection for the next rerun before widgets instantiate."""
+    queue_practice_question(
+        st.session_state,
+        question_id,
+        switch_view=switch_view,
+        notice=notice,
+    )
+
+
+def _sync_navigation_and_practice_state() -> None:
+    """Apply pending navigation or question changes before widgets bind their keys."""
+    sync_navigation_and_practice_state(st.session_state)
 
 
 # --- Authentication & CSV Management ---
@@ -453,10 +603,7 @@ def render_sidebar_profile() -> None:
         st.caption(f"Learner ID: `{user.get('learner_id', 'N/A')}`")
         st.write("---")
         if st.button("Sign Out", key="sign_out_button"):
-            st.session_state["authenticated"] = False
-            st.session_state.pop("user", None)
-            st.session_state.pop("debug_info", None)
-            st.session_state.pop("practice_evaluation_result", None)
+            clear_user_session_state(st.session_state)
             st.rerun()
 
 
@@ -470,6 +617,20 @@ def _safe_get_chemistry_questions() -> list[JEEQuestionRecord]:
         return []
 
 
+def _render_question_assets(assets: list[ResolvedAsset]) -> None:
+    """Render attached question figures, or a plain notice when a figure file is missing."""
+    if not assets:
+        return
+    for asset in assets:
+        caption = f"Figure {asset.figure_number} ({asset.asset_id})"
+        if asset.exists:
+            st.image(str(asset.file_path), caption=caption)
+        else:
+            # Students see a plain notice; the fix (dvc pull data/assets.dvc on the host) goes to the ops log.
+            st.info(f"Figure {asset.figure_number} is unavailable right now.")
+            log_event("question_asset_missing", level=logging.WARNING, path=asset.asset_id)
+
+
 def render_practice_tab(current_user: dict[str, str]) -> None:
     """Render interactive JEE Chemistry problem practice with deterministic evaluation."""
     st.subheader("JEE Chemistry Exam Practice")
@@ -480,28 +641,28 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
         st.warning("No Chemistry questions found in the repository data.")
         return
 
+    q_years = {q.question_id: (q.year or "JEE") for q in chem_questions}
     q_ids = [q.question_id for q in chem_questions]
-    default_idx = 0
     selected_qid = st.session_state.get("selected_question_id")
-    if selected_qid in q_ids:
-        default_idx = q_ids.index(selected_qid)
+    if st.session_state.get("practice_question_picker") not in q_ids:
+        st.session_state["practice_question_picker"] = selected_qid if selected_qid in q_ids else q_ids[0]
 
-    col_select, col_rand = st.columns([3, 1])
+    loaded_notice = st.session_state.pop("practice_loaded_notice", None)
+    if loaded_notice:
+        st.success(loaded_notice)
+
+    col_select, col_rand = st.columns([3, 1], vertical_alignment="bottom")
     with col_rand:
-        if st.button("Random Problem", key="random_problem_btn"):
+        if st.button("Random problem", key="random_problem_btn", use_container_width=True):
             rand_q = random.choice(chem_questions)
-            st.session_state["selected_question_id"] = rand_q.question_id
-            st.session_state["practice_question_started_at"] = time.monotonic()
-            st.session_state["practice_hint_count"] = 0
-            st.session_state.pop("practice_evaluation_result", None)
+            _queue_practice_question(rand_q.question_id, switch_view=False)
             st.rerun()
 
     with col_select:
         chosen_qid = st.selectbox(
-            "Select Problem",
+            "Select problem",
             q_ids,
-            index=default_idx,
-            format_func=lambda qid: f"{qid} ({getattr(_question_repo.get_question(qid), 'year', None) or 'JEE'})",
+            format_func=lambda qid: f"{qid} ({q_years.get(qid, 'JEE')})",
             key="practice_question_picker",
         )
         if chosen_qid != st.session_state.get("selected_question_id"):
@@ -521,27 +682,35 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
         return
 
     topic = _topic_tagger.get_topic(question)
-
-    # Question Display Box
-    st.markdown("---")
-    st.markdown(
-        f"**Question ID:** `{question.question_id}` | "
-        f"**Topic:** `{topic}` | "
-        f"**Year:** {question.year or 'N/A'} | "
-        f"**Session:** {question.session or 'N/A'} | "
-        f"**Shift:** {question.shift or 'N/A'}"
+    display_question_text, resolved_assets = _asset_repo.resolve_for_question(
+        question.question_text,
+        question.asset_ids,
     )
-    st.markdown(f"#### {question.question_text}")
 
-    if question.options:
-        st.markdown("**Options:**")
-        for opt in question.options:
-            st.markdown(f"- **({opt.label})** {opt.text}")
+    # Question Display Sheet
+    with st.container(border=True):
+        st.markdown(
+            "<div class='meta-strip'>"
+            f"<span class='meta-pill'><strong>Question</strong> <code>{html.escape(question.question_id)}</code></span>"
+            f"<span class='meta-pill'><strong>Topic</strong> <code>{html.escape(topic)}</code></span>"
+            f"<span class='meta-pill'><strong>Year</strong> {html.escape(str(question.year or 'N/A'))}</span>"
+            f"<span class='meta-pill'><strong>Session</strong> {html.escape(str(question.session or 'N/A'))}</span>"
+            f"<span class='meta-pill'><strong>Shift</strong> {html.escape(str(question.shift or 'N/A'))}</span>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(f"#### {display_question_text}")
+        _render_question_assets(resolved_assets)
 
-    col_diff, col_hint = st.columns([2, 1])
+        if question.options:
+            st.markdown("**Options**")
+            for opt in question.options:
+                st.markdown(f"- **({opt.label})** {opt.text}")
+
+    col_diff, col_hint = st.columns([2, 1], vertical_alignment="bottom")
     with col_diff:
         selected_difficulty = st.selectbox(
-            "Practice Difficulty Level",
+            "Practice difficulty level",
             ["Easy", "Medium", "Hard"],
             index=["Easy", "Medium", "Hard"].index(st.session_state.get("practice_selected_difficulty", "Medium")),
             key="practice_difficulty_select",
@@ -549,8 +718,7 @@ def render_practice_tab(current_user: dict[str, str]) -> None:
         )
         st.session_state["practice_selected_difficulty"] = selected_difficulty
     with col_hint:
-        st.write("")
-        if st.button("Show Hint", key="practice_show_hint_btn"):
+        if st.button("Show hint", key="practice_show_hint_btn", use_container_width=True):
             st.session_state["practice_hint_count"] = int(st.session_state.get("practice_hint_count", 0)) + 1
 
     hint_count = int(st.session_state.get("practice_hint_count", 0))
@@ -793,10 +961,13 @@ def render_progress_tab(current_user: dict[str, str]) -> None:
         year_str = getattr(rec_q, "year", None) or "JEE"
         st.markdown(f"**Recommended Question ID:** `{rec.question_id}` ({year_str})")
         st.info(f"**Pedagogical Rationale:** {rec.reason}")
-        if st.button("Practice This Recommended Problem Now", key="load_recommended_btn"):
-            st.session_state["selected_question_id"] = rec.question_id
-            st.session_state.pop("practice_evaluation_result", None)
-            st.info("Loaded into Practice Problems tab! Switch to the 'Practice Problems' tab above to solve it.")
+        if st.button("Practice this recommended problem", type="primary", key="load_recommended_btn"):
+            _queue_practice_question(
+                rec.question_id,
+                switch_view=True,
+                notice=f"Loaded recommended question `{rec.question_id}`.",
+            )
+            st.rerun()
 
     st.write("---")
     st.markdown("### Recent Practice History")
@@ -819,25 +990,28 @@ def render_progress_tab(current_user: dict[str, str]) -> None:
 
 def main() -> None:
     st.set_page_config(page_title="JEE Chemistry Tutor", layout="centered")
+    _inject_app_styles()
 
     # Gate access behind authentication
     if not st.session_state.get("authenticated", False):
         render_auth_page()
         return
 
-    # Render authenticated sidebar
+    # Render authenticated sidebar and apply any queued view/problem transitions before widgets bind
     render_sidebar_profile()
+    _sync_navigation_and_practice_state()
 
-    tab_tutor, tab_practice, tab_progress, tab_debug = st.tabs([
-        "Chemistry Tutor",
-        "Practice Problems",
-        "My Progress",
-        "Debug & Inspection",
-    ])
+    active_view = st.radio(
+        "Workspace",
+        APP_VIEWS,
+        horizontal=True,
+        key="active_view",
+        label_visibility="collapsed",
+    )
 
     current_user = st.session_state.get("user", {})
 
-    with tab_tutor:
+    if active_view == "Chemistry Tutor":
         st.title("JEE Chemistry Tutor")
         st.caption(f"Welcome, **{current_user.get('name', 'Student')}**! Ask a question or attach your handwritten work.")
 
@@ -982,13 +1156,13 @@ def main() -> None:
                     else:
                         st.error(answer)
 
-    with tab_practice:
+    elif active_view == "Practice Problems":
         render_practice_tab(current_user)
 
-    with tab_progress:
+    elif active_view == "My Progress":
         render_progress_tab(current_user)
 
-    with tab_debug:
+    elif active_view == "Debug & Inspection":
         st.subheader("Prompt & Text Extraction Debugger")
         st.caption("Inspect image OCR extraction, verify combined image+text prompts, and view retrieval context.")
 
@@ -1000,7 +1174,7 @@ def main() -> None:
                 st.markdown("#### Pending Image Extraction Preview")
                 st.json(st.session_state.get("ocr_meta", {}))
                 st.markdown("**Extracted Text:**")
-                st.code(st.session_state.get("raw_ocr_text", "(empty)"))
+                st.code(st.session_state.get("raw_ocr_text", "(empty)"), wrap_lines=True)
         else:
             col_m1, col_m2, col_m3, col_m4 = st.columns(4)
             col_m1.metric("Status", "Delivered" if "Successfully" in debug_info["delivery_status"] else "Error")
@@ -1018,10 +1192,10 @@ def main() -> None:
                     st.json(debug_info.get("ocr_meta", {}))
                 with c_raw:
                     st.markdown("**Raw OCR Extracted Text:**")
-                    st.code(debug_info["raw_ocr_text"] or "(no text extracted)")
+                    st.code(debug_info["raw_ocr_text"] or "(no text extracted)", wrap_lines=True)
                     if debug_info["final_extracted_text"] != debug_info["raw_ocr_text"]:
                         st.markdown("**User Corrected Text:**")
-                        st.code(debug_info["final_extracted_text"])
+                        st.code(debug_info["final_extracted_text"], wrap_lines=True)
             else:
                 st.write("No image was attached for this submission (pure text prompt).")
 
@@ -1030,13 +1204,13 @@ def main() -> None:
             col_u, col_i = st.columns(2)
             with col_u:
                 st.markdown("**Student Typed Text:**")
-                st.code(debug_info["user_typed_text"] or "(none)")
+                st.code(debug_info["user_typed_text"] or "(none)", wrap_lines=True)
             with col_i:
                 st.markdown("**Image Extracted Work:**")
-                st.code(debug_info["final_extracted_text"] or "(none)")
+                st.code(debug_info["final_extracted_text"] or "(none)", wrap_lines=True)
 
             st.markdown("**Final Combined Prompt Sent to Groq (`user` message):**")
-            st.code(debug_info["combined_prompt"], language="text")
+            st.code(debug_info["combined_prompt"], language="text", wrap_lines=True)
 
             st.markdown(f"**Delivery Result:** `{debug_info['delivery_status']}` at `{debug_info['timestamp']}`")
 

@@ -64,6 +64,7 @@ Dependency note: `requirements.txt` is the full development freeze. `requirement
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| Practice questions show "Figure N is unavailable right now." | `data/assets` (question figures, DVC-tracked, ~39 MB) was never pulled on the host; `app` logs `question_asset_missing` | on the host: `dvc pull data/assets.dvc`, check `ls data/assets/crops`, then `docker compose up -d app` |
 | `api` unhealthy, `/health` returns 503 | no questions loaded | `dvc pull data/processed.dvc`, or set `JEE_QUESTIONS_PATH` to a valid JSONL |
 | Every API request returns 500 | FastAPI/Starlette version mismatch | install the pinned versions; `tests/test_api_startup.py` guards this |
 | `app` container restarts in a loop | missing/placeholder `GROQ_API_KEY` | check `docker compose logs app`; set the key in `.env` |

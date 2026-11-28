@@ -87,6 +87,7 @@ services:
       HF_HOME: /cache/huggingface
     volumes:
       - ./data/processed:/app/data/processed:ro
+      - ./data/assets:/app/data/assets:ro
       - ./models:/app/models:ro
       - app_state:/app/data/state
       - hf_cache:/cache/huggingface
