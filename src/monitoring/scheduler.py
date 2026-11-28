@@ -4,8 +4,10 @@ Each tick (every ``tick_seconds``):
   1. join delayed labels onto the prediction log;
   2. evaluate every complete window that has not been evaluated yet (catching up after
      downtime, at most ``max_catch_up_windows``; a larger gap raises a ``monitoring_gap`` alert);
-  3. once per UTC day after ``backup_hour_utc``, back up the monitoring database;
-  4. write a heartbeat (``monitor_state`` row + file) used by the container health check.
+  3. if ``MONITORING_TRIGGER_ENABLED=1``, pass each new window report to Person 2's retraining
+     trigger (``src/monitoring/trigger.py``), which may retrain and register a challenger;
+  4. once per UTC day after ``backup_hour_utc``, back up the monitoring database;
+  5. write a heartbeat (``monitor_state`` row + file) used by the container health check.
 
 A window [start, end) is evaluated once ``now >= end + label_lag``. Windows are aligned to
 multiples of the window length since the Unix epoch, so every run agrees on window IDs.
@@ -14,7 +16,10 @@ multiples of the window length since the Unix epoch, so every run agrees on wind
     python -m src.monitoring.scheduler --once     # one tick, then exit (manual / tests)
 
 Environment: MONITORING_DB_PATH, MONITORING_OUTPUT_DIR, MONITORING_BACKUP_DIR,
-MONITORING_WINDOW_MINUTES, MONITORING_TICK_SECONDS, MONITORING_BACKUP_HOUR_UTC.
+MONITORING_WINDOW_MINUTES, MONITORING_TICK_SECONDS, MONITORING_BACKUP_HOUR_UTC,
+MONITORING_TRIGGER_ENABLED (default 0), MONITORING_TRIGGER_EXECUTE (default 1: run the retraining
+pipeline when the trigger fires; 0 = dry run), MONITORING_TRIGGER_SIMULATED (default 0: use the
+window-count cooldown meant for the drift experiment), TRIGGER_STATE_DIR (trigger state and events).
 """
 from __future__ import annotations
 
@@ -51,6 +56,10 @@ class Settings:
     backup_hour_utc: int
     config: dict[str, Any]
     retention: dict[str, Any] | None = None  # configs/monitoring/retention.yaml; loaded when None
+    trigger_enabled: bool = False
+    trigger_execute: bool = True
+    trigger_simulated: bool = False
+    trigger_state_dir: str = "data/state/retraining"
 
     @classmethod
     def from_env(cls, config_path: str = DEFAULT_CONFIG) -> "Settings":
@@ -70,7 +79,18 @@ class Settings:
             backup_hour_utc=int(os.environ.get("MONITORING_BACKUP_HOUR_UTC", 2)),
             config=cfg,
             retention=load_retention(),
+            trigger_enabled=_env_flag("MONITORING_TRIGGER_ENABLED", False),
+            trigger_execute=_env_flag("MONITORING_TRIGGER_EXECUTE", True),
+            trigger_simulated=_env_flag("MONITORING_TRIGGER_SIMULATED", False),
+            trigger_state_dir=os.environ.get("TRIGGER_STATE_DIR", "data/state/retraining"),
         )
+
+
+def _env_flag(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None or not raw.strip():
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
 def floor_to_window(t: datetime, window: timedelta) -> datetime:
@@ -133,6 +153,10 @@ def tick(s: Settings, now: datetime | None = None) -> dict[str, Any]:
         summary["windows"].append((report["window_id"], report["status"]))
         with db.session(s.db_path) as conn:
             _set_state(conn, "last_window_end", iso(end), now)
+        if s.trigger_enabled:
+            event = _maybe_trigger(s, report)
+            if event is not None:
+                summary.setdefault("trigger_events", []).append(event)
 
     summary["backup"] = _maybe_backup(s, now)
     summary["retention"] = _maybe_retention(s, now)
@@ -142,6 +166,43 @@ def tick(s: Settings, now: datetime | None = None) -> dict[str, Any]:
     Path(s.output_dir).mkdir(parents=True, exist_ok=True)
     (Path(s.output_dir) / HEARTBEAT_FILE).write_text(iso(now), encoding="utf-8")
     return summary
+
+
+def _maybe_trigger(s: Settings, report: dict[str, Any]) -> dict[str, Any] | None:
+    """Hand one evaluated window to the retraining trigger. Never lets a trigger failure stop monitoring.
+
+    Runs after ``last_window_end`` is saved, so a crash here cannot make the window be evaluated twice.
+    The trigger owns its policy (conditions, cooldown, daily cap, minimum records); this only calls it.
+    """
+    try:
+        from src.monitoring.trigger import process_window_for_trigger
+
+        state_dir = Path(s.trigger_state_dir)
+        state_dir.mkdir(parents=True, exist_ok=True)
+        event = process_window_for_trigger(
+            report,
+            state_path=state_dir / "trigger_state.json",
+            events_path=state_dir / "trigger_events.jsonl",
+            simulated_mode=s.trigger_simulated,
+            execute_pipeline=s.trigger_execute,
+            db_path=s.db_path,
+        )
+    except Exception as exc:
+        log_event("trigger_failed", level=logging.ERROR, service="monitoring",
+                  window_id=report.get("window_id"), error_type=type(exc).__name__)
+        return None
+    if event is None:
+        return None
+    status = str(event.get("status", ""))
+    if status == "cooldown_blocked":
+        log_event("trigger_blocked", service="monitoring", window_id=report.get("window_id"),
+                  status=status, reason=str(event.get("reason", ""))[:200])
+    else:
+        log_event("trigger_fired", level=logging.WARNING, service="monitoring",
+                  window_id=report.get("window_id"), trigger_id=event.get("trigger_id"),
+                  status="failed" if status.startswith("failed") else status, model_version=event.get("mlflow_model_version"),
+                  reason=str(event.get("condition_met", ""))[:200])
+    return event
 
 
 def _record_gap_alert(s: Settings, skipped: int, now: datetime) -> None:

@@ -31,6 +31,11 @@ COPY --chown=app:app configs ./configs
 # evaluator falls back to "not_configured" and no drift or performance is measured.
 COPY --chown=app:app reports/monitoring/reference_profile.json ./reports/monitoring/reference_profile.json
 
+# Commit of the code in this image; recorded in retrained challengers' model cards (no git in the image).
+# Last, so a new commit does not invalidate the cached layers above.
+ARG GIT_COMMIT=unknown
+ENV GIT_COMMIT=$GIT_COMMIT
+
 USER app
 
 EXPOSE 8501 8000

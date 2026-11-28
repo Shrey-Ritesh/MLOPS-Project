@@ -156,11 +156,25 @@ services:
       MONITORING_WINDOW_MINUTES: ${MONITORING_WINDOW_MINUTES:-15}
       MONITORING_TICK_SECONDS: ${MONITORING_TICK_SECONDS:-60}
       MONITORING_BACKUP_HOUR_UTC: "2"
+      # Retraining trigger (Person 2), called after each window. Off by default; for the drift
+      # experiment set MONITORING_TRIGGER_ENABLED=1 (and MONITORING_TRIGGER_SIMULATED=1) in .env.
+      MONITORING_TRIGGER_ENABLED: ${MONITORING_TRIGGER_ENABLED:-0}
+      MONITORING_TRIGGER_EXECUTE: ${MONITORING_TRIGGER_EXECUTE:-1}
+      MONITORING_TRIGGER_SIMULATED: ${MONITORING_TRIGGER_SIMULATED:-0}
+      # Retraining outputs on the persistent app_state volume, never over the committed champion.
+      TRIGGER_STATE_DIR: /app/data/state/retraining
+      TRIGGER_SNAPSHOT_DIR: /app/data/state/retraining/snapshots
+      TRIGGER_CHALLENGER_DIR: /app/data/state/retraining/challenger
+      TRIGGER_CHALLENGER_COMPARISON: /app/data/state/retraining/challenger_comparison.json
     volumes:
       - app_state:/app/data/state
       - monitoring_backups:/app/data/backups
-    cpus: 0.5
-    mem_limit: 512m
+      # Read-only inputs for retraining (committed in git): training data and the baseline it is compared with.
+      - ./data/synthetic:/app/data/synthetic:ro
+      - ./models/track_b/baseline:/app/models/track_b/baseline:ro
+    # Bounded so a retrain (~3 s, ~300 MB peak, measured) can never starve the tutor.
+    cpus: 1.0
+    mem_limit: 1g
     restart: unless-stopped
     healthcheck:
       # Healthy while the scheduler has completed a tick in the last 5 minutes.
