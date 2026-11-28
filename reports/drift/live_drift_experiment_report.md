@@ -1,8 +1,8 @@
 # Drift and Performance Degradation Live Experiment Report
 
-**Experiment ID:** `exp_live_drift_20261127_161910`  
+**Experiment ID:** `exp_live_drift_20261128_052235`  
 **Shift Injected At:** `2026-11-26T10:30:00+00:00`  
-**Conducted At:** `2026-11-27T16:19:10.388677+00:00`  
+**Conducted At:** `2026-11-28T05:22:35.678165+00:00`  
 **Owner:** Person 2 (ML: Drift & Retraining)  
 
 ---
@@ -42,7 +42,7 @@
 
 ```json
 {
-  "trigger_id": "trig_20261126_104500_536c35",
+  "trigger_id": "trig_20261126_104500_2eb8e4",
   "fired_at": "2026-11-26T10:45:00.000Z",
   "condition_met": "feature_drift_exceeded_threshold (FEATURE_DRIFT:psi:hint_count, FEATURE_DRIFT:psi:response_time_seconds)",
   "evidence_window_ids": [

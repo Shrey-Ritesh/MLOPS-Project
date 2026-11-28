@@ -201,6 +201,111 @@ services:
     depends_on:
       chroma:
         condition: service_healthy
+  
+  # Phase 3: Dashboard adapter
+  # Reads monitoring SQLite data and MLflow metadata.
+  # Exposes Prometheus metrics and dashboard API endpoints.
+  dashboard-adapter:
+    image: ${APP_IMAGE:-jee-tutor:local}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    logging: *default-logging
+    ports:
+      - 127.0.0.1:9100:9100
+    command:
+      - uvicorn
+      - src.dashboard_adapter.app:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "9100"
+    environment:
+      # MONITORING_DB_PATH: /app/data/dashboard-experiment/drift_experiment.sqlite3    
+      MONITORING_DB_PATH: /app/data/state/monitoring.sqlite3
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - ./data/state:/app/data/state:ro
+      - ./data/state:/app/data/state:ro
+      - ./reports/monitoring:/app/reports/monitoring:ro
+    #volumes:
+    #  - ./data/dashboard-experiment:/app/data/dashboard-experiment:ro
+    #  - ./reports/monitoring:/app/reports/monitoring:ro
+    depends_on:
+      app:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:9100/health', timeout=5)"
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # Phase 3: Prometheus metrics collection
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    logging: *default-logging
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    depends_on:
+      dashboard-adapter:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - sh
+        - -c
+        - "wget -q -O /dev/null http://localhost:9090/-/healthy"
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  # Phase 3: Grafana dashboard visualisation
+  grafana:
+    image: grafana/grafana:12.1.0
+    logging: *default-logging
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - -q
+        - -O
+        - /dev/null
+        - http://localhost:3000/api/health
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   chroma_data:
@@ -210,3 +315,5 @@ volumes:
   app_state:
   monitoring_backups:
   mlflow_data:
+  prometheus_data:
+  grafana_data:
